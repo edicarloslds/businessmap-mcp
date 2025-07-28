@@ -28,12 +28,38 @@ npm run build
 echo "🧪 Running tests..."
 npm run test:npx
 
+# Get current version from package.json
+CURRENT_VERSION=$(node -p "require('./package.json').version")
+echo "📋 Current version: $CURRENT_VERSION"
+
+# Calculate example versions
+PATCH_VERSION=$(node -p "
+  const semver = require('./package.json').version.split('.');
+  semver[2] = parseInt(semver[2]) + 1;
+  semver.join('.');
+")
+
+MINOR_VERSION=$(node -p "
+  const semver = require('./package.json').version.split('.');
+  semver[1] = parseInt(semver[1]) + 1;
+  semver[2] = 0;
+  semver.join('.');
+")
+
+MAJOR_VERSION=$(node -p "
+  const semver = require('./package.json').version.split('.');
+  semver[0] = parseInt(semver[0]) + 1;
+  semver[1] = 0;
+  semver[2] = 0;
+  semver.join('.');
+")
+
 # Ask for version type
 echo ""
 echo "Select version bump type:"
-echo "1) patch (1.0.0 -> 1.0.1)"
-echo "2) minor (1.0.0 -> 1.1.0)"
-echo "3) major (1.0.0 -> 2.0.0)"
+echo "1) patch ($CURRENT_VERSION -> $PATCH_VERSION)"
+echo "2) minor ($CURRENT_VERSION -> $MINOR_VERSION)"
+echo "3) major ($CURRENT_VERSION -> $MAJOR_VERSION)"
 read -p "Enter choice (1-3): " choice
 
 case $choice in
@@ -43,7 +69,7 @@ case $choice in
     *) echo "❌ Invalid choice"; exit 1 ;;
 esac
 
-# Update version
+# Update version (this automatically updates package.json and creates a git tag)
 echo "📝 Updating version ($VERSION_TYPE)..."
 npm version $VERSION_TYPE
 

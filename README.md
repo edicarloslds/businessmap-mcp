@@ -172,15 +172,6 @@ npm run docker:logs
 npm run docker:down
 ```
 
-## Publishing
-
-To publish a new version to npm:
-
-```bash
-npm install -g @edicarlos.lds/businessmap-mcp
-businessmap-mcp
-```
-
 ## License
 
 MIT
