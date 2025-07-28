@@ -1,15 +1,25 @@
 {
-  "name": "businessmap-mcp",
+  "name": "@edicarlos.lds/businessmap-mcp",
   "version": "1.0.0",
   "description": "Model Context Protocol server for BusinessMap (Kanbanize) integration",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "businessmap-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
     "watch": "tsx --watch src/index.ts",
     "test": "jest",
+    "test:npx": "bash scripts/test-npx.sh",
+    "publish:npm": "bash scripts/publish.sh",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write src/**/*.ts",
@@ -21,7 +31,7 @@
     "docker:up": "docker-compose up -d",
     "docker:down": "docker-compose down",
     "docker:logs": "docker-compose logs -f businessmap-mcp",
-    "prepare": "npm run build"
+    "prepublishOnly": "npm run build"
   },
   "keywords": [
     "mcp",
@@ -31,8 +41,19 @@
     "api",
     "integration"
   ],
-  "author": "Your Organization",
+  "author": "Edicarlos Lopes <edicarloslds@gmail.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/edicarloslds/businessmap-mcp.git"
+  },
+  "homepage": "https://github.com/edicarloslds/businessmap-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/edicarloslds/businessmap-mcp/issues"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.17.0",
     "axios": "^1.6.0",

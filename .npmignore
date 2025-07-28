@@ -1,0 +1,60 @@
+# Source files
+src/
+tsconfig.json
+.eslintrc.json
+.prettierrc
+
+# Development files
+.env
+.env.example
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Node modules
+node_modules/
+
+# Build artifacts
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Testing
+coverage/
+.nyc_output
+.jest/
+
+# Development
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Scripts (keep only essential ones)
+scripts/setup.sh
+scripts/test-*.sh
+
+# Git
+.git/
+.gitignore
+
+# Examples
+claude_desktop_config.example.json 
