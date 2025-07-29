@@ -2,9 +2,79 @@ import { ApiResponse, Card, CreateCardParams, UpdateCardParams } from '../../typ
 import { BaseClientModuleImpl } from './base-client.js';
 
 export interface CardFilters {
-  column_id?: number;
-  swimlane_id?: number;
+  // Date and time filters
+  archived_from?: string;
+  archived_from_date?: string;
+  archived_to?: string;
+  archived_to_date?: string;
+  created_from?: string;
+  created_from_date?: string;
+  created_to?: string;
+  created_to_date?: string;
+  deadline_from?: string;
+  deadline_from_date?: string;
+  deadline_to?: string;
+  deadline_to_date?: string;
+  discarded_from?: string;
+  discarded_from_date?: string;
+  discarded_to?: string;
+  discarded_to_date?: string;
+  first_end_from?: string;
+  first_end_from_date?: string;
+  first_end_to?: string;
+  first_end_to_date?: string;
+  first_start_from?: string;
+  first_start_from_date?: string;
+  first_start_to?: string;
+  first_start_to_date?: string;
+  in_current_position_since_from?: string;
+  in_current_position_since_from_date?: string;
+  in_current_position_since_to?: string;
+  in_current_position_since_to_date?: string;
+  last_end_from?: string;
+  last_end_from_date?: string;
+  last_end_to?: string;
+  last_end_to_date?: string;
+  last_modified_from?: string;
+  last_modified_from_date?: string;
+  last_modified_to?: string;
+  last_modified_to_date?: string;
+  last_start_from?: string;
+  last_start_from_date?: string;
+  last_start_to?: string;
+  last_start_to_date?: string;
+
+  // ID filters (arrays)
+  board_ids?: number[];
+  card_ids?: number[];
+  column_ids?: number[];
+  lane_ids?: number[];
+  last_column_ids?: number[];
+  last_lane_ids?: number[];
+  owner_user_ids?: number[];
+  priorities?: number[];
+  reason_ids?: number[];
+  sections?: number[];
+  sizes?: number[];
+  type_ids?: number[];
+  version_ids?: number[];
+  workflow_ids?: number[];
+
+  // String array filters
+  colors?: string[];
+  custom_ids?: string[];
+
+  // Configuration options
+  include_logged_time_for_child_cards?: number;
+  include_logged_time_for_subtasks?: number;
+
+  // Pagination
+  page?: number;
+  per_page?: number;
+
+  // Legacy compatibility (keeping for backward compatibility)
   assignee_user_id?: number;
+  tag_ids?: number[];
 }
 
 export class CardClient extends BaseClientModuleImpl {
@@ -45,18 +115,18 @@ export class CardClient extends BaseClientModuleImpl {
   }
 
   /**
-   * Move a card to a different column or swimlane
+   * Move a card to a different column or lane
    */
   async moveCard(
     cardId: number,
     columnId: number,
-    swimlaneId?: number,
+    laneId?: number,
     position?: number
   ): Promise<Card> {
     this.checkReadOnlyMode('move card');
     const response = await this.http.patch<ApiResponse<Card>>(`/cards/${cardId}`, {
       column_id: columnId,
-      swimlane_id: swimlaneId,
+      lane_id: laneId,
       position: position,
     });
     return response.data.data;

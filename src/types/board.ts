@@ -24,8 +24,7 @@ export interface Column {
 }
 
 export interface CreateBoardParams {
+  workspace_id?: number;
   name: string;
   description?: string;
-  workspace_id?: number;
-  project_id?: number;
 }

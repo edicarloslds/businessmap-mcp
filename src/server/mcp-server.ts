@@ -4,7 +4,7 @@ import { config } from '../config/environment.js';
 import {
   BoardToolHandler,
   CardToolHandler,
-  CycleTimeToolHandler,
+  CustomFieldToolHandler,
   UserToolHandler,
   UtilityToolHandler,
   WorkspaceToolHandler,
@@ -45,8 +45,8 @@ export class BusinessMapMcpServer {
       new WorkspaceToolHandler(),
       new BoardToolHandler(),
       new CardToolHandler(),
+      new CustomFieldToolHandler(),
       new UserToolHandler(),
-      new CycleTimeToolHandler(),
       new UtilityToolHandler(),
     ];
 

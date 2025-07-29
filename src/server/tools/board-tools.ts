@@ -23,14 +23,60 @@ export class BoardToolHandler implements BaseToolHandler {
       'list_boards',
       {
         title: 'List Boards',
-        description: 'Get a list of boards, optionally filtered by workspace',
+        description: 'Get a list of boards with optional filters',
         inputSchema: {
-          workspace_id: z.number().optional().describe('Optional workspace ID to filter boards'),
+          // ID filters (arrays)
+          board_ids: z
+            .array(z.number())
+            .optional()
+            .describe('A list of the board ids that you want to get'),
+          workspace_ids: z
+            .array(z.number())
+            .optional()
+            .describe('A list of the workspace ids holding the boards that you want to get'),
+
+          // Expansion options
+          expand: z
+            .array(z.enum(['workflows', 'settings', 'structure']))
+            .optional()
+            .describe(
+              'A list of properties for which you want to get additional details. Allowed: workflows, settings, structure'
+            ),
+
+          // Field selection
+          fields: z
+            .array(
+              z.enum(['board_id', 'workspace_id', 'is_archived', 'name', 'description', 'revision'])
+            )
+            .optional()
+            .describe(
+              'A list of fields that you want in the response. Allowed: board_id, workspace_id, is_archived, name, description, revision'
+            ),
+
+          // Assignment filter
+          if_assigned: z
+            .number()
+            .optional()
+            .describe('When set to 1 you will only get boards to which you are assigned (0 or 1)'),
+
+          // Archive status
+          is_archived: z
+            .number()
+            .optional()
+            .describe(
+              'When set to 0 you will only get non-archived boards. When set to 1 you will only get archived boards (0 or 1)'
+            ),
+
+          // Legacy compatibility
+          workspace_id: z
+            .number()
+            .optional()
+            .describe('Optional workspace ID to filter boards (legacy parameter)'),
         },
       },
-      async ({ workspace_id }) => {
+      async (params) => {
         try {
-          const boards = await client.getBoards(workspace_id);
+          const boards = await client.getBoards(params);
           return createSuccessResponse(boards);
         } catch (error) {
           return createErrorResponse(error, 'fetching boards');
@@ -67,7 +113,7 @@ export class BoardToolHandler implements BaseToolHandler {
               return createSuccessResponse({ ...board, structure }, 'Board found directly:');
             } catch (directError) {
               // If direct lookup fails, fallback to list and search
-              const boards = await client.getBoards(workspace_id);
+              const boards = await client.getBoards(workspace_id ? { workspace_id } : undefined);
               const foundBoard = boards.find((b) => b.board_id === board_id);
 
               if (foundBoard) {
@@ -111,7 +157,7 @@ export class BoardToolHandler implements BaseToolHandler {
 
           // If board_name is provided, search by name
           if (board_name) {
-            const boards = await client.getBoards(workspace_id);
+            const boards = await client.getBoards(workspace_id ? { workspace_id } : undefined);
             const foundBoards = boards.filter((b) =>
               b.name.toLowerCase().includes(board_name.toLowerCase())
             );
@@ -168,7 +214,7 @@ export class BoardToolHandler implements BaseToolHandler {
           }
 
           // If neither ID nor name provided, list all boards
-          const boards = await client.getBoards(workspace_id);
+          const boards = await client.getBoards(workspace_id ? { workspace_id } : undefined);
           return createSuccessResponse(
             boards.map((b) => ({
               board_id: b.board_id,
@@ -288,8 +334,9 @@ export class BoardToolHandler implements BaseToolHandler {
         description: 'Create a new board in a workspace',
         inputSchema: {
           name: z.string().describe('The name of the board'),
-          workspace_id: z.number().describe('The ID of the workspace'),
+          workspace_id: z.number().optional().describe('The ID of the workspace'),
           description: z.string().optional().describe('Optional description for the board'),
+          project_id: z.number().optional().describe('Optional project ID for the board'),
         },
       },
       async ({ name, workspace_id, description }) => {
@@ -314,11 +361,11 @@ export class BoardToolHandler implements BaseToolHandler {
         title: 'Create Lane',
         description: 'Create a new lane/swimlane in a board (válido na API oficial)',
         inputSchema: {
-          workflow_id: z.number().describe('The ID of the workflow'),
-          position: z.number().describe('The position of the lane'),
           name: z.string().describe('The name of the lane'),
+          workflow_id: z.number().describe('The workflow ID'),
+          position: z.number().describe('The position of the lane'),
           description: z.string().optional().describe('Optional description for the lane'),
-          color: z.string().describe('Optional color for the lane'),
+          color: z.string().describe('The color for the lane'),
         },
       },
       async ({ workflow_id, name, description, color, position }) => {
@@ -326,7 +373,7 @@ export class BoardToolHandler implements BaseToolHandler {
           const lane = await client.createLane({
             workflow_id,
             name,
-            description,
+            description: description || null,
             color,
             position,
           });

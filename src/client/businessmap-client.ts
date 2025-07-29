@@ -1,14 +1,15 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { ApiError, BusinessMapConfig } from '../types/index.js';
 import {
-  AnalyticsClient,
   BoardClient,
   CardClient,
   CardFilters,
+  CustomFieldClient,
   UserClient,
   UtilityClient,
   WorkspaceClient,
 } from './modules/index.js';
+import { BoardFilters } from './modules/board-client.js';
 
 export class BusinessMapClient {
   private http: AxiosInstance;
@@ -20,7 +21,7 @@ export class BusinessMapClient {
   private boardClient: BoardClient;
   private cardClient: CardClient;
   private userClient: UserClient;
-  private analyticsClient: AnalyticsClient;
+  private customFieldClient: CustomFieldClient;
   private utilityClient: UtilityClient;
 
   constructor(config: BusinessMapConfig) {
@@ -48,7 +49,7 @@ export class BusinessMapClient {
     this.boardClient = new BoardClient();
     this.cardClient = new CardClient();
     this.userClient = new UserClient();
-    this.analyticsClient = new AnalyticsClient();
+    this.customFieldClient = new CustomFieldClient();
     this.utilityClient = new UtilityClient();
 
     // Initialize all modules with http client and config
@@ -57,7 +58,7 @@ export class BusinessMapClient {
       this.boardClient,
       this.cardClient,
       this.userClient,
-      this.analyticsClient,
+      this.customFieldClient,
       this.utilityClient,
     ].forEach((module) => {
       module.initialize(this.http, this.config);
@@ -153,8 +154,8 @@ export class BusinessMapClient {
   }
 
   // Board Management - Delegated to BoardClient
-  async getBoards(workspaceId?: number) {
-    return this.boardClient.getBoards(workspaceId);
+  async getBoards(filters?: BoardFilters) {
+    return this.boardClient.getBoards(filters);
   }
 
   async getBoard(boardId: number) {
@@ -210,8 +211,8 @@ export class BusinessMapClient {
     return this.cardClient.updateCard(params);
   }
 
-  async moveCard(cardId: number, columnId: number, swimlaneId?: number, position?: number) {
-    return this.cardClient.moveCard(cardId, columnId, swimlaneId, position);
+  async moveCard(cardId: number, columnId: number, laneId?: number, position?: number) {
+    return this.cardClient.moveCard(cardId, columnId, laneId, position);
   }
 
   async deleteCard(cardId: number) {
@@ -227,13 +228,9 @@ export class BusinessMapClient {
     return this.userClient.getUser(userId);
   }
 
-  // Analytics - Delegated to AnalyticsClient
-  async getWorkflowCycleTimeColumns(boardId: number) {
-    return this.analyticsClient.getWorkflowCycleTimeColumns(boardId);
-  }
-
-  async getWorkflowEffectiveCycleTimeColumns(boardId: number) {
-    return this.analyticsClient.getWorkflowEffectiveCycleTimeColumns(boardId);
+  // Custom Fields - Delegated to CustomFieldClient
+  async getCustomField(customFieldId: number) {
+    return this.customFieldClient.getCustomField(customFieldId);
   }
 
   // Utility Methods - Delegated to UtilityClient

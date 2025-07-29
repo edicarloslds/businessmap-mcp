@@ -1,6 +1,6 @@
-// Lane/Swimlane Types for BusinessMap API
+// Lane Types for BusinessMap API
 
-export interface Swimlane {
+export interface Lane {
   lane_id?: number;
   workflow: number;
   position: number;

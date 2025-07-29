@@ -141,8 +141,7 @@ The BusinessMap MCP server provides the following tools:
 - `mcp_businessmap_get_user` - Get user details
 
 ### Analytics & Reports
-- `mcp_businessmap_get_workflow_cycle_time_columns` - Get cycle time configuration columns ✅ **Válido na API oficial**
-- `mcp_businessmap_get_workflow_effective_cycle_time_columns` - Get effective cycle time configuration columns ✅ **Válido na API oficial**
+
 
 > **Nota**: Outros endpoints de analytics foram temporariamente removidos pois não existem na API oficial do BusinessMap. Para mais detalhes, consulte `API_ENDPOINTS_REVIEW.md`.
 

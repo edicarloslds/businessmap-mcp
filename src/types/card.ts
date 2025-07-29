@@ -291,7 +291,7 @@ export interface UpdateCardParams {
   title?: string;
   description?: string;
   column_id?: number;
-  swimlane_id?: number;
+  lane_id?: number;
   size?: number;
   priority?: string;
   owner_user_id?: number;

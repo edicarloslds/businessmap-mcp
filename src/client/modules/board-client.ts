@@ -4,16 +4,37 @@ import {
   Column,
   CreateBoardParams,
   CreateLaneParams,
-  Swimlane,
+  Lane,
 } from '../../types/index.js';
 import { BaseClientModuleImpl } from './base-client.js';
 
+export interface BoardFilters {
+  // ID filters (arrays)
+  board_ids?: number[];
+  workspace_ids?: number[];
+
+  // Expansion options
+  expand?: ('workflows' | 'settings' | 'structure')[];
+
+  // Field selection
+  fields?: ('board_id' | 'workspace_id' | 'is_archived' | 'name' | 'description' | 'revision')[];
+
+  // Assignment filter
+  if_assigned?: number; // 0 or 1
+
+  // Archive status
+  is_archived?: number; // 0 or 1
+
+  // Legacy compatibility
+  workspace_id?: number;
+}
+
 export class BoardClient extends BaseClientModuleImpl {
   /**
-   * Get all boards, optionally filtered by workspace
+   * Get all boards with optional filters
    */
-  async getBoards(workspaceId?: number): Promise<Board[]> {
-    const params = workspaceId ? { workspace_id: workspaceId } : {};
+  async getBoards(filters?: BoardFilters): Promise<Board[]> {
+    const params = filters || {};
     const response = await this.http.get<ApiResponse<Board[]>>('/boards', { params });
     return response.data.data;
   }
@@ -71,25 +92,25 @@ export class BoardClient extends BaseClientModuleImpl {
   /**
    * Get all lanes/swimlanes for a board
    */
-  async getLanes(boardId: number): Promise<Swimlane[]> {
-    const response = await this.http.get<ApiResponse<Swimlane[]>>(`/boards/${boardId}/lanes`);
+  async getLanes(boardId: number): Promise<Lane[]> {
+    const response = await this.http.get<ApiResponse<Lane[]>>(`/boards/${boardId}/lanes`);
     return response.data.data;
   }
 
   /**
    * Get a specific lane by ID
    */
-  async getLane(laneId: number): Promise<Swimlane> {
-    const response = await this.http.get<ApiResponse<Swimlane>>(`/lanes/${laneId}`);
+  async getLane(laneId: number): Promise<Lane> {
+    const response = await this.http.get<ApiResponse<Lane>>(`/lanes/${laneId}`);
     return response.data.data;
   }
 
   /**
    * Create a new lane/swimlane
    */
-  async createLane(params: CreateLaneParams): Promise<Swimlane> {
+  async createLane(params: CreateLaneParams): Promise<Lane> {
     this.checkReadOnlyMode('create lane');
-    const response = await this.http.post<ApiResponse<Swimlane>>('/lanes', params);
+    const response = await this.http.post<ApiResponse<Lane>>('/lanes', params);
     return response.data.data;
   }
 }
