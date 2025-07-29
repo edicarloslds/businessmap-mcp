@@ -12,6 +12,14 @@ fi
 
 echo "✅ Logged in to npm as: $(npm whoami)"
 
+# Check if GitHub CLI is authenticated
+if ! gh auth status > /dev/null 2>&1; then
+    echo "❌ You need to authenticate with GitHub CLI first: gh auth login"
+    exit 1
+fi
+
+echo "✅ Authenticated with GitHub CLI"
+
 # Check if working directory is clean
 if [ -n "$(git status --porcelain)" ]; then
     echo "❌ Working directory is not clean. Please commit or stash your changes."
@@ -31,6 +39,16 @@ npm run test:npx
 # Get current version from package.json
 CURRENT_VERSION=$(node -p "require('./package.json').version")
 echo "📋 Current version: $CURRENT_VERSION"
+
+# Get the latest tag
+LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+if [ -z "$LATEST_TAG" ]; then
+    echo "📋 No previous tags found, will include all commits"
+    COMMIT_RANGE=""
+else
+    echo "📋 Latest tag: $LATEST_TAG"
+    COMMIT_RANGE="$LATEST_TAG..HEAD"
+fi
 
 # Calculate example versions
 PATCH_VERSION=$(node -p "
@@ -76,12 +94,36 @@ npm version $VERSION_TYPE
 NEW_VERSION=$(node -p "require('./package.json').version")
 echo "✅ New version: $NEW_VERSION"
 
+# Generate release notes based on commits since last tag
+echo "📝 Generating release notes..."
+
+# Generate the release notes using the dedicated script
+RELEASE_NOTES=$(bash scripts/generate-release-notes.sh "$NEW_VERSION" "$COMMIT_RANGE")
+
+echo "📋 Release notes preview:"
+echo "$RELEASE_NOTES"
+echo ""
+
 # Confirm publication
-read -p "🤔 Publish version $NEW_VERSION to npm? (y/N): " confirm
+read -p "🤔 Publish version $NEW_VERSION to npm and create GitHub release? (y/N): " confirm
 if [[ $confirm != [yY] ]]; then
     echo "❌ Publication cancelled"
+    # Revert the version bump
+    git tag -d "v$NEW_VERSION" 2>/dev/null || true
+    git reset --hard HEAD~1
     exit 1
 fi
+
+# Push the tag to remote
+echo "📤 Pushing tag to GitHub..."
+git push origin "v$NEW_VERSION"
+
+# Create GitHub release
+echo "🏷️ Creating GitHub release..."
+echo "$RELEASE_NOTES" | gh release create "v$NEW_VERSION" \
+    --title "Release v$NEW_VERSION" \
+    --notes-file - \
+    --latest
 
 # Publish to npm
 echo "📤 Publishing to npm..."
@@ -93,7 +135,7 @@ echo "🎉 Users can now install with:"
 echo "   npx @edicarlos.lds/businessmap-mcp"
 echo "   npm install -g @edicarlos.lds/businessmap-mcp"
 echo ""
-echo "📋 Don't forget to:"
-echo "   1. Push the version tag: git push origin v$NEW_VERSION"
-echo "   2. Create a GitHub release"
-echo "   3. Update documentation if needed" 
+echo "🔗 Links:"
+echo "   📦 NPM: https://www.npmjs.com/package/@edicarlos.lds/businessmap-mcp"
+echo "   🏷️ GitHub Release: https://github.com/edicarloslds/businessmap-mcp/releases/tag/v$NEW_VERSION"
+echo "   📚 Repository: https://github.com/edicarloslds/businessmap-mcp" 

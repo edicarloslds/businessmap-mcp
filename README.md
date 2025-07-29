@@ -219,6 +219,43 @@ The server now performs the following steps during initialization:
 
 If the connection fails, the server will display detailed error messages and retry automatically.
 
+## Development
+
+### Release Process
+
+This project uses an automated release process. See [RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md) for detailed documentation.
+
+**Quick Start:**
+```bash
+# Preview release notes
+npm run preview:release
+
+# Publish new version (interactive)
+npm run publish:npm
+```
+
+The release process automatically:
+- Bumps version (patch/minor/major)
+- Generates release notes from commits
+- Creates GitHub tags and releases
+- Publishes to NPM
+
+### Contributing
+
+1. Follow conventional commit format for better release notes:
+   ```
+   feat: add new feature
+   fix: resolve bug
+   docs: update documentation
+   refactor: improve code structure
+   ```
+
+2. Ensure all tests pass before submitting PR:
+   ```bash
+   npm test
+   npm run test:npx
+   ```
+
 ## License
 
 MIT

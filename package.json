@@ -20,6 +20,7 @@
     "test": "jest",
     "test:npx": "bash scripts/test-npx.sh",
     "publish:npm": "bash scripts/publish.sh",
+    "preview:release": "bash scripts/preview-release-notes.sh",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "format": "prettier --write src/**/*.ts",
