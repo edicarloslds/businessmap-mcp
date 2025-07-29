@@ -1,6 +1,7 @@
 # BusinessMap MCP Server
 
 [![npm version](https://badge.fury.io/js/@edicarlos.lds%2Fbusinessmap-mcp.svg)](https://badge.fury.io/js/@edicarlos.lds%2Fbusinessmap-mcp)
+[![GitHub release](https://img.shields.io/github/v/release/edicarloslds/businessmap-mcp)](https://github.com/edicarloslds/businessmap-mcp/releases)
 [![npm downloads](https://img.shields.io/npm/dm/@edicarlos.lds/businessmap-mcp)](https://www.npmjs.com/package/@edicarlos.lds/businessmap-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
@@ -206,7 +207,6 @@ The server now includes automatic connection verification during startup. If you
 3. **Common issues**:
    - **Invalid API URL**: Ensure your URL follows the format `https://your-account.kanbanize.com/api/v2`
    - **Invalid API Token**: Verify your token has the necessary permissions
-   - **Network connectivity**: Check if you can reach the API URL from your network
 
 ### Startup Process
 
