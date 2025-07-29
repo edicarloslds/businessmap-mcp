@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-import { BusinessMapConfig } from '../types/businessmap.js';
+import { BusinessMapConfig } from '../types/index.js';
 
 // Load environment variables
 dotenv.config();
@@ -75,4 +75,4 @@ export function validateConfig(): void {
   console.log(`✅ Configuration validated for ${config.server.name} v${config.server.version}`);
   console.log(`📡 BusinessMap API: ${config.businessMap.apiUrl}`);
   console.log(`🔒 Read-only mode: ${config.businessMap.readOnlyMode ? 'enabled' : 'disabled'}`);
-} 
+}

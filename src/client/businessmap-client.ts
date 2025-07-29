@@ -1,29 +1,27 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
+import { ApiError, BusinessMapConfig } from '../types/index.js';
 import {
-  ApiError,
-  ApiResponse,
-  Board,
-  BusinessMapConfig,
-  Card,
-  Column,
-  CreateBoardParams,
-  CreateCardParams,
-  CreateLaneParams,
-  CreateWorkspaceParams,
-  CycleTimeColumn,
-  EffectiveCycleTimeColumn,
-  Swimlane,
-  // CumulativeFlowData, // Comentado - tipo não disponível na API oficial
-  UpdateCardParams,
-  User,
-  // WorkflowAnalytics, // Comentado - tipo não disponível na API oficial
-  Workspace,
-} from '../types/businessmap.js';
+  AnalyticsClient,
+  BoardClient,
+  CardClient,
+  CardFilters,
+  UserClient,
+  UtilityClient,
+  WorkspaceClient,
+} from './modules/index.js';
 
 export class BusinessMapClient {
   private http: AxiosInstance;
   private readonly config: BusinessMapConfig;
   private isInitialized: boolean = false;
+
+  // Client modules
+  private workspaceClient: WorkspaceClient;
+  private boardClient: BoardClient;
+  private cardClient: CardClient;
+  private userClient: UserClient;
+  private analyticsClient: AnalyticsClient;
+  private utilityClient: UtilityClient;
 
   constructor(config: BusinessMapConfig) {
     this.config = config;
@@ -44,6 +42,26 @@ export class BusinessMapClient {
         throw this.transformError(error);
       }
     );
+
+    // Initialize client modules
+    this.workspaceClient = new WorkspaceClient();
+    this.boardClient = new BoardClient();
+    this.cardClient = new CardClient();
+    this.userClient = new UserClient();
+    this.analyticsClient = new AnalyticsClient();
+    this.utilityClient = new UtilityClient();
+
+    // Initialize all modules with http client and config
+    [
+      this.workspaceClient,
+      this.boardClient,
+      this.cardClient,
+      this.userClient,
+      this.analyticsClient,
+      this.utilityClient,
+    ].forEach((module) => {
+      module.initialize(this.http, this.config);
+    });
   }
 
   /**
@@ -69,14 +87,14 @@ export class BusinessMapClient {
       }
 
       // Try to perform a health check first
-      const isHealthy = await this.healthCheck();
+      const isHealthy = await this.utilityClient.healthCheck();
       if (!isHealthy) {
         throw new Error('API connection failed - please check your API URL and token');
       }
 
       // Try to fetch API info to verify authentication
       try {
-        await this.getApiInfo();
+        await this.utilityClient.getApiInfo();
       } catch (error) {
         if (error instanceof Error && error.message.includes('401')) {
           throw new Error(
@@ -110,232 +128,120 @@ export class BusinessMapClient {
     return new Error(`Network Error: ${error.message}`);
   }
 
-  // Workspace Management
-  async getWorkspaces(): Promise<Workspace[]> {
-    const response = await this.http.get<ApiResponse<Workspace[]>>('/workspaces');
-    return response.data.data;
+  // Workspace Management - Delegated to WorkspaceClient
+  async getWorkspaces() {
+    return this.workspaceClient.getWorkspaces();
   }
 
-  async getWorkspace(workspaceId: number): Promise<Workspace> {
-    const response = await this.http.get<ApiResponse<Workspace>>(`/workspaces/${workspaceId}`);
-    return response.data.data;
+  async getWorkspace(workspaceId: number) {
+    return this.workspaceClient.getWorkspace(workspaceId);
   }
 
-  async createWorkspace(params: CreateWorkspaceParams): Promise<Workspace> {
-    if (this.config.readOnlyMode) {
-      throw new Error('Cannot create workspace in read-only mode');
-    }
-    const response = await this.http.post<ApiResponse<Workspace>>('/workspaces', params);
-    return response.data.data;
+  async createWorkspace(params: Parameters<WorkspaceClient['createWorkspace']>[0]) {
+    return this.workspaceClient.createWorkspace(params);
   }
 
   async updateWorkspace(
     workspaceId: number,
-    params: Partial<CreateWorkspaceParams>
-  ): Promise<Workspace> {
-    if (this.config.readOnlyMode) {
-      throw new Error('Cannot update workspace in read-only mode');
-    }
-    const response = await this.http.patch<ApiResponse<Workspace>>(
-      `/workspaces/${workspaceId}`,
-      params
-    );
-    return response.data.data;
+    params: Parameters<WorkspaceClient['updateWorkspace']>[1]
+  ) {
+    return this.workspaceClient.updateWorkspace(workspaceId, params);
   }
 
-  async deleteWorkspace(workspaceId: number): Promise<void> {
-    if (this.config.readOnlyMode) {
-      throw new Error('Cannot delete workspace in read-only mode');
-    }
-    await this.http.delete(`/workspaces/${workspaceId}`);
+  async deleteWorkspace(workspaceId: number) {
+    return this.workspaceClient.deleteWorkspace(workspaceId);
   }
 
-  // Board Management
-  async getBoards(workspaceId?: number): Promise<Board[]> {
-    const params = workspaceId ? { workspace_id: workspaceId } : {};
-    const response = await this.http.get<ApiResponse<Board[]>>('/boards', { params });
-    return response.data.data;
+  // Board Management - Delegated to BoardClient
+  async getBoards(workspaceId?: number) {
+    return this.boardClient.getBoards(workspaceId);
   }
 
-  async getBoard(boardId: number): Promise<Board> {
-    const response = await this.http.get<ApiResponse<Board>>(`/boards/${boardId}`);
-    return response.data.data;
+  async getBoard(boardId: number) {
+    return this.boardClient.getBoard(boardId);
   }
 
-  async createBoard(params: CreateBoardParams): Promise<Board> {
-    if (this.config.readOnlyMode) {
-      throw new Error('Cannot create board in read-only mode');
-    }
-    const response = await this.http.post<ApiResponse<Board>>('/boards', params);
-    return response.data.data;
+  async createBoard(params: Parameters<BoardClient['createBoard']>[0]) {
+    return this.boardClient.createBoard(params);
   }
 
-  async updateBoard(boardId: number, params: Partial<CreateBoardParams>): Promise<Board> {
-    if (this.config.readOnlyMode) {
-      throw new Error('Cannot update board in read-only mode');
-    }
-    const response = await this.http.patch<ApiResponse<Board>>(`/boards/${boardId}`, params);
-    return response.data.data;
+  async updateBoard(boardId: number, params: Parameters<BoardClient['updateBoard']>[1]) {
+    return this.boardClient.updateBoard(boardId, params);
   }
 
-  async deleteBoard(boardId: number): Promise<void> {
-    if (this.config.readOnlyMode) {
-      throw new Error('Cannot delete board in read-only mode');
-    }
-    await this.http.delete(`/boards/${boardId}`);
+  async deleteBoard(boardId: number) {
+    return this.boardClient.deleteBoard(boardId);
   }
 
   async getBoardStructure(boardId: number) {
-    const response = await this.http.get(`/boards/${boardId}/structure`);
-    return response.data.data;
+    return this.boardClient.getBoardStructure(boardId);
   }
 
-  // Get board columns - endpoint válido na API oficial
-  async getColumns(boardId: number): Promise<Column[]> {
-    const response = await this.http.get<ApiResponse<Column[]>>(`/boards/${boardId}/columns`);
-    return response.data.data;
+  async getColumns(boardId: number) {
+    return this.boardClient.getColumns(boardId);
   }
 
-  // Lanes/Swimlanes Management - endpoints válidos na API oficial
-  async getLanes(boardId: number): Promise<Swimlane[]> {
-    const response = await this.http.get<ApiResponse<Swimlane[]>>(`/boards/${boardId}/lanes`);
-    return response.data.data;
+  async getLanes(boardId: number) {
+    return this.boardClient.getLanes(boardId);
   }
 
-  async getLane(laneId: number): Promise<Swimlane> {
-    const response = await this.http.get<ApiResponse<Swimlane>>(`/lanes/${laneId}`);
-    return response.data.data;
+  async getLane(laneId: number) {
+    return this.boardClient.getLane(laneId);
   }
 
-  async createLane(params: CreateLaneParams): Promise<Swimlane> {
-    if (this.config.readOnlyMode) {
-      throw new Error('Cannot create lane in read-only mode');
-    }
-    const response = await this.http.post<ApiResponse<Swimlane>>('/lanes', params);
-    return response.data.data;
+  async createLane(params: Parameters<BoardClient['createLane']>[0]) {
+    return this.boardClient.createLane(params);
   }
 
-  // Card Management
-  async getCards(
-    boardId: number,
-    filters?: { column_id?: number; swimlane_id?: number; assignee_user_id?: number }
-  ): Promise<Card[]> {
-    const params = { board_id: boardId, ...filters };
-    const response = await this.http.get<ApiResponse<Card[]>>('/cards', { params });
-    return response.data.data;
+  // Card Management - Delegated to CardClient
+  async getCards(boardId: number, filters?: CardFilters) {
+    return this.cardClient.getCards(boardId, filters);
   }
 
-  async getCard(cardId: number): Promise<Card> {
-    const response = await this.http.get<ApiResponse<Card>>(`/cards/${cardId}`);
-    return response.data.data;
+  async getCard(cardId: number) {
+    return this.cardClient.getCard(cardId);
   }
 
-  async createCard(params: CreateCardParams): Promise<Card> {
-    if (this.config.readOnlyMode) {
-      throw new Error('Cannot create card in read-only mode');
-    }
-    const response = await this.http.post<ApiResponse<Card>>('/cards', params);
-    return response.data.data;
+  async createCard(params: Parameters<CardClient['createCard']>[0]) {
+    return this.cardClient.createCard(params);
   }
 
-  async updateCard(params: UpdateCardParams): Promise<Card> {
-    if (this.config.readOnlyMode) {
-      throw new Error('Cannot update card in read-only mode');
-    }
-    const { card_id, ...updateData } = params;
-    const response = await this.http.patch<ApiResponse<Card>>(`/cards/${card_id}`, updateData);
-    return response.data.data;
+  async updateCard(params: Parameters<CardClient['updateCard']>[0]) {
+    return this.cardClient.updateCard(params);
   }
 
-  async moveCard(
-    cardId: number,
-    columnId: number,
-    swimlaneId?: number,
-    position?: number
-  ): Promise<Card> {
-    if (this.config.readOnlyMode) {
-      throw new Error('Cannot move card in read-only mode');
-    }
-    const response = await this.http.patch<ApiResponse<Card>>(`/cards/${cardId}`, {
-      column_id: columnId,
-      swimlane_id: swimlaneId,
-      position: position,
-    });
-    return response.data.data;
+  async moveCard(cardId: number, columnId: number, swimlaneId?: number, position?: number) {
+    return this.cardClient.moveCard(cardId, columnId, swimlaneId, position);
   }
 
-  async deleteCard(cardId: number): Promise<void> {
-    if (this.config.readOnlyMode) {
-      throw new Error('Cannot delete card in read-only mode');
-    }
-    await this.http.delete(`/cards/${cardId}`);
+  async deleteCard(cardId: number) {
+    return this.cardClient.deleteCard(cardId);
   }
 
-  // User Management
-  async getUsers(): Promise<User[]> {
-    const response = await this.http.get<ApiResponse<User[]>>('/users');
-    return response.data.data;
+  // User Management - Delegated to UserClient
+  async getUsers() {
+    return this.userClient.getUsers();
   }
 
-  async getUser(userId: number): Promise<User> {
-    const response = await this.http.get<ApiResponse<User>>(`/users/${userId}`);
-    return response.data.data;
+  async getUser(userId: number) {
+    return this.userClient.getUser(userId);
   }
 
-  // Cycle Time Analytics - endpoints válidos na API oficial
-  async getWorkflowCycleTimeColumns(boardId: number): Promise<CycleTimeColumn[]> {
-    const response = await this.http.get<ApiResponse<CycleTimeColumn[]>>(
-      `/boards/${boardId}/analytics/cycle_time_columns`
-    );
-    return response.data.data;
+  // Analytics - Delegated to AnalyticsClient
+  async getWorkflowCycleTimeColumns(boardId: number) {
+    return this.analyticsClient.getWorkflowCycleTimeColumns(boardId);
   }
 
-  async getWorkflowEffectiveCycleTimeColumns(boardId: number): Promise<EffectiveCycleTimeColumn[]> {
-    const response = await this.http.get<ApiResponse<EffectiveCycleTimeColumn[]>>(
-      `/boards/${boardId}/analytics/effective_cycle_time_columns`
-    );
-    return response.data.data;
+  async getWorkflowEffectiveCycleTimeColumns(boardId: number) {
+    return this.analyticsClient.getWorkflowEffectiveCycleTimeColumns(boardId);
   }
 
-  // Utility Methods
-  async healthCheck(): Promise<boolean> {
-    try {
-      // Use /workspaces endpoint as health check since /health may not exist
-      await this.http.get('/workspaces');
-      return true;
-    } catch (error) {
-      // Log the actual error for debugging
-      console.error(
-        'Health check failed:',
-        error instanceof Error ? error.message : 'Unknown error'
-      );
-      return false;
-    }
+  // Utility Methods - Delegated to UtilityClient
+  async healthCheck() {
+    return this.utilityClient.healthCheck();
   }
 
   async getApiInfo() {
-    try {
-      // Tentativa de usar /info (que não existe na API oficial)
-      const response = await this.http.get('/info');
-      return response.data;
-    } catch (error) {
-      // Fallback: verificar conectividade com /workspaces
-      console.warn('Endpoint /info não disponível na API oficial, testando conectividade...');
-      try {
-        await this.http.get('/workspaces');
-        return {
-          message: 'API is responding (fallback test)',
-          endpoint: '/workspaces',
-          status: 'healthy',
-          note: 'Endpoint /info não existe na API oficial do BusinessMap',
-          api_version: 'v2',
-          documentation: 'https://rdsaude.kanbanize.com/openapi/#/',
-        };
-      } catch (fallbackError) {
-        throw new Error(
-          `API connection failed: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`
-        );
-      }
-    }
+    return this.utilityClient.getApiInfo();
   }
 }
