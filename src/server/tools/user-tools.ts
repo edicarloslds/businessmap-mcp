@@ -7,6 +7,7 @@ export class UserToolHandler implements BaseToolHandler {
   registerTools(server: McpServer, client: BusinessMapClient, readOnlyMode: boolean): void {
     this.registerListUsers(server, client);
     this.registerGetUser(server, client);
+    this.registerGetCurrentUser(server, client);
   }
 
   private registerListUsers(server: McpServer, client: BusinessMapClient): void {
@@ -44,6 +45,25 @@ export class UserToolHandler implements BaseToolHandler {
           return createSuccessResponse(user);
         } catch (error) {
           return createErrorResponse(error, 'fetching user');
+        }
+      }
+    );
+  }
+
+  private registerGetCurrentUser(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_current_user',
+      {
+        title: 'Get Current User',
+        description: 'Get details of the current logged user',
+        inputSchema: {},
+      },
+      async () => {
+        try {
+          const currentUser = await client.getCurrentUser();
+          return createSuccessResponse(currentUser);
+        } catch (error) {
+          return createErrorResponse(error, 'fetching current user');
         }
       }
     );

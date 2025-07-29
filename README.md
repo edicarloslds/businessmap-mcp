@@ -125,7 +125,7 @@ The BusinessMap MCP server provides the following tools:
 - `mcp_businessmap_get_board` - Get board details with structure
 - `mcp_businessmap_create_board` - Create new board (if not in read-only mode)
 - `mcp_businessmap_get_columns` - Get all columns for a board ✅ **Válido na API oficial**
-- `mcp_businessmap_get_lanes` - Get all lanes/swimlanes for a board ✅ **Válido na API oficial**
+- `mcp_businessmap_get_lanes` - Get all lanes for a board ✅ **Válido na API oficial**
 - `mcp_businessmap_get_lane` - Get details of a specific lane/swimlane ✅ **Válido na API oficial**
 - `mcp_businessmap_create_lane` - Create new lane/swimlane (if not in read-only mode) ✅ **Válido na API oficial**
 
@@ -139,6 +139,7 @@ The BusinessMap MCP server provides the following tools:
 ### User Management
 - `mcp_businessmap_list_users` - Get all users
 - `mcp_businessmap_get_user` - Get user details
+- `mcp_businessmap_get_current_user` - Get current logged user details
 
 ### Analytics & Reports
 

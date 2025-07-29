@@ -1,5 +1,6 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { ApiError, BusinessMapConfig } from '../types/index.js';
+import { BoardFilters } from './modules/board-client.js';
 import {
   BoardClient,
   CardClient,
@@ -9,7 +10,6 @@ import {
   UtilityClient,
   WorkspaceClient,
 } from './modules/index.js';
-import { BoardFilters } from './modules/board-client.js';
 
 export class BusinessMapClient {
   private http: AxiosInstance;
@@ -226,6 +226,10 @@ export class BusinessMapClient {
 
   async getUser(userId: number) {
     return this.userClient.getUser(userId);
+  }
+
+  async getCurrentUser() {
+    return this.userClient.getCurrentUser();
   }
 
   // Custom Fields - Delegated to CustomFieldClient

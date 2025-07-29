@@ -1,4 +1,4 @@
-import { ApiResponse, User } from '../../types/index.js';
+import { ApiResponse, CurrentUser, User } from '../../types/index.js';
 import { BaseClientModuleImpl } from './base-client.js';
 
 export class UserClient extends BaseClientModuleImpl {
@@ -15,6 +15,14 @@ export class UserClient extends BaseClientModuleImpl {
    */
   async getUser(userId: number): Promise<User> {
     const response = await this.http.get<ApiResponse<User>>(`/users/${userId}`);
+    return response.data.data;
+  }
+
+  /**
+   * Get current logged user data
+   */
+  async getCurrentUser(): Promise<CurrentUser> {
+    const response = await this.http.get<ApiResponse<CurrentUser>>('/me');
     return response.data.data;
   }
 }
