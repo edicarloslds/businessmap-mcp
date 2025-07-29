@@ -18,6 +18,18 @@ export class BusinessMapMcpServer {
     this.setupResources();
   }
 
+  /**
+   * Initialize the server by verifying the BusinessMap API connection
+   */
+  async initialize(): Promise<void> {
+    try {
+      await this.businessMapClient.initialize();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to initialize BusinessMap MCP Server: ${message}`);
+    }
+  }
+
   private setupTools(): void {
     this.setupWorkspaceTools();
     this.setupBoardTools();
@@ -40,17 +52,21 @@ export class BusinessMapMcpServer {
         try {
           const workspaces = await this.businessMapClient.getWorkspaces();
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(workspaces, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(workspaces, null, 2),
+              },
+            ],
           };
         } catch (error) {
           return {
-            content: [{
-              type: 'text',
-              text: `Error fetching workspaces: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `Error fetching workspaces: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
             isError: true,
           };
         }
@@ -71,17 +87,21 @@ export class BusinessMapMcpServer {
         try {
           const workspace = await this.businessMapClient.getWorkspace(workspace_id);
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(workspace, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(workspace, null, 2),
+              },
+            ],
           };
         } catch (error) {
           return {
-            content: [{
-              type: 'text',
-              text: `Error fetching workspace: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `Error fetching workspace: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
             isError: true,
           };
         }
@@ -104,17 +124,21 @@ export class BusinessMapMcpServer {
           try {
             const workspace = await this.businessMapClient.createWorkspace({ name, description });
             return {
-              content: [{
-                type: 'text',
-                text: `Workspace created successfully:\n${JSON.stringify(workspace, null, 2)}`,
-              }],
+              content: [
+                {
+                  type: 'text',
+                  text: `Workspace created successfully:\n${JSON.stringify(workspace, null, 2)}`,
+                },
+              ],
             };
           } catch (error) {
             return {
-              content: [{
-                type: 'text',
-                text: `Error creating workspace: ${error instanceof Error ? error.message : 'Unknown error'}`,
-              }],
+              content: [
+                {
+                  type: 'text',
+                  text: `Error creating workspace: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                },
+              ],
               isError: true,
             };
           }
@@ -138,29 +162,218 @@ export class BusinessMapMcpServer {
         try {
           const boards = await this.businessMapClient.getBoards(workspace_id);
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(boards, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(boards, null, 2),
+              },
+            ],
           };
         } catch (error) {
           return {
-            content: [{
-              type: 'text',
-              text: `Error fetching boards: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `Error fetching boards: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
             isError: true,
           };
         }
       }
     );
 
-    // Get board details
+    // Search board by ID or name
+    this.mcpServer.registerTool(
+      'search_board',
+      {
+        title: 'Search Board',
+        description:
+          'Search for a board by ID or name, with intelligent fallback to list all boards if direct search fails',
+        inputSchema: {
+          board_id: z.number().optional().describe('The ID of the board to search for'),
+          board_name: z.string().optional().describe('The name of the board to search for'),
+          workspace_id: z
+            .number()
+            .optional()
+            .describe('Optional workspace ID to limit search scope'),
+        },
+      },
+      async ({ board_id, board_name, workspace_id }) => {
+        try {
+          // If board_id is provided, try direct lookup first
+          if (board_id) {
+            try {
+              const [board, structure] = await Promise.all([
+                this.businessMapClient.getBoard(board_id),
+                this.businessMapClient.getBoardStructure(board_id),
+              ]);
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: `Board found directly:\n${JSON.stringify({ ...board, structure }, null, 2)}`,
+                  },
+                ],
+              };
+            } catch (directError) {
+              // If direct lookup fails, fallback to list and search
+              const boards = await this.businessMapClient.getBoards(workspace_id);
+              const foundBoard = boards.find((b) => b.board_id === board_id);
+
+              if (foundBoard) {
+                try {
+                  const structure = await this.businessMapClient.getBoardStructure(board_id);
+                  return {
+                    content: [
+                      {
+                        type: 'text',
+                        text: `Board found via list search:\n${JSON.stringify({ ...foundBoard, structure }, null, 2)}`,
+                      },
+                    ],
+                  };
+                } catch (structureError) {
+                  return {
+                    content: [
+                      {
+                        type: 'text',
+                        text: `Board found but structure unavailable:\n${JSON.stringify(foundBoard, null, 2)}\nStructure error: ${structureError instanceof Error ? structureError.message : 'Unknown error'}`,
+                      },
+                    ],
+                  };
+                }
+              } else {
+                return {
+                  content: [
+                    {
+                      type: 'text',
+                      text: `Board with ID ${board_id} not found. Available boards:\n${JSON.stringify(
+                        boards.map((b) => ({
+                          board_id: b.board_id,
+                          name: b.name,
+                          workspace_id: b.workspace_id,
+                        })),
+                        null,
+                        2
+                      )}`,
+                    },
+                  ],
+                  isError: true,
+                };
+              }
+            }
+          }
+
+          // If board_name is provided, search by name
+          if (board_name) {
+            const boards = await this.businessMapClient.getBoards(workspace_id);
+            const foundBoards = boards.filter((b) =>
+              b.name.toLowerCase().includes(board_name.toLowerCase())
+            );
+
+            if (foundBoards.length === 0) {
+              return {
+                content: [
+                  {
+                    type: 'text',
+                    text: `No boards found matching name "${board_name}". Available boards:\n${JSON.stringify(
+                      boards.map((b) => ({
+                        board_id: b.board_id,
+                        name: b.name,
+                        workspace_id: b.workspace_id,
+                      })),
+                      null,
+                      2
+                    )}`,
+                  },
+                ],
+                isError: true,
+              };
+            }
+
+            if (foundBoards.length === 1) {
+              const foundBoard = foundBoards[0]!;
+              try {
+                const structure = await this.businessMapClient.getBoardStructure(
+                  foundBoard.board_id
+                );
+                return {
+                  content: [
+                    {
+                      type: 'text',
+                      text: `Board found by name:\n${JSON.stringify({ ...foundBoard, structure }, null, 2)}`,
+                    },
+                  ],
+                };
+              } catch (structureError) {
+                return {
+                  content: [
+                    {
+                      type: 'text',
+                      text: `Board found but structure unavailable:\n${JSON.stringify(foundBoard, null, 2)}`,
+                    },
+                  ],
+                };
+              }
+            }
+
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Multiple boards found matching "${board_name}":\n${JSON.stringify(
+                    foundBoards.map((b) => ({
+                      board_id: b.board_id,
+                      name: b.name,
+                      workspace_id: b.workspace_id,
+                    })),
+                    null,
+                    2
+                  )}`,
+                },
+              ],
+            };
+          }
+
+          // If neither ID nor name provided, list all boards
+          const boards = await this.businessMapClient.getBoards(workspace_id);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `All available boards:\n${JSON.stringify(
+                  boards.map((b) => ({
+                    board_id: b.board_id,
+                    name: b.name,
+                    workspace_id: b.workspace_id,
+                  })),
+                  null,
+                  2
+                )}`,
+              },
+            ],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error searching for board: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
+
+    // Get board details (improved with better error handling)
     this.mcpServer.registerTool(
       'get_board',
       {
         title: 'Get Board',
-        description: 'Get details of a specific board including its structure',
+        description:
+          'Get details of a specific board including its structure. For more robust search, use search_board tool instead.',
         inputSchema: {
           board_id: z.number().describe('The ID of the board'),
         },
@@ -172,17 +385,21 @@ export class BusinessMapMcpServer {
             this.businessMapClient.getBoardStructure(board_id),
           ]);
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify({ ...board, structure }, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({ ...board, structure }, null, 2),
+              },
+            ],
           };
         } catch (error) {
           return {
-            content: [{
-              type: 'text',
-              text: `Error fetching board: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `Error fetching board ${board_id}: ${error instanceof Error ? error.message : 'Unknown error'}. Try using search_board tool for more robust search with fallback options.`,
+              },
+            ],
             isError: true,
           };
         }
@@ -204,19 +421,27 @@ export class BusinessMapMcpServer {
         },
         async ({ name, workspace_id, description }) => {
           try {
-            const board = await this.businessMapClient.createBoard({ name, workspace_id, description });
+            const board = await this.businessMapClient.createBoard({
+              name,
+              workspace_id,
+              description,
+            });
             return {
-              content: [{
-                type: 'text',
-                text: `Board created successfully:\n${JSON.stringify(board, null, 2)}`,
-              }],
+              content: [
+                {
+                  type: 'text',
+                  text: `Board created successfully:\n${JSON.stringify(board, null, 2)}`,
+                },
+              ],
             };
           } catch (error) {
             return {
-              content: [{
-                type: 'text',
-                text: `Error creating board: ${error instanceof Error ? error.message : 'Unknown error'}`,
-              }],
+              content: [
+                {
+                  type: 'text',
+                  text: `Error creating board: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                },
+              ],
               isError: true,
             };
           }
@@ -236,7 +461,10 @@ export class BusinessMapMcpServer {
           board_id: z.number().describe('The ID of the board'),
           column_id: z.number().optional().describe('Optional column ID to filter cards'),
           swimlane_id: z.number().optional().describe('Optional swimlane ID to filter cards'),
-          assignee_user_id: z.number().optional().describe('Optional assignee user ID to filter cards'),
+          assignee_user_id: z
+            .number()
+            .optional()
+            .describe('Optional assignee user ID to filter cards'),
         },
       },
       async ({ board_id, column_id, swimlane_id, assignee_user_id }) => {
@@ -244,17 +472,21 @@ export class BusinessMapMcpServer {
           const filters = { column_id, swimlane_id, assignee_user_id };
           const cards = await this.businessMapClient.getCards(board_id, filters);
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(cards, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(cards, null, 2),
+              },
+            ],
           };
         } catch (error) {
           return {
-            content: [{
-              type: 'text',
-              text: `Error fetching cards: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `Error fetching cards: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
             isError: true,
           };
         }
@@ -275,17 +507,57 @@ export class BusinessMapMcpServer {
         try {
           const card = await this.businessMapClient.getCard(card_id);
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(card, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(card, null, 2),
+              },
+            ],
           };
         } catch (error) {
           return {
-            content: [{
-              type: 'text',
-              text: `Error fetching card: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `Error fetching card: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
+
+    // Get card size
+    this.mcpServer.registerTool(
+      'get_card_size',
+      {
+        title: 'Get Card Size',
+        description: 'Get the size/points of a specific card',
+        inputSchema: {
+          card_id: z.number().describe('The ID of the card'),
+        },
+      },
+      async ({ card_id }) => {
+        try {
+          const card = await this.businessMapClient.getCard(card_id);
+          const size = card.size || 0;
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Card "${card.title}" (ID: ${card_id}) has size: ${size} points`,
+              },
+            ],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error fetching card size: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
             isError: true,
           };
         }
@@ -307,7 +579,10 @@ export class BusinessMapMcpServer {
             swimlane_id: z.number().optional().describe('Optional swimlane ID'),
             type_id: z.number().optional().describe('Optional card type ID'),
             size: z.number().optional().describe('Optional card size/points'),
-            priority: z.string().optional().describe('Priority level (Low, Average, High, Critical)'),
+            priority: z
+              .string()
+              .optional()
+              .describe('Priority level (Low, Average, High, Critical)'),
             owner_user_id: z.number().optional().describe('Optional owner user ID'),
             assignee_user_id: z.number().optional().describe('Optional assignee user ID'),
             deadline: z.string().optional().describe('Optional deadline (ISO date string)'),
@@ -317,17 +592,21 @@ export class BusinessMapMcpServer {
           try {
             const card = await this.businessMapClient.createCard(params);
             return {
-              content: [{
-                type: 'text',
-                text: `Card created successfully:\n${JSON.stringify(card, null, 2)}`,
-              }],
+              content: [
+                {
+                  type: 'text',
+                  text: `Card created successfully:\n${JSON.stringify(card, null, 2)}`,
+                },
+              ],
             };
           } catch (error) {
             return {
-              content: [{
-                type: 'text',
-                text: `Error creating card: ${error instanceof Error ? error.message : 'Unknown error'}`,
-              }],
+              content: [
+                {
+                  type: 'text',
+                  text: `Error creating card: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                },
+              ],
               isError: true,
             };
           }
@@ -349,19 +628,28 @@ export class BusinessMapMcpServer {
         },
         async ({ card_id, column_id, swimlane_id, position }) => {
           try {
-            const card = await this.businessMapClient.moveCard(card_id, column_id, swimlane_id, position);
+            const card = await this.businessMapClient.moveCard(
+              card_id,
+              column_id,
+              swimlane_id,
+              position
+            );
             return {
-              content: [{
-                type: 'text',
-                text: `Card moved successfully:\n${JSON.stringify(card, null, 2)}`,
-              }],
+              content: [
+                {
+                  type: 'text',
+                  text: `Card moved successfully:\n${JSON.stringify(card, null, 2)}`,
+                },
+              ],
             };
           } catch (error) {
             return {
-              content: [{
-                type: 'text',
-                text: `Error moving card: ${error instanceof Error ? error.message : 'Unknown error'}`,
-              }],
+              content: [
+                {
+                  type: 'text',
+                  text: `Error moving card: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                },
+              ],
               isError: true,
             };
           }
@@ -373,7 +661,7 @@ export class BusinessMapMcpServer {
         'update_card',
         {
           title: 'Update Card',
-          description: 'Update a card\'s properties',
+          description: "Update a card's properties",
           inputSchema: {
             card_id: z.number().describe('The ID of the card to update'),
             title: z.string().optional().describe('New title for the card'),
@@ -388,17 +676,57 @@ export class BusinessMapMcpServer {
           try {
             const card = await this.businessMapClient.updateCard(params);
             return {
-              content: [{
-                type: 'text',
-                text: `Card updated successfully:\n${JSON.stringify(card, null, 2)}`,
-              }],
+              content: [
+                {
+                  type: 'text',
+                  text: `Card updated successfully:\n${JSON.stringify(card, null, 2)}`,
+                },
+              ],
             };
           } catch (error) {
             return {
-              content: [{
-                type: 'text',
-                text: `Error updating card: ${error instanceof Error ? error.message : 'Unknown error'}`,
-              }],
+              content: [
+                {
+                  type: 'text',
+                  text: `Error updating card: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                },
+              ],
+              isError: true,
+            };
+          }
+        }
+      );
+
+      // Set card size
+      this.mcpServer.registerTool(
+        'set_card_size',
+        {
+          title: 'Set Card Size',
+          description: 'Set the size/points of a specific card',
+          inputSchema: {
+            card_id: z.number().describe('The ID of the card to update'),
+            size: z.number().describe('The new size/points for the card'),
+          },
+        },
+        async ({ card_id, size }) => {
+          try {
+            const card = await this.businessMapClient.updateCard({ card_id, size });
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Card "${card.title}" (ID: ${card_id}) size updated to: ${size} points`,
+                },
+              ],
+            };
+          } catch (error) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Error setting card size: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                },
+              ],
               isError: true,
             };
           }
@@ -420,17 +748,21 @@ export class BusinessMapMcpServer {
         try {
           const users = await this.businessMapClient.getUsers();
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(users, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(users, null, 2),
+              },
+            ],
           };
         } catch (error) {
           return {
-            content: [{
-              type: 'text',
-              text: `Error fetching users: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `Error fetching users: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
             isError: true,
           };
         }
@@ -451,17 +783,21 @@ export class BusinessMapMcpServer {
         try {
           const user = await this.businessMapClient.getUser(user_id);
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(user, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(user, null, 2),
+              },
+            ],
           };
         } catch (error) {
           return {
-            content: [{
-              type: 'text',
-              text: `Error fetching user: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `Error fetching user: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
             isError: true,
           };
         }
@@ -484,19 +820,27 @@ export class BusinessMapMcpServer {
       },
       async ({ board_id, period_start, period_end }) => {
         try {
-          const analytics = await this.businessMapClient.getWorkflowAnalytics(board_id, period_start, period_end);
+          const analytics = await this.businessMapClient.getWorkflowAnalytics(
+            board_id,
+            period_start,
+            period_end
+          );
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(analytics, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(analytics, null, 2),
+              },
+            ],
           };
         } catch (error) {
           return {
-            content: [{
-              type: 'text',
-              text: `Error fetching workflow analytics: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `Error fetching workflow analytics: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
             isError: true,
           };
         }
@@ -517,19 +861,27 @@ export class BusinessMapMcpServer {
       },
       async ({ board_id, period_start, period_end }) => {
         try {
-          const flowData = await this.businessMapClient.getCumulativeFlowData(board_id, period_start, period_end);
+          const flowData = await this.businessMapClient.getCumulativeFlowData(
+            board_id,
+            period_start,
+            period_end
+          );
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(flowData, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(flowData, null, 2),
+              },
+            ],
           };
         } catch (error) {
           return {
-            content: [{
-              type: 'text',
-              text: `Error fetching cumulative flow data: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `Error fetching cumulative flow data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
             isError: true,
           };
         }
@@ -550,19 +902,27 @@ export class BusinessMapMcpServer {
       },
       async ({ board_id, period_start, period_end }) => {
         try {
-          const report = await this.businessMapClient.getCycleTimeReport(board_id, period_start, period_end);
+          const report = await this.businessMapClient.getCycleTimeReport(
+            board_id,
+            period_start,
+            period_end
+          );
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(report, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(report, null, 2),
+              },
+            ],
           };
         } catch (error) {
           return {
-            content: [{
-              type: 'text',
-              text: `Error fetching cycle time report: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `Error fetching cycle time report: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
             isError: true,
           };
         }
@@ -583,19 +943,27 @@ export class BusinessMapMcpServer {
       },
       async ({ board_id, period_start, period_end }) => {
         try {
-          const report = await this.businessMapClient.getThroughputReport(board_id, period_start, period_end);
+          const report = await this.businessMapClient.getThroughputReport(
+            board_id,
+            period_start,
+            period_end
+          );
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(report, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(report, null, 2),
+              },
+            ],
           };
         } catch (error) {
           return {
-            content: [{
-              type: 'text',
-              text: `Error fetching throughput report: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `Error fetching throughput report: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
             isError: true,
           };
         }
@@ -616,17 +984,21 @@ export class BusinessMapMcpServer {
         try {
           const isHealthy = await this.businessMapClient.healthCheck();
           return {
-            content: [{
-              type: 'text',
-              text: `BusinessMap API Health: ${isHealthy ? 'Healthy' : 'Unhealthy'}`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `BusinessMap API Health: ${isHealthy ? 'Healthy' : 'Unhealthy'}`,
+              },
+            ],
           };
         } catch (error) {
           return {
-            content: [{
-              type: 'text',
-              text: `Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
             isError: true,
           };
         }
@@ -645,17 +1017,21 @@ export class BusinessMapMcpServer {
         try {
           const apiInfo = await this.businessMapClient.getApiInfo();
           return {
-            content: [{
-              type: 'text',
-              text: JSON.stringify(apiInfo, null, 2),
-            }],
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(apiInfo, null, 2),
+              },
+            ],
           };
         } catch (error) {
           return {
-            content: [{
-              type: 'text',
-              text: `Error fetching API info: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            }],
+            content: [
+              {
+                type: 'text',
+                text: `Error fetching API info: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
             isError: true,
           };
         }
@@ -671,4 +1047,4 @@ export class BusinessMapMcpServer {
   get server(): McpServer {
     return this.mcpServer;
   }
-} 
+}

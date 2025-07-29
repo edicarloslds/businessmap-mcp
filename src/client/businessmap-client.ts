@@ -18,6 +18,7 @@ import {
 export class BusinessMapClient {
   private http: AxiosInstance;
   private readonly config: BusinessMapConfig;
+  private isInitialized: boolean = false;
 
   constructor(config: BusinessMapConfig) {
     this.config = config;
@@ -38,6 +39,62 @@ export class BusinessMapClient {
         throw this.transformError(error);
       }
     );
+  }
+
+  /**
+   * Initialize the client by verifying the connection to the BusinessMap API
+   */
+  async initialize(): Promise<void> {
+    if (this.isInitialized) {
+      return;
+    }
+
+    try {
+      // Verify configuration first
+      if (!this.config.apiUrl) {
+        throw new Error(
+          'API URL is not configured. Please set BUSINESSMAP_API_URL environment variable.'
+        );
+      }
+
+      if (!this.config.apiToken) {
+        throw new Error(
+          'API Token is not configured. Please set BUSINESSMAP_API_TOKEN environment variable.'
+        );
+      }
+
+      // Try to perform a health check first
+      const isHealthy = await this.healthCheck();
+      if (!isHealthy) {
+        throw new Error('API connection failed - please check your API URL and token');
+      }
+
+      // Try to fetch API info to verify authentication
+      try {
+        await this.getApiInfo();
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('401')) {
+          throw new Error(
+            'Authentication failed - please verify your API token has the correct permissions'
+          );
+        }
+        throw new Error(
+          `API verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
+      }
+
+      this.isInitialized = true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      throw new Error(`Failed to initialize BusinessMap client: ${message}`);
+    }
+  }
+
+  /**
+   * Check if the client has been initialized
+   */
+  get initialized(): boolean {
+    return this.isInitialized;
   }
 
   private transformError(error: AxiosError): Error {
@@ -252,15 +309,32 @@ export class BusinessMapClient {
   // Utility Methods
   async healthCheck(): Promise<boolean> {
     try {
-      await this.http.get('/health');
+      // Use /workspaces endpoint as health check since /health may not exist
+      await this.http.get('/workspaces');
       return true;
-    } catch {
+    } catch (error) {
+      // Log the actual error for debugging
+      console.error(
+        'Health check failed:',
+        error instanceof Error ? error.message : 'Unknown error'
+      );
       return false;
     }
   }
 
   async getApiInfo() {
-    const response = await this.http.get('/info');
-    return response.data;
+    try {
+      const response = await this.http.get('/info');
+      return response.data;
+    } catch (error) {
+      // If /info doesn't exist, try /workspaces to at least verify connectivity
+      console.error('API info endpoint not available, testing with workspaces...');
+      const response = await this.http.get('/workspaces');
+      return {
+        message: 'API is responding',
+        endpoint: '/workspaces',
+        status: 'healthy',
+      };
+    }
   }
 }

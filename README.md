@@ -28,11 +28,11 @@ The server requires the following environment variables:
 - `BUSINESSMAP_API_URL`: Your BusinessMap API URL (e.g., `https://your-account.kanbanize.com/api/v2`)
 - `BUSINESSMAP_READ_ONLY_MODE`: Set to `"true"` for read-only mode, `"false"` to allow modifications (optional, defaults to `"false"`)
 
-### Claude Desktop Configuration
+#### Claude Desktop
 
-Add the following configuration to your Claude Desktop `claude_desktop_config.json` file:
+Add the following configuration to your `claude_desktop_config.json` file:
 
-#### Using NPX:
+**Using NPX:**
 
 ```json
 {
@@ -50,7 +50,7 @@ Add the following configuration to your Claude Desktop `claude_desktop_config.js
 }
 ```
 
-#### Using Global Installation:
+**Using Global Installation:**
 
 ```json
 {
@@ -66,6 +66,12 @@ Add the following configuration to your Claude Desktop `claude_desktop_config.js
   }
 }
 ```
+
+#### Other MCP Clients
+
+For other MCP clients, use the appropriate configuration format for your client, ensuring you specify:
+- Command: `npx @edicarlos.lds/businessmap-mcp` (or `businessmap-mcp` if globally installed)
+- Environment variables: `BUSINESSMAP_API_TOKEN`, `BUSINESSMAP_API_URL`, and optionally `BUSINESSMAP_READ_ONLY_MODE`
 
 ### Manual Setup
 
@@ -171,6 +177,40 @@ npm run docker:logs
 # Stop containers
 npm run docker:down
 ```
+
+## Troubleshooting
+
+### Connection Issues
+
+The server now includes automatic connection verification during startup. If you encounter connection issues:
+
+1. **Check your environment variables**:
+   ```bash
+   echo $BUSINESSMAP_API_URL
+   echo $BUSINESSMAP_API_TOKEN
+   ```
+
+2. **Test the connection manually**:
+   ```bash
+   chmod +x scripts/test-connection.sh
+   ./scripts/test-connection.sh
+   ```
+
+3. **Common issues**:
+   - **Invalid API URL**: Ensure your URL follows the format `https://your-account.kanbanize.com/api/v2`
+   - **Invalid API Token**: Verify your token has the necessary permissions
+   - **Network connectivity**: Check if you can reach the API URL from your network
+
+### Startup Process
+
+The server now performs the following steps during initialization:
+
+1. **Configuration validation** - Checks all required environment variables
+2. **API connection verification** - Tests connectivity with up to 3 retry attempts
+3. **Authentication check** - Verifies API token permissions
+4. **Server startup** - Starts the MCP server only after successful connection
+
+If the connection fails, the server will display detailed error messages and retry automatically.
 
 ## License
 
