@@ -5,13 +5,18 @@ import {
   Board,
   BusinessMapConfig,
   Card,
+  Column,
   CreateBoardParams,
   CreateCardParams,
+  CreateLaneParams,
   CreateWorkspaceParams,
-  CumulativeFlowData,
+  CycleTimeColumn,
+  EffectiveCycleTimeColumn,
+  Swimlane,
+  // CumulativeFlowData, // Comentado - tipo não disponível na API oficial
   UpdateCardParams,
   User,
-  WorkflowAnalytics,
+  // WorkflowAnalytics, // Comentado - tipo não disponível na API oficial
   Workspace,
 } from '../types/businessmap.js';
 
@@ -185,6 +190,31 @@ export class BusinessMapClient {
     return response.data.data;
   }
 
+  // Get board columns - endpoint válido na API oficial
+  async getColumns(boardId: number): Promise<Column[]> {
+    const response = await this.http.get<ApiResponse<Column[]>>(`/boards/${boardId}/columns`);
+    return response.data.data;
+  }
+
+  // Lanes/Swimlanes Management - endpoints válidos na API oficial
+  async getLanes(boardId: number): Promise<Swimlane[]> {
+    const response = await this.http.get<ApiResponse<Swimlane[]>>(`/boards/${boardId}/lanes`);
+    return response.data.data;
+  }
+
+  async getLane(laneId: number): Promise<Swimlane> {
+    const response = await this.http.get<ApiResponse<Swimlane>>(`/lanes/${laneId}`);
+    return response.data.data;
+  }
+
+  async createLane(params: CreateLaneParams): Promise<Swimlane> {
+    if (this.config.readOnlyMode) {
+      throw new Error('Cannot create lane in read-only mode');
+    }
+    const response = await this.http.post<ApiResponse<Swimlane>>('/lanes', params);
+    return response.data.data;
+  }
+
   // Card Management
   async getCards(
     boardId: number,
@@ -252,57 +282,18 @@ export class BusinessMapClient {
     return response.data.data;
   }
 
-  // Analytics and Reporting
-  async getWorkflowAnalytics(
-    boardId: number,
-    periodStart: string,
-    periodEnd: string
-  ): Promise<WorkflowAnalytics> {
-    const params = {
-      board_id: boardId,
-      period_start: periodStart,
-      period_end: periodEnd,
-    };
-    const response = await this.http.get<ApiResponse<WorkflowAnalytics>>('/analytics/workflow', {
-      params,
-    });
-    return response.data.data;
-  }
-
-  async getCumulativeFlowData(
-    boardId: number,
-    periodStart: string,
-    periodEnd: string
-  ): Promise<CumulativeFlowData[]> {
-    const params = {
-      board_id: boardId,
-      period_start: periodStart,
-      period_end: periodEnd,
-    };
-    const response = await this.http.get<ApiResponse<CumulativeFlowData[]>>(
-      '/analytics/cumulative-flow',
-      { params }
+  // Cycle Time Analytics - endpoints válidos na API oficial
+  async getWorkflowCycleTimeColumns(boardId: number): Promise<CycleTimeColumn[]> {
+    const response = await this.http.get<ApiResponse<CycleTimeColumn[]>>(
+      `/boards/${boardId}/analytics/cycle_time_columns`
     );
     return response.data.data;
   }
 
-  async getCycleTimeReport(boardId: number, periodStart: string, periodEnd: string) {
-    const params = {
-      board_id: boardId,
-      period_start: periodStart,
-      period_end: periodEnd,
-    };
-    const response = await this.http.get('/analytics/cycle-time', { params });
-    return response.data.data;
-  }
-
-  async getThroughputReport(boardId: number, periodStart: string, periodEnd: string) {
-    const params = {
-      board_id: boardId,
-      period_start: periodStart,
-      period_end: periodEnd,
-    };
-    const response = await this.http.get('/analytics/throughput', { params });
+  async getWorkflowEffectiveCycleTimeColumns(boardId: number): Promise<EffectiveCycleTimeColumn[]> {
+    const response = await this.http.get<ApiResponse<EffectiveCycleTimeColumn[]>>(
+      `/boards/${boardId}/analytics/effective_cycle_time_columns`
+    );
     return response.data.data;
   }
 
@@ -324,17 +315,27 @@ export class BusinessMapClient {
 
   async getApiInfo() {
     try {
+      // Tentativa de usar /info (que não existe na API oficial)
       const response = await this.http.get('/info');
       return response.data;
     } catch (error) {
-      // If /info doesn't exist, try /workspaces to at least verify connectivity
-      console.error('API info endpoint not available, testing with workspaces...');
-      const response = await this.http.get('/workspaces');
-      return {
-        message: 'API is responding',
-        endpoint: '/workspaces',
-        status: 'healthy',
-      };
+      // Fallback: verificar conectividade com /workspaces
+      console.warn('Endpoint /info não disponível na API oficial, testando conectividade...');
+      try {
+        await this.http.get('/workspaces');
+        return {
+          message: 'API is responding (fallback test)',
+          endpoint: '/workspaces',
+          status: 'healthy',
+          note: 'Endpoint /info não existe na API oficial do BusinessMap',
+          api_version: 'v2',
+          documentation: 'https://rdsaude.kanbanize.com/openapi/#/',
+        };
+      } catch (fallbackError) {
+        throw new Error(
+          `API connection failed: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`
+        );
+      }
     }
   }
 }

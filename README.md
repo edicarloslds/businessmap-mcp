@@ -113,9 +113,14 @@ The BusinessMap MCP server provides the following tools:
 - `mcp_businessmap_create_workspace` - Create new workspace
 
 ### Board Management
-- `mcp_businessmap_list_boards` - Get all boards (optionally filtered by workspace)
-- `mcp_businessmap_get_board` - Get board details and structure
-- `mcp_businessmap_create_board` - Create new board
+- `mcp_businessmap_list_boards` - List boards in workspace(s)
+- `mcp_businessmap_search_board` - Search for boards by ID or name
+- `mcp_businessmap_get_board` - Get board details with structure
+- `mcp_businessmap_create_board` - Create new board (if not in read-only mode)
+- `mcp_businessmap_get_columns` - Get all columns for a board ✅ **Válido na API oficial**
+- `mcp_businessmap_get_lanes` - Get all lanes/swimlanes for a board ✅ **Válido na API oficial**
+- `mcp_businessmap_get_lane` - Get details of a specific lane/swimlane ✅ **Válido na API oficial**
+- `mcp_businessmap_create_lane` - Create new lane/swimlane (if not in read-only mode) ✅ **Válido na API oficial**
 
 ### Card Management
 - `mcp_businessmap_list_cards` - Get cards from a board with optional filters
@@ -129,10 +134,10 @@ The BusinessMap MCP server provides the following tools:
 - `mcp_businessmap_get_user` - Get user details
 
 ### Analytics & Reports
-- `mcp_businessmap_get_workflow_analytics` - Get workflow analytics for a board
-- `mcp_businessmap_get_cumulative_flow_data` - Get cumulative flow diagram data
-- `mcp_businessmap_get_cycle_time_report` - Get cycle time report
-- `mcp_businessmap_get_throughput_report` - Get throughput report
+- `mcp_businessmap_get_workflow_cycle_time_columns` - Get cycle time configuration columns ✅ **Válido na API oficial**
+- `mcp_businessmap_get_workflow_effective_cycle_time_columns` - Get effective cycle time configuration columns ✅ **Válido na API oficial**
+
+> **Nota**: Outros endpoints de analytics foram temporariamente removidos pois não existem na API oficial do BusinessMap. Para mais detalhes, consulte `API_ENDPOINTS_REVIEW.md`.
 
 ### System
 - `mcp_businessmap_health_check` - Check API connection

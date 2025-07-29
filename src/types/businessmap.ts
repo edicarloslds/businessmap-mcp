@@ -39,6 +39,14 @@ export interface Column {
   description?: string;
   limit?: number;
   type: 'requested' | 'in_progress' | 'done';
+  board_id?: number;
+  is_last?: boolean;
+  cards_count?: number;
+  wip_limit?: number;
+  section: 'requested' | 'in_progress' | 'done';
+  flow_type: 'queue' | 'active';
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Swimlane {
@@ -47,6 +55,21 @@ export interface Swimlane {
   name: string;
   description?: string;
   color?: string;
+  board_id?: number;
+  is_enabled?: boolean;
+  is_default?: boolean;
+  cards_count?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Parâmetros para criação de lane - endpoint válido na API oficial
+export interface CreateLaneParams {
+  name: string;
+  board_id: number;
+  description?: string;
+  color?: string;
+  position?: number;
 }
 
 export interface Card {
@@ -94,24 +117,38 @@ export interface User {
   created_at: string;
 }
 
-export interface WorkflowAnalytics {
+// Cycle Time Analytics - endpoints válidos na API oficial
+export interface CycleTimeColumn {
+  column_id: number;
+  column_name: string;
   board_id: number;
-  period_start: string;
-  period_end: string;
-  throughput: number;
-  cycle_time_avg: number;
-  lead_time_avg: number;
-  flow_efficiency: number;
-  wip_count: number;
+  position: number;
+  is_start_column: boolean;
+  is_end_column: boolean;
+  cycle_time_data?: {
+    average_days: number;
+    min_days: number;
+    max_days: number;
+    total_cards: number;
+  };
 }
 
-export interface CumulativeFlowData {
-  date: string;
-  column_data: {
-    column_id: number;
-    column_name: string;
-    card_count: number;
-  }[];
+export interface EffectiveCycleTimeColumn {
+  column_id: number;
+  column_name: string;
+  board_id: number;
+  position: number;
+  is_effective_start: boolean;
+  is_effective_end: boolean;
+  exclude_weekends: boolean;
+  exclude_holidays: boolean;
+  effective_cycle_time_data?: {
+    average_hours: number;
+    min_hours: number;
+    max_hours: number;
+    total_cards: number;
+    business_hours_only: boolean;
+  };
 }
 
 // API Response Types
@@ -172,4 +209,4 @@ export interface CreateBoardParams {
   name: string;
   description?: string;
   workspace_id: number;
-} 
+}

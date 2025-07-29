@@ -35,7 +35,7 @@ export class BusinessMapMcpServer {
     this.setupBoardTools();
     this.setupCardTools();
     this.setupUserTools();
-    this.setupAnalyticsTools();
+    this.setupCycleTimeTools(); // Adicionado para cycle time válidos
     this.setupUtilityTools();
   }
 
@@ -448,6 +448,158 @@ export class BusinessMapMcpServer {
         }
       );
     }
+
+    // Get board columns - endpoint válido na API oficial
+    this.mcpServer.registerTool(
+      'get_columns',
+      {
+        title: 'Get Board Columns',
+        description: 'Get all columns for a board (válido na API oficial)',
+        inputSchema: {
+          board_id: z.number().describe('The ID of the board'),
+        },
+      },
+      async ({ board_id }) => {
+        try {
+          const columns = await this.businessMapClient.getColumns(board_id);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(columns, null, 2),
+              },
+            ],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error fetching board columns: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
+
+    // Get board lanes/swimlanes - endpoint válido na API oficial
+    this.mcpServer.registerTool(
+      'get_lanes',
+      {
+        title: 'Get Board Lanes',
+        description: 'Get all lanes/swimlanes for a board (válido na API oficial)',
+        inputSchema: {
+          board_id: z.number().describe('The ID of the board'),
+        },
+      },
+      async ({ board_id }) => {
+        try {
+          const lanes = await this.businessMapClient.getLanes(board_id);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(lanes, null, 2),
+              },
+            ],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error fetching board lanes: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
+
+    // Get single lane - endpoint válido na API oficial
+    this.mcpServer.registerTool(
+      'get_lane',
+      {
+        title: 'Get Lane Details',
+        description: 'Get details of a specific lane/swimlane (válido na API oficial)',
+        inputSchema: {
+          lane_id: z.number().describe('The ID of the lane'),
+        },
+      },
+      async ({ lane_id }) => {
+        try {
+          const lane = await this.businessMapClient.getLane(lane_id);
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify(lane, null, 2),
+              },
+            ],
+          };
+        } catch (error) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `Error fetching lane details: ${error instanceof Error ? error.message : 'Unknown error'}`,
+              },
+            ],
+            isError: true,
+          };
+        }
+      }
+    );
+
+    if (!config.businessMap.readOnlyMode) {
+      // Create lane - endpoint válido na API oficial
+      this.mcpServer.registerTool(
+        'create_lane',
+        {
+          title: 'Create Lane',
+          description: 'Create a new lane/swimlane in a board (válido na API oficial)',
+          inputSchema: {
+            name: z.string().describe('The name of the lane'),
+            board_id: z.number().describe('The ID of the board'),
+            description: z.string().optional().describe('Optional description for the lane'),
+            color: z.string().optional().describe('Optional color for the lane'),
+            position: z.number().optional().describe('Optional position for the lane'),
+          },
+        },
+        async ({ name, board_id, description, color, position }) => {
+          try {
+            const lane = await this.businessMapClient.createLane({
+              name,
+              board_id,
+              description,
+              color,
+              position,
+            });
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Lane created successfully:\n${JSON.stringify(lane, null, 2)}`,
+                },
+              ],
+            };
+          } catch (error) {
+            return {
+              content: [
+                {
+                  type: 'text',
+                  text: `Error creating lane: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                },
+              ],
+              isError: true,
+            };
+          }
+        }
+      );
+    }
   }
 
   private setupCardTools(): void {
@@ -805,31 +957,25 @@ export class BusinessMapMcpServer {
     );
   }
 
-  private setupAnalyticsTools(): void {
-    // Workflow analytics
+  private setupCycleTimeTools(): void {
+    // Cycle Time Columns - endpoint válido na API oficial
     this.mcpServer.registerTool(
-      'get_workflow_analytics',
+      'get_workflow_cycle_time_columns',
       {
-        title: 'Get Workflow Analytics',
-        description: 'Get workflow analytics for a board within a time period',
+        title: 'Get Workflow Cycle Time Columns',
+        description: 'Get cycle time configuration columns for a board (válido na API oficial)',
         inputSchema: {
           board_id: z.number().describe('The ID of the board'),
-          period_start: z.string().describe('Start date (ISO date string)'),
-          period_end: z.string().describe('End date (ISO date string)'),
         },
       },
-      async ({ board_id, period_start, period_end }) => {
+      async ({ board_id }) => {
         try {
-          const analytics = await this.businessMapClient.getWorkflowAnalytics(
-            board_id,
-            period_start,
-            period_end
-          );
+          const columns = await this.businessMapClient.getWorkflowCycleTimeColumns(board_id);
           return {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify(analytics, null, 2),
+                text: JSON.stringify(columns, null, 2),
               },
             ],
           };
@@ -838,7 +984,7 @@ export class BusinessMapMcpServer {
             content: [
               {
                 type: 'text',
-                text: `Error fetching workflow analytics: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                text: `Error fetching cycle time columns: ${error instanceof Error ? error.message : 'Unknown error'}`,
               },
             ],
             isError: true,
@@ -847,30 +993,26 @@ export class BusinessMapMcpServer {
       }
     );
 
-    // Cumulative flow diagram
+    // Effective Cycle Time Columns - endpoint válido na API oficial
     this.mcpServer.registerTool(
-      'get_cumulative_flow_data',
+      'get_workflow_effective_cycle_time_columns',
       {
-        title: 'Get Cumulative Flow Data',
-        description: 'Get cumulative flow diagram data for a board',
+        title: 'Get Workflow Effective Cycle Time Columns',
+        description:
+          'Get effective cycle time configuration columns for a board (válido na API oficial)',
         inputSchema: {
           board_id: z.number().describe('The ID of the board'),
-          period_start: z.string().describe('Start date (ISO date string)'),
-          period_end: z.string().describe('End date (ISO date string)'),
         },
       },
-      async ({ board_id, period_start, period_end }) => {
+      async ({ board_id }) => {
         try {
-          const flowData = await this.businessMapClient.getCumulativeFlowData(
-            board_id,
-            period_start,
-            period_end
-          );
+          const columns =
+            await this.businessMapClient.getWorkflowEffectiveCycleTimeColumns(board_id);
           return {
             content: [
               {
                 type: 'text',
-                text: JSON.stringify(flowData, null, 2),
+                text: JSON.stringify(columns, null, 2),
               },
             ],
           };
@@ -879,89 +1021,7 @@ export class BusinessMapMcpServer {
             content: [
               {
                 type: 'text',
-                text: `Error fetching cumulative flow data: ${error instanceof Error ? error.message : 'Unknown error'}`,
-              },
-            ],
-            isError: true,
-          };
-        }
-      }
-    );
-
-    // Cycle time report
-    this.mcpServer.registerTool(
-      'get_cycle_time_report',
-      {
-        title: 'Get Cycle Time Report',
-        description: 'Get cycle time report for a board',
-        inputSchema: {
-          board_id: z.number().describe('The ID of the board'),
-          period_start: z.string().describe('Start date (ISO date string)'),
-          period_end: z.string().describe('End date (ISO date string)'),
-        },
-      },
-      async ({ board_id, period_start, period_end }) => {
-        try {
-          const report = await this.businessMapClient.getCycleTimeReport(
-            board_id,
-            period_start,
-            period_end
-          );
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(report, null, 2),
-              },
-            ],
-          };
-        } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Error fetching cycle time report: ${error instanceof Error ? error.message : 'Unknown error'}`,
-              },
-            ],
-            isError: true,
-          };
-        }
-      }
-    );
-
-    // Throughput report
-    this.mcpServer.registerTool(
-      'get_throughput_report',
-      {
-        title: 'Get Throughput Report',
-        description: 'Get throughput report for a board',
-        inputSchema: {
-          board_id: z.number().describe('The ID of the board'),
-          period_start: z.string().describe('Start date (ISO date string)'),
-          period_end: z.string().describe('End date (ISO date string)'),
-        },
-      },
-      async ({ board_id, period_start, period_end }) => {
-        try {
-          const report = await this.businessMapClient.getThroughputReport(
-            board_id,
-            period_start,
-            period_end
-          );
-          return {
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify(report, null, 2),
-              },
-            ],
-          };
-        } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Error fetching throughput report: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                text: `Error fetching effective cycle time columns: ${error instanceof Error ? error.message : 'Unknown error'}`,
               },
             ],
             isError: true,
@@ -1010,7 +1070,8 @@ export class BusinessMapMcpServer {
       'get_api_info',
       {
         title: 'Get API Info',
-        description: 'Get information about the BusinessMap API',
+        description:
+          'Get information about the BusinessMap API (nota: endpoint /info não existe na API oficial)',
         inputSchema: {},
       },
       async () => {
