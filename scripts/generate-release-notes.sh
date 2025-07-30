@@ -109,12 +109,19 @@ categorize_commits() {
     
     # Add changelog link
     if [ -n "$COMMIT_RANGE" ]; then
-        LATEST_TAG=$(echo $COMMIT_RANGE | cut -d'.' -f1)
-        echo "**Full Changelog**: https://github.com/edicarloslds/businessmap-mcp/compare/$LATEST_TAG...v$VERSION"
+        # Extract the previous tag from the commit range (everything before the dots)
+        PREVIOUS_TAG=$(echo $COMMIT_RANGE | sed 's/\.\.\..*$//' | sed 's/\.\..*$//')
+        echo "**Full Changelog**: https://github.com/edicarloslds/businessmap-mcp/compare/$PREVIOUS_TAG...v$VERSION"
     else
-        # For first release
-        FIRST_COMMIT=$(git rev-list --max-parents=0 HEAD)
-        echo "**Full Changelog**: https://github.com/edicarloslds/businessmap-mcp/commits/v$VERSION"
+        # If no range provided, get the previous tag automatically
+        PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -v "^v$VERSION$" | head -1)
+        if [ -n "$PREVIOUS_TAG" ]; then
+            echo "**Full Changelog**: https://github.com/edicarloslds/businessmap-mcp/compare/$PREVIOUS_TAG...v$VERSION"
+        else
+            # For first release
+            FIRST_COMMIT=$(git rev-list --max-parents=0 HEAD)
+            echo "**Full Changelog**: https://github.com/edicarloslds/businessmap-mcp/commits/v$VERSION"
+        fi
     fi
 }
 
