@@ -1,4 +1,4 @@
-import { ApiResponse, Card, CreateCardParams, UpdateCardParams } from '../../types/index.js';
+import { ApiResponse, Card, CreateCardParams, UpdateCardParams, Comment, CommentListResponse, CommentResponse } from '../../types/index.js';
 import { BaseClientModuleImpl } from './base-client.js';
 
 export interface CardFilters {
@@ -138,5 +138,21 @@ export class CardClient extends BaseClientModuleImpl {
   async deleteCard(cardId: number): Promise<void> {
     this.checkReadOnlyMode('delete card');
     await this.http.delete(`/cards/${cardId}`);
+  }
+
+  /**
+   * Get comments for a specific card
+   */
+  async getCardComments(cardId: number): Promise<Comment[]> {
+    const response = await this.http.get<CommentListResponse>(`/cards/${cardId}/comments`);
+    return response.data.data;
+  }
+
+  /**
+   * Get details of a specific comment
+   */
+  async getCardComment(cardId: number, commentId: number): Promise<Comment> {
+    const response = await this.http.get<CommentResponse>(`/cards/${cardId}/comments/${commentId}`);
+    return response.data.data;
   }
 }

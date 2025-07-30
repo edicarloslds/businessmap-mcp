@@ -8,6 +8,8 @@ export class CardToolHandler implements BaseToolHandler {
     this.registerListCards(server, client);
     this.registerGetCard(server, client);
     this.registerGetCardSize(server, client);
+    this.registerGetCardComments(server, client);
+    this.registerGetCardComment(server, client);
 
     if (!readOnlyMode) {
       this.registerCreateCard(server, client);
@@ -698,6 +700,52 @@ export class CardToolHandler implements BaseToolHandler {
           };
         } catch (error) {
           return createErrorResponse(error, 'setting card size');
+        }
+      }
+    );
+  }
+
+  private registerGetCardComments(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_comments',
+      {
+        title: 'Get Card Comments',
+        description: 'Get all comments for a specific card',
+        inputSchema: {
+          card_id: z.number().describe('The ID of the card'),
+        },
+      },
+      async ({ card_id }) => {
+        try {
+          const comments = await client.getCardComments(card_id);
+          return createSuccessResponse({
+            comments,
+            count: comments.length,
+          });
+        } catch (error) {
+          return createErrorResponse(error, 'getting card comments');
+        }
+      }
+    );
+  }
+
+  private registerGetCardComment(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_comment',
+      {
+        title: 'Get Card Comment',
+        description: 'Get details of a specific comment from a card',
+        inputSchema: {
+          card_id: z.number().describe('The ID of the card'),
+          comment_id: z.number().describe('The ID of the comment'),
+        },
+      },
+      async ({ card_id, comment_id }) => {
+        try {
+          const comment = await client.getCardComment(card_id, comment_id);
+          return createSuccessResponse(comment);
+        } catch (error) {
+          return createErrorResponse(error, 'getting card comment');
         }
       }
     );

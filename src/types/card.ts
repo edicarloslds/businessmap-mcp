@@ -299,3 +299,29 @@ export interface UpdateCardParams {
   deadline?: string;
   position?: number;
 }
+
+// Comment types
+export interface Comment {
+  comment_id: number;
+  type: string;
+  text: string;
+  attachments: {
+    id: number;
+    file_name: string;
+    link: string;
+  };
+  created_at: string;
+  last_modified: string;
+  author: {
+    type: string;
+    value: number;
+  };
+}
+
+export interface CommentListResponse {
+  data: Comment[];
+}
+
+export interface CommentResponse {
+  data: Comment;
+}

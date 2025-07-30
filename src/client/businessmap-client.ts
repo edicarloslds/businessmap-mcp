@@ -219,6 +219,14 @@ export class BusinessMapClient {
     return this.cardClient.deleteCard(cardId);
   }
 
+  async getCardComments(cardId: number) {
+    return this.cardClient.getCardComments(cardId);
+  }
+
+  async getCardComment(cardId: number, commentId: number) {
+    return this.cardClient.getCardComment(cardId, commentId);
+  }
+
   // User Management - Delegated to UserClient
   async getUsers() {
     return this.userClient.getUsers();

@@ -6,8 +6,8 @@ export class UtilityClient extends BaseClientModuleImpl {
    */
   async healthCheck(): Promise<boolean> {
     try {
-      // Use /workspaces endpoint as health check since /health may not exist
-      await this.http.get('/workspaces');
+      // Use /me endpoint as health check since /health may not exist
+      await this.http.get('/me');
       return true;
     } catch (error) {
       // Log the actual error for debugging
@@ -28,13 +28,13 @@ export class UtilityClient extends BaseClientModuleImpl {
       const response = await this.http.get('/info');
       return response.data;
     } catch (error) {
-      // Fallback: verificar conectividade com /workspaces
+      // Fallback: verificar conectividade com /me
       console.warn('Endpoint /info não disponível na API oficial, testando conectividade...');
       try {
-        await this.http.get('/workspaces');
+        await this.http.get('/me');
         return {
           message: 'API is responding (fallback test)',
-          endpoint: '/workspaces',
+          endpoint: '/me',
           status: 'healthy',
           note: 'Endpoint /info não existe na API oficial do BusinessMap',
           api_version: 'v2',
