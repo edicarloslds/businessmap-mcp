@@ -10,6 +10,8 @@ export class CardToolHandler implements BaseToolHandler {
     this.registerGetCardSize(server, client);
     this.registerGetCardComments(server, client);
     this.registerGetCardComment(server, client);
+    this.registerGetCardCustomFields(server, client);
+    this.registerGetCardTypes(server, client);
 
     if (!readOnlyMode) {
       this.registerCreateCard(server, client);
@@ -746,6 +748,54 @@ export class CardToolHandler implements BaseToolHandler {
           return createSuccessResponse(comment);
         } catch (error) {
           return createErrorResponse(error, 'getting card comment');
+        }
+      }
+    );
+  }
+
+  private registerGetCardCustomFields(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_custom_fields',
+      {
+        title: 'Get Card Custom Fields',
+        description: 'Get all custom fields for a specific card',
+        inputSchema: {
+          card_id: z.number().describe('The ID of the card'),
+        },
+      },
+      async ({ card_id }) => {
+        try {
+          const customFields = await client.getCardCustomFields(card_id);
+          return createSuccessResponse({
+            customFields,
+            count: customFields.length,
+          });
+        } catch (error) {
+          return createErrorResponse(error, 'getting card custom fields');
+        }
+      }
+    );
+  }
+
+  private registerGetCardTypes(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_types',
+      {
+        title: 'Get Card Types',
+        description: 'Get all available card types',
+        inputSchema: {
+          // No parameters needed for this endpoint
+        },
+      },
+      async () => {
+        try {
+          const cardTypes = await client.getCardTypes();
+          return createSuccessResponse({
+            cardTypes,
+            count: cardTypes.length,
+          });
+        } catch (error) {
+          return createErrorResponse(error, 'getting card types');
         }
       }
     );

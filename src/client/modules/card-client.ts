@@ -1,4 +1,16 @@
-import { ApiResponse, Card, CreateCardParams, UpdateCardParams, Comment, CommentListResponse, CommentResponse } from '../../types/index.js';
+import {
+  ApiResponse,
+  Card,
+  CardCustomField,
+  CardCustomFieldsResponse,
+  CardType,
+  CardTypesResponse,
+  Comment,
+  CommentListResponse,
+  CommentResponse,
+  CreateCardParams,
+  UpdateCardParams,
+} from '../../types/index.js';
 import { BaseClientModuleImpl } from './base-client.js';
 
 export interface CardFilters {
@@ -153,6 +165,22 @@ export class CardClient extends BaseClientModuleImpl {
    */
   async getCardComment(cardId: number, commentId: number): Promise<Comment> {
     const response = await this.http.get<CommentResponse>(`/cards/${cardId}/comments/${commentId}`);
+    return response.data.data;
+  }
+
+  /**
+   * Get custom fields for a specific card
+   */
+  async getCardCustomFields(cardId: number): Promise<CardCustomField[]> {
+    const response = await this.http.get<CardCustomFieldsResponse>(`/cards/${cardId}/customFields`);
+    return response.data.data;
+  }
+
+  /**
+   * Get all card types
+   */
+  async getCardTypes(): Promise<CardType[]> {
+    const response = await this.http.get<CardTypesResponse>('/cardTypes');
     return response.data.data;
   }
 }

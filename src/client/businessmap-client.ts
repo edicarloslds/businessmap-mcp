@@ -227,6 +227,14 @@ export class BusinessMapClient {
     return this.cardClient.getCardComment(cardId, commentId);
   }
 
+  async getCardCustomFields(cardId: number) {
+    return this.cardClient.getCardCustomFields(cardId);
+  }
+
+  async getCardTypes() {
+    return this.cardClient.getCardTypes();
+  }
+
   // User Management - Delegated to UserClient
   async getUsers() {
     return this.userClient.getUsers();

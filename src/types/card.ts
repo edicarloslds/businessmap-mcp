@@ -325,3 +325,26 @@ export interface CommentListResponse {
 export interface CommentResponse {
   data: Comment;
 }
+
+// Card Custom Fields Response
+export interface CardCustomFieldsResponse {
+  data: CardCustomField[];
+}
+
+// Card Types
+export interface CardType {
+  type_id: number;
+  icon_type: number;
+  icon_id: number;
+  name: string;
+  description: string;
+  color: string;
+  card_color_sync: number;
+  all_properties_are_locked: number;
+  availability: number;
+  is_enabled: number;
+}
+
+export interface CardTypesResponse {
+  data: CardType[];
+}
