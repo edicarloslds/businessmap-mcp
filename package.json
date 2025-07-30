@@ -1,6 +1,6 @@
 {
   "name": "@edicarlos.lds/businessmap-mcp",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "Model Context Protocol server for BusinessMap (Kanbanize) integration",
   "type": "module",
   "main": "dist/index.js",
