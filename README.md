@@ -35,6 +35,7 @@ The server requires the following environment variables:
 - `BUSINESSMAP_API_TOKEN`: Your BusinessMap API token
 - `BUSINESSMAP_API_URL`: Your BusinessMap API URL (e.g., `https://your-account.kanbanize.com/api/v2`)
 - `BUSINESSMAP_READ_ONLY_MODE`: Set to `"true"` for read-only mode, `"false"` to allow modifications (optional, defaults to `"false"`)
+- `BUSINESSMAP_DEFAULT_WORKSPACE_ID`: Set the BusinessMap workspace ID (optional)
 
 #### Claude Desktop
 
