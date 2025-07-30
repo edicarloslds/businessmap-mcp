@@ -51,8 +51,8 @@ Add the following configuration to your `claude_desktop_config.json` file:
       "env": {
         "BUSINESSMAP_API_TOKEN": "your_token_here",
         "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
-        "BUSINESSMAP_READ_ONLY_MODE": "false",
-        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1"
+        "BUSINESSMAP_READ_ONLY_MODE": "false", // optional
+        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1" // optional
       }
     }
   }
@@ -69,8 +69,8 @@ Add the following configuration to your `claude_desktop_config.json` file:
       "env": {
         "BUSINESSMAP_API_TOKEN": "your_token_here",
         "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
-        "BUSINESSMAP_READ_ONLY_MODE": "false",
-        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1"
+        "BUSINESSMAP_READ_ONLY_MODE": "false", // optional
+        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1" // optional
       }
     }
   }
