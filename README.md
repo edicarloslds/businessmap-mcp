@@ -99,7 +99,7 @@ For other MCP clients, use the appropriate configuration format for your client,
    npm install
    ```
 
-3. Create a `.env` file with your BusinessMap credentials:
+3. Create a `.env` file with your BusinessMap credentials (for development/testing):
 
    ```env
    BUSINESSMAP_API_TOKEN=your_token_here
@@ -107,6 +107,8 @@ For other MCP clients, use the appropriate configuration format for your client,
    BUSINESSMAP_READ_ONLY_MODE=false
    BUSINESSMAP_DEFAULT_WORKSPACE_ID=1
    ```
+
+   > **Note**: When using as an MCP server with Claude Desktop, you don't need a `.env` file. Configure the environment variables directly in your MCP client configuration instead.
 
 #### Environment Variables
 
