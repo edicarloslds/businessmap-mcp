@@ -151,9 +151,16 @@ The BusinessMap MCP server provides the following tools:
 ### Card Management
 - `mcp_businessmap_list_cards` - Get cards from a board with optional filters
 - `mcp_businessmap_get_card` - Get detailed card information
+- `mcp_businessmap_get_card_size` - Get the size/points of a specific card
+- `mcp_businessmap_get_card_comments` - Get all comments for a specific card
+- `mcp_businessmap_get_card_comment` - Get details of a specific comment from a card
 - `mcp_businessmap_create_card` - Create new card
 - `mcp_businessmap_move_card` - Move card to different column/swimlane
 - `mcp_businessmap_update_card` - Update card properties
+- `mcp_businessmap_set_card_size` - Set the size/points of a specific card
+
+### Custom Field Management
+- `mcp_businessmap_get_custom_field` - Get details of a specific custom field by ID
 
 ### User Management
 - `mcp_businessmap_list_users` - Get all users
