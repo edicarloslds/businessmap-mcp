@@ -51,7 +51,8 @@ Add the following configuration to your `claude_desktop_config.json` file:
       "env": {
         "BUSINESSMAP_API_TOKEN": "your_token_here",
         "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
-        "BUSINESSMAP_READ_ONLY_MODE": "false"
+        "BUSINESSMAP_READ_ONLY_MODE": "false",
+        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1"
       }
     }
   }
@@ -68,7 +69,8 @@ Add the following configuration to your `claude_desktop_config.json` file:
       "env": {
         "BUSINESSMAP_API_TOKEN": "your_token_here",
         "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
-        "BUSINESSMAP_READ_ONLY_MODE": "false"
+        "BUSINESSMAP_READ_ONLY_MODE": "false",
+        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1"
       }
     }
   }
@@ -78,35 +80,49 @@ Add the following configuration to your `claude_desktop_config.json` file:
 #### Other MCP Clients
 
 For other MCP clients, use the appropriate configuration format for your client, ensuring you specify:
+
 - Command: `npx @edicarlos.lds/businessmap-mcp` (or `businessmap-mcp` if globally installed)
-- Environment variables: `BUSINESSMAP_API_TOKEN`, `BUSINESSMAP_API_URL`, and optionally `BUSINESSMAP_READ_ONLY_MODE`
+- Environment variables: `BUSINESSMAP_API_TOKEN`, `BUSINESSMAP_API_URL`, and optionally `BUSINESSMAP_READ_ONLY_MODE`, `BUSINESSMAP_DEFAULT_WORKSPACE_ID`
 
 ### Manual Setup
 
 1. Clone this repository:
+
    ```bash
    git clone https://github.com/edicarloslds/businessmap-mcp.git
    cd businessmap-mcp
    ```
 
 2. Install dependencies:
+
    ```bash
    npm install
    ```
 
 3. Create a `.env` file with your BusinessMap credentials:
+
    ```env
    BUSINESSMAP_API_TOKEN=your_token_here
    BUSINESSMAP_API_URL=https://your-account.kanbanize.com/api/v2
    BUSINESSMAP_READ_ONLY_MODE=false
+   BUSINESSMAP_DEFAULT_WORKSPACE_ID=1
    ```
 
+#### Environment Variables
+
+- **`BUSINESSMAP_API_TOKEN`** (required): Your BusinessMap API token
+- **`BUSINESSMAP_API_URL`** (required): Your BusinessMap API URL (e.g., `https://your-account.kanbanize.com/api/v2`)
+- **`BUSINESSMAP_READ_ONLY_MODE`** (optional): Set to `true` to prevent write operations (default: `false`)
+- **`BUSINESSMAP_DEFAULT_WORKSPACE_ID`** (optional): Default workspace ID to use when not specified in operations
+
 4. Build the project:
+
    ```bash
    npm run build
    ```
 
 5. Start the server:
+
    ```bash
    npm start
    ```
