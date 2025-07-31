@@ -7,6 +7,7 @@ import {
   CustomFieldToolHandler,
   UserToolHandler,
   UtilityToolHandler,
+  WorkflowToolHandler,
   WorkspaceToolHandler,
 } from './tools/index.js';
 
@@ -48,6 +49,7 @@ export class BusinessMapMcpServer {
       new CustomFieldToolHandler(),
       new UserToolHandler(),
       new UtilityToolHandler(),
+      new WorkflowToolHandler(),
     ];
 
     // Register all tools from handlers

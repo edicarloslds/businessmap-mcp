@@ -163,6 +163,10 @@ The BusinessMap MCP server provides the following tools:
 ### Custom Field Management
 - `mcp_businessmap_get_custom_field` - Get details of a specific custom field by ID
 
+### Workflow & Cycle Time Analysis
+- `mcp_businessmap_get_workflow_cycle_time_columns` - Get workflow's cycle time columns
+- `mcp_businessmap_calculate_card_cycle_time` - Calculate cycle time for a specific card based on cycle time columns
+
 ### User Management
 - `mcp_businessmap_list_users` - Get all users
 - `mcp_businessmap_get_user` - Get user details
@@ -211,6 +215,60 @@ npm run docker:logs
 # Stop containers
 npm run docker:down
 ```
+
+## Usage Examples
+
+### Calculate Card Cycle Time
+
+The `calculate_card_cycle_time` tool provides comprehensive cycle time analysis for any card, **calculating BUSINESS DAYS only** (excludes weekends):
+
+```bash
+# Basic usage - calculate cycle time for card ID 464136
+mcp_Businessmap_Dev_Mode_calculate_card_cycle_time({
+  "card_id": 464136,
+  "include_detailed_breakdown": true
+})
+```
+
+**Response includes:**
+- **Primary metric**: Business days (excludes weekends)
+- Business hours (8 hours per business day)
+- Current cycle status (IN_CYCLE or NOT_IN_CYCLE)
+- Calendar time for reference only
+- List of all cycle time columns with current position
+- Detailed timestamps and card information
+- Contextual notes and calculation methodology
+
+**Key Features:**
+- ✅ **Business days calculation** (excludes weekends automatically)
+- ✅ Automatically detects cycle time columns for the card's workflow
+- ✅ Works with any card from any board
+- ✅ Identifies if card is currently in a cycle time column
+- ✅ Provides both business and calendar time metrics
+- ✅ Includes comprehensive context and metadata
+
+**Example Response Structure:**
+```json
+{
+  "card_id": 464136,
+  "card_title": "[NEW] [APP] Product Header",
+  "cycle_status": "IN_CYCLE",
+  "current_column_name": "PARA CODE REVIEW",
+  "is_current_column_in_cycle": true,
+  "cycle_time": {
+    "business_days": 32,
+    "business_hours": 256,
+    "calendar_days": 42,
+    "calendar_hours": 1030,
+    "formatted_business_time": "32 business days (256 business hours)",
+    "formatted_calendar_time": "42 days"
+  },
+  "cycle_time_columns": [...],
+  "notes": [...]
+}
+```
+
+> **⚠️ Important**: Use `business_days` as the primary metric for cycle time reporting. Calendar time is provided for reference only.
 
 ## Troubleshooting
 

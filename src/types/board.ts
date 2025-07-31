@@ -11,7 +11,7 @@ export interface Board {
 
 export interface Column {
   column_id?: number;
-  workflow: number;
+  workflow_id: number;
   section: number;
   parent_column_id: number;
   position: number;

@@ -8,6 +8,7 @@ import {
   CustomFieldClient,
   UserClient,
   UtilityClient,
+  WorkflowClient,
   WorkspaceClient,
 } from './modules/index.js';
 
@@ -23,6 +24,7 @@ export class BusinessMapClient {
   private userClient: UserClient;
   private customFieldClient: CustomFieldClient;
   private utilityClient: UtilityClient;
+  private workflowClient: WorkflowClient;
 
   constructor(config: BusinessMapConfig) {
     this.config = config;
@@ -51,6 +53,7 @@ export class BusinessMapClient {
     this.userClient = new UserClient();
     this.customFieldClient = new CustomFieldClient();
     this.utilityClient = new UtilityClient();
+    this.workflowClient = new WorkflowClient();
 
     // Initialize all modules with http client and config
     [
@@ -60,6 +63,7 @@ export class BusinessMapClient {
       this.userClient,
       this.customFieldClient,
       this.utilityClient,
+      this.workflowClient,
     ].forEach((module) => {
       module.initialize(this.http, this.config);
     });
@@ -251,6 +255,15 @@ export class BusinessMapClient {
   // Custom Fields - Delegated to CustomFieldClient
   async getCustomField(customFieldId: number) {
     return this.customFieldClient.getCustomField(customFieldId);
+  }
+
+  // Workflow Management - Delegated to WorkflowClient
+  async getWorkflowCycleTimeColumns(boardId: number, workflowId: number) {
+    return this.workflowClient.getWorkflowCycleTimeColumns(boardId, workflowId);
+  }
+
+  async getWorkflowEffectiveCycleTimeColumns(boardId: number, workflowId: number) {
+    return this.workflowClient.getWorkflowEffectiveCycleTimeColumns(boardId, workflowId);
   }
 
   // Utility Methods - Delegated to UtilityClient

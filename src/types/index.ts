@@ -5,4 +5,5 @@ export * from './card';
 export * from './custom-field';
 export * from './lane';
 export * from './user';
+export * from './workflow';
 export * from './workspace';
