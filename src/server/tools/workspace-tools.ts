@@ -1,6 +1,10 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
+import {
+  createWorkspaceSchema,
+  getWorkspaceSchema,
+  listWorkspacesSchema,
+} from '../../schemas/workspace-schemas.js';
 import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
 
 export class WorkspaceToolHandler implements BaseToolHandler {
@@ -19,7 +23,7 @@ export class WorkspaceToolHandler implements BaseToolHandler {
       {
         title: 'List Workspaces',
         description: 'Get a list of all workspaces',
-        inputSchema: {},
+        inputSchema: listWorkspacesSchema.shape,
       },
       async () => {
         try {
@@ -38,9 +42,7 @@ export class WorkspaceToolHandler implements BaseToolHandler {
       {
         title: 'Get Workspace',
         description: 'Get details of a specific workspace',
-        inputSchema: {
-          workspace_id: z.number().describe('The ID of the workspace'),
-        },
+        inputSchema: getWorkspaceSchema.shape,
       },
       async ({ workspace_id }) => {
         try {
@@ -59,10 +61,7 @@ export class WorkspaceToolHandler implements BaseToolHandler {
       {
         title: 'Create Workspace',
         description: 'Create a new workspace',
-        inputSchema: {
-          name: z.string().describe('The name of the workspace'),
-          description: z.string().optional().describe('Optional description for the workspace'),
-        },
+        inputSchema: createWorkspaceSchema.shape,
       },
       async ({ name, description }) => {
         try {

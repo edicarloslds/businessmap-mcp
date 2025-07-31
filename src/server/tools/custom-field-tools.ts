@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
 import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
+import { getCustomFieldSchema } from '../../schemas/custom-field-schemas.js';
 
 export class CustomFieldToolHandler implements BaseToolHandler {
   registerTools(server: McpServer, client: BusinessMapClient, readOnlyMode: boolean): void {
@@ -14,9 +14,7 @@ export class CustomFieldToolHandler implements BaseToolHandler {
       {
         title: 'Get Custom Field',
         description: 'Get details of a specific custom field by ID',
-        inputSchema: {
-          custom_field_id: z.number().describe('The ID of the custom field'),
-        },
+        inputSchema: getCustomFieldSchema.shape,
       },
       async ({ custom_field_id }) => {
         try {

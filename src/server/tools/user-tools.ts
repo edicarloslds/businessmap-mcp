@@ -1,6 +1,10 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
+import {
+  getCurrentUserSchema,
+  getUserSchema,
+  listUsersSchema,
+} from '../../schemas/user-schemas.js';
 import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
 
 export class UserToolHandler implements BaseToolHandler {
@@ -16,7 +20,7 @@ export class UserToolHandler implements BaseToolHandler {
       {
         title: 'List Users',
         description: 'Get a list of all users',
-        inputSchema: {},
+        inputSchema: listUsersSchema.shape,
       },
       async () => {
         try {
@@ -35,9 +39,7 @@ export class UserToolHandler implements BaseToolHandler {
       {
         title: 'Get User',
         description: 'Get details of a specific user',
-        inputSchema: {
-          user_id: z.number().describe('The ID of the user'),
-        },
+        inputSchema: getUserSchema.shape,
       },
       async ({ user_id }) => {
         try {
@@ -56,7 +58,7 @@ export class UserToolHandler implements BaseToolHandler {
       {
         title: 'Get Current User',
         description: 'Get details of the current logged user',
-        inputSchema: {},
+        inputSchema: getCurrentUserSchema.shape,
       },
       async () => {
         try {

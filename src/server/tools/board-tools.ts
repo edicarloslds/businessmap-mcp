@@ -1,6 +1,13 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
+import {
+  createBoardSchema,
+  createLaneSchema,
+  getBoardSchema,
+  getLaneSchema,
+  listBoardsSchema,
+  searchBoardSchema,
+} from '../../schemas/index.js';
 import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
 
 export class BoardToolHandler implements BaseToolHandler {
@@ -24,55 +31,7 @@ export class BoardToolHandler implements BaseToolHandler {
       {
         title: 'List Boards',
         description: 'Get a list of boards with optional filters',
-        inputSchema: {
-          // ID filters (arrays)
-          board_ids: z
-            .array(z.number())
-            .optional()
-            .describe('A list of the board ids that you want to get'),
-          workspace_ids: z
-            .array(z.number())
-            .optional()
-            .describe('A list of the workspace ids holding the boards that you want to get'),
-
-          // Expansion options
-          expand: z
-            .array(z.enum(['workflows', 'settings', 'structure']))
-            .optional()
-            .describe(
-              'A list of properties for which you want to get additional details. Allowed: workflows, settings, structure'
-            ),
-
-          // Field selection
-          fields: z
-            .array(
-              z.enum(['board_id', 'workspace_id', 'is_archived', 'name', 'description', 'revision'])
-            )
-            .optional()
-            .describe(
-              'A list of fields that you want in the response. Allowed: board_id, workspace_id, is_archived, name, description, revision'
-            ),
-
-          // Assignment filter
-          if_assigned: z
-            .number()
-            .optional()
-            .describe('When set to 1 you will only get boards to which you are assigned (0 or 1)'),
-
-          // Archive status
-          is_archived: z
-            .number()
-            .optional()
-            .describe(
-              'When set to 0 you will only get non-archived boards. When set to 1 you will only get archived boards (0 or 1)'
-            ),
-
-          // Legacy compatibility
-          workspace_id: z
-            .number()
-            .optional()
-            .describe('Optional workspace ID to filter boards (legacy parameter)'),
-        },
+        inputSchema: listBoardsSchema.shape,
       },
       async (params) => {
         try {
@@ -92,14 +51,7 @@ export class BoardToolHandler implements BaseToolHandler {
         title: 'Search Board',
         description:
           'Search for a board by ID or name, with intelligent fallback to list all boards if direct search fails',
-        inputSchema: {
-          board_id: z.number().optional().describe('The ID of the board to search for'),
-          board_name: z.string().optional().describe('The name of the board to search for'),
-          workspace_id: z
-            .number()
-            .optional()
-            .describe('Optional workspace ID to limit search scope'),
-        },
+        inputSchema: searchBoardSchema.shape,
       },
       async ({ board_id, board_name, workspace_id }) => {
         try {
@@ -237,9 +189,7 @@ export class BoardToolHandler implements BaseToolHandler {
         title: 'Get Board',
         description:
           'Get details of a specific board including its structure. For more robust search, use search_board tool instead.',
-        inputSchema: {
-          board_id: z.number().describe('The ID of the board'),
-        },
+        inputSchema: getBoardSchema.shape,
       },
       async ({ board_id }) => {
         try {
@@ -269,9 +219,7 @@ export class BoardToolHandler implements BaseToolHandler {
       {
         title: 'Get Board Columns',
         description: 'Get all columns for a board (válido na API oficial)',
-        inputSchema: {
-          board_id: z.number().describe('The ID of the board'),
-        },
+        inputSchema: getBoardSchema.shape,
       },
       async ({ board_id }) => {
         try {
@@ -290,9 +238,7 @@ export class BoardToolHandler implements BaseToolHandler {
       {
         title: 'Get Board Lanes',
         description: 'Get all lanes/swimlanes for a board (válido na API oficial)',
-        inputSchema: {
-          board_id: z.number().describe('The ID of the board'),
-        },
+        inputSchema: getBoardSchema.shape,
       },
       async ({ board_id }) => {
         try {
@@ -311,9 +257,7 @@ export class BoardToolHandler implements BaseToolHandler {
       {
         title: 'Get Lane Details',
         description: 'Get details of a specific lane/swimlane (válido na API oficial)',
-        inputSchema: {
-          lane_id: z.number().describe('The ID of the lane'),
-        },
+        inputSchema: getLaneSchema.shape,
       },
       async ({ lane_id }) => {
         try {
@@ -332,12 +276,7 @@ export class BoardToolHandler implements BaseToolHandler {
       {
         title: 'Create Board',
         description: 'Create a new board in a workspace',
-        inputSchema: {
-          name: z.string().describe('The name of the board'),
-          workspace_id: z.number().optional().describe('The ID of the workspace'),
-          description: z.string().optional().describe('Optional description for the board'),
-          project_id: z.number().optional().describe('Optional project ID for the board'),
-        },
+        inputSchema: createBoardSchema.shape,
       },
       async ({ name, workspace_id, description }) => {
         try {
@@ -360,13 +299,7 @@ export class BoardToolHandler implements BaseToolHandler {
       {
         title: 'Create Lane',
         description: 'Create a new lane/swimlane in a board (válido na API oficial)',
-        inputSchema: {
-          name: z.string().describe('The name of the lane'),
-          workflow_id: z.number().describe('The workflow ID'),
-          position: z.number().describe('The position of the lane'),
-          description: z.string().optional().describe('Optional description for the lane'),
-          color: z.string().describe('The color for the lane'),
-        },
+        inputSchema: createLaneSchema.shape,
       },
       async ({ workflow_id, name, description, color, position }) => {
         try {

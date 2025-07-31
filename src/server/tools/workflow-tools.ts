@@ -1,8 +1,13 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { z } from 'zod';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
 import { Card, WorkflowCycleTimeColumn } from '../../types/index.js';
 import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
+import {
+  getWorkflowCycleTimeColumnsSchema,
+  getWorkflowEffectiveCycleTimeColumnsSchema,
+  calculateCardCycleTimeSchema,
+  testEffectiveCycleTimeColumnsSchema,
+} from '../../schemas/workflow-schemas.js';
 
 export class WorkflowToolHandler implements BaseToolHandler {
   registerTools(server: McpServer, client: BusinessMapClient, readOnlyMode: boolean): void {
@@ -19,10 +24,7 @@ export class WorkflowToolHandler implements BaseToolHandler {
       {
         title: 'Get Workflow Cycle Time Columns',
         description: "Get workflow's cycle time columns",
-        inputSchema: {
-          board_id: z.number().describe('The ID of the board'),
-          workflow_id: z.number().describe('The ID of the workflow'),
-        },
+        inputSchema: getWorkflowCycleTimeColumnsSchema.shape,
       },
       async ({ board_id, workflow_id }) => {
         try {
@@ -45,10 +47,7 @@ export class WorkflowToolHandler implements BaseToolHandler {
         title: 'Get Workflow Effective Cycle Time Columns',
         description:
           "Get workflow's effective cycle time columns (the columns actually used for cycle time calculation with applied filters/logic)",
-        inputSchema: {
-          board_id: z.number().describe('The ID of the board'),
-          workflow_id: z.number().describe('The ID of the workflow'),
-        },
+        inputSchema: getWorkflowCycleTimeColumnsSchema.shape,
       },
       async ({ board_id, workflow_id }) => {
         try {
@@ -76,30 +75,7 @@ export class WorkflowToolHandler implements BaseToolHandler {
         title: 'Calculate Card Cycle Time',
         description:
           'Calculate the cycle time of a specific card based on cycle time columns only, counting BUSINESS DAYS only (excludes weekends). Returns detailed breakdown with business days as primary metric. Optionally includes refinement columns (PARA REFINAMENTO, EM REFINAMENTO, REFINADO) for extended cycle time calculation. Also compares with effective cycle time columns if available.',
-        inputSchema: {
-          card_id: z.number().describe('The ID of the card to calculate cycle time for'),
-          board_id: z
-            .number()
-            .optional()
-            .describe('Optional board ID (will be retrieved from card if not provided)'),
-          include_detailed_breakdown: z
-            .boolean()
-            .optional()
-            .default(true)
-            .describe('Whether to include detailed breakdown by column'),
-          compare_with_effective: z
-            .boolean()
-            .optional()
-            .default(true)
-            .describe('Whether to compare with effective cycle time columns'),
-          include_refinement_columns: z
-            .boolean()
-            .optional()
-            .default(false)
-            .describe(
-              'Whether to include refinement columns (PARA REFINAMENTO, EM REFINAMENTO, REFINADO) in cycle time calculation'
-            ),
-        },
+        inputSchema: calculateCardCycleTimeSchema.shape,
       },
       async ({
         card_id,
@@ -443,10 +419,7 @@ export class WorkflowToolHandler implements BaseToolHandler {
       {
         title: 'TEST: Get Workflow Effective Cycle Time Columns',
         description: "TEST version of get workflow's effective cycle time columns",
-        inputSchema: {
-          board_id: z.number().describe('The ID of the board'),
-          workflow_id: z.number().describe('The ID of the workflow'),
-        },
+        inputSchema: getWorkflowCycleTimeColumnsSchema.shape,
       },
       async ({ board_id, workflow_id }) => {
         try {
