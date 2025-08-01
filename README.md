@@ -135,45 +135,46 @@ For other MCP clients, use the appropriate configuration format for your client,
 The BusinessMap MCP server provides the following tools:
 
 ### Workspace Management
-- `mcp_businessmap_list_workspaces` - Get all workspaces
-- `mcp_businessmap_get_workspace` - Get workspace details
-- `mcp_businessmap_create_workspace` - Create new workspace
+- `list_workspaces` - Get all workspaces
+- `get_workspace` - Get workspace details
+- `create_workspace` - Create new workspace
 
 ### Board Management
-- `mcp_businessmap_list_boards` - List boards in workspace(s)
-- `mcp_businessmap_search_board` - Search for boards by ID or name
-- `mcp_businessmap_get_board` - Get board details with structure
-- `mcp_businessmap_create_board` - Create new board (if not in read-only mode)
-- `mcp_businessmap_get_columns` - Get all columns for a board
-- `mcp_businessmap_get_lanes` - Get all lanes for a board
-- `mcp_businessmap_get_lane` - Get details of a specific lane/swimlane
-- `mcp_businessmap_create_lane` - Create new lane/swimlane (if not in read-only mode)
+- `list_boards` - List boards in workspace(s)
+- `search_board` - Search for boards by ID or name
+- `get_board` - Get board details with structure
+- `create_board` - Create new board (if not in read-only mode)
+- `get_columns` - Get all columns for a board
+- `get_lanes` - Get all lanes for a board
+- `get_lane` - Get details of a specific lane/swimlane
+- `create_lane` - Create new lane/swimlane (if not in read-only mode)
 
 ### Card Management
-- `mcp_businessmap_list_cards` - Get cards from a board with optional filters
-- `mcp_businessmap_get_card` - Get detailed card information
-- `mcp_businessmap_get_card_size` - Get the size/points of a specific card
-- `mcp_businessmap_get_card_comments` - Get all comments for a specific card
-- `mcp_businessmap_get_card_comment` - Get details of a specific comment from a card
-- `mcp_businessmap_create_card` - Create new card
-- `mcp_businessmap_move_card` - Move card to different column/swimlane
-- `mcp_businessmap_update_card` - Update card properties
-- `mcp_businessmap_set_card_size` - Set the size/points of a specific card
+- `list_cards` - Get cards from a board with optional filters
+- `get_card` - Get detailed card information
+- `get_card_size` - Get the size/points of a specific card
+- `get_card_comments` - Get all comments for a specific card
+- `get_card_comment` - Get details of a specific comment from a card
+- `create_card` - Create new card
+- `move_card` - Move card to different column/swimlane
+- `update_card` - Update card properties
+- `set_card_size` - Set the size/points of a specific card
 
 ### Custom Field Management
-- `mcp_businessmap_get_custom_field` - Get details of a specific custom field by ID
+- `get_custom_field` - Get details of a specific custom field by ID
 
 ### Workflow & Cycle Time Analysis
-- `mcp_businessmap_get_workflow_cycle_time_columns` - Get workflow's cycle time columns
+- `get_workflow_cycle_time_columns` - Get workflow's cycle time columns
+- `get_workflow_effective_cycle_time_columns` - Get workflow's effective cycle time columns
 
 ### User Management
-- `mcp_businessmap_list_users` - Get all users
-- `mcp_businessmap_get_user` - Get user details
-- `mcp_businessmap_get_current_user` - Get current logged user details
+- `list_users` - Get all users
+- `get_user` - Get user details
+- `get_current_user` - Get current logged user details
 
 ### System
-- `mcp_businessmap_health_check` - Check API connection
-- `mcp_businessmap_get_api_info` - Get API information
+- `health_check` - Check API connection
+- `get_api_info` - Get API information
 
 ## Development
 
