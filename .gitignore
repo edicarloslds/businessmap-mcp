@@ -16,6 +16,9 @@ build/
 .env.test.local
 .env.production.local
 
+# NPM authentication (if using local .npmrc with tokens)
+.npmrc.tmp
+
 # Runtime data
 pids
 *.pid
