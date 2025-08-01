@@ -6,34 +6,42 @@ echo "🚀 Starting BusinessMap MCP Server publication process..."
 
 # Function to check NPM authentication
 check_npm_auth() {
-    # First try to use token if available
-    if [ -n "$NPM_PUBLISH_TOKEN" ]; then
-        echo "🔑 Using NPM_PUBLISH_TOKEN for authentication"
-        npm config set //registry.npmjs.org/:_authToken=$NPM_PUBLISH_TOKEN
+    # Check if user is already logged in to npm
+    if npm whoami > /dev/null 2>&1; then
+        echo "✅ Already authenticated with npm"
         return 0
     fi
     
-    # Check if user is logged in to npm
-    if ! npm whoami > /dev/null 2>&1; then
-        echo "❌ NPM authentication failed!"
-        echo ""
-        echo "To fix this, you have two options:"
-        echo "1) Set NPM_PUBLISH_TOKEN environment variable:"
-        echo "   export NPM_PUBLISH_TOKEN=your_npm_token_here"
-        echo "   # Then run the script again"
-        echo ""
-        echo "2) Login manually:"
-        echo "   npm login"
-        echo ""
-        echo "💡 To get an NPM token:"
-        echo "   1. Go to https://www.npmjs.com/settings/tokens"
-        echo "   2. Click 'Generate New Token'"
-        echo "   3. Choose 'Automation' type"
-        echo "   4. Copy the token and set as NPM_PUBLISH_TOKEN"
-        exit 1
+    # Try to use token if available
+    if [ -n "$NPM_PUBLISH_TOKEN" ]; then
+        echo "🔑 Using NPM_PUBLISH_TOKEN for authentication"
+        npm config set //registry.npmjs.org/:_authToken=$NPM_PUBLISH_TOKEN
+        
+        # Verify the token works
+        if npm whoami > /dev/null 2>&1; then
+            echo "✅ NPM_PUBLISH_TOKEN authentication successful"
+            return 0
+        else
+            echo "❌ NPM_PUBLISH_TOKEN is invalid or expired"
+        fi
     fi
     
-    return 0
+    echo "❌ NPM authentication failed!"
+    echo ""
+    echo "To fix this, you have two options:"
+    echo "1) Set NPM_PUBLISH_TOKEN environment variable:"
+    echo "   export NPM_PUBLISH_TOKEN=your_npm_token_here"
+    echo "   # Then run the script again"
+    echo ""
+    echo "2) Login manually:"
+    echo "   npm login"
+    echo ""
+    echo "💡 To get an NPM token:"
+    echo "   1. Go to https://www.npmjs.com/settings/tokens"
+    echo "   2. Click 'Generate New Token'"
+    echo "   3. Choose 'Automation' type"
+    echo "   4. Copy the token and set as NPM_PUBLISH_TOKEN"
+    exit 1
 }
 
 # Check NPM authentication
