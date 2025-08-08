@@ -20,6 +20,7 @@
     "watch": "tsx --watch src/index.ts",
     "test": "jest",
     "test:npx": "bash scripts/test-npx.sh",
+    "version:bump": "bash scripts/version-bump.sh",
     "publish:npm": "bash scripts/publish-npm.sh",
     "publish:github": "bash scripts/publish-github.sh",
     "preview:release": "bash scripts/preview-release-notes.sh",

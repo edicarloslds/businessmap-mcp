@@ -53,10 +53,59 @@ echo "📋 Current version: $CURRENT_VERSION"
 # Check if this version is already published
 if npm view @edicarlos.lds/businessmap-mcp@$CURRENT_VERSION > /dev/null 2>&1; then
     echo "❌ Version $CURRENT_VERSION is already published to NPM"
-    echo "Please bump the version first using:"
-    echo "  npm version patch|minor|major"
-    echo "Or use the individual scripts: npm run publish:npm && npm run publish:github"
-    exit 1
+    echo ""
+    echo "🔄 Would you like to bump the version and publish?"
+    read -p "Bump version and continue? (y/N): " bump_confirm
+    if [[ $bump_confirm != [yY] ]]; then
+        echo "❌ NPM publication cancelled"
+        echo "You can bump the version manually using: npm version patch|minor|major"
+        exit 1
+    fi
+    
+    # Calculate example versions
+    PATCH_VERSION=$(node -p "
+      const semver = require('./package.json').version.split('.');
+      semver[2] = parseInt(semver[2]) + 1;
+      semver.join('.');
+    ")
+
+    MINOR_VERSION=$(node -p "
+      const semver = require('./package.json').version.split('.');
+      semver[1] = parseInt(semver[1]) + 1;
+      semver[2] = 0;
+      semver.join('.');
+    ")
+
+    MAJOR_VERSION=$(node -p "
+      const semver = require('./package.json').version.split('.');
+      semver[0] = parseInt(semver[0]) + 1;
+      semver[1] = 0;
+      semver[2] = 0;
+      semver.join('.');
+    ")
+
+    # Ask for version type
+    echo ""
+    echo "Select version bump type:"
+    echo "1) patch ($CURRENT_VERSION -> $PATCH_VERSION)"
+    echo "2) minor ($CURRENT_VERSION -> $MINOR_VERSION)"
+    echo "3) major ($CURRENT_VERSION -> $MAJOR_VERSION)"
+    read -p "Enter choice (1-3): " choice
+
+    case $choice in
+        1) VERSION_TYPE="patch" ;;
+        2) VERSION_TYPE="minor" ;;
+        3) VERSION_TYPE="major" ;;
+        *) echo "❌ Invalid choice"; exit 1 ;;
+    esac
+
+    # Update version (this automatically updates package.json and creates a git tag)
+    echo "📝 Updating version ($VERSION_TYPE)..."
+    npm version $VERSION_TYPE
+
+    NEW_VERSION=$(node -p "require('./package.json').version")
+    echo "✅ New version: $NEW_VERSION"
+    CURRENT_VERSION=$NEW_VERSION
 fi
 
 # Confirm publication

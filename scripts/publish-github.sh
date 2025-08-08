@@ -46,6 +46,65 @@ echo "📋 Current version: $CURRENT_VERSION"
 if git tag -l | grep -q "^v$CURRENT_VERSION$"; then
     echo "📋 Tag v$CURRENT_VERSION already exists"
     TAG_EXISTS=true
+    
+    # Check if release already exists
+    if gh release view "v$CURRENT_VERSION" > /dev/null 2>&1; then
+        echo "❌ Release v$CURRENT_VERSION already exists on GitHub"
+        echo ""
+        echo "🔄 Would you like to bump the version and create a new release?"
+        read -p "Bump version and continue? (y/N): " bump_confirm
+        if [[ $bump_confirm != [yY] ]]; then
+            echo "❌ GitHub release creation cancelled"
+            echo "To update existing release, delete it first: gh release delete v$CURRENT_VERSION"
+            exit 1
+        fi
+        
+        # Calculate example versions
+        PATCH_VERSION=$(node -p "
+          const semver = require('./package.json').version.split('.');
+          semver[2] = parseInt(semver[2]) + 1;
+          semver.join('.');
+        ")
+
+        MINOR_VERSION=$(node -p "
+          const semver = require('./package.json').version.split('.');
+          semver[1] = parseInt(semver[1]) + 1;
+          semver[2] = 0;
+          semver.join('.');
+        ")
+
+        MAJOR_VERSION=$(node -p "
+          const semver = require('./package.json').version.split('.');
+          semver[0] = parseInt(semver[0]) + 1;
+          semver[1] = 0;
+          semver[2] = 0;
+          semver.join('.');
+        ")
+
+        # Ask for version type
+        echo ""
+        echo "Select version bump type:"
+        echo "1) patch ($CURRENT_VERSION -> $PATCH_VERSION)"
+        echo "2) minor ($CURRENT_VERSION -> $MINOR_VERSION)"
+        echo "3) major ($CURRENT_VERSION -> $MAJOR_VERSION)"
+        read -p "Enter choice (1-3): " choice
+
+        case $choice in
+            1) VERSION_TYPE="patch" ;;
+            2) VERSION_TYPE="minor" ;;
+            3) VERSION_TYPE="major" ;;
+            *) echo "❌ Invalid choice"; exit 1 ;;
+        esac
+
+        # Update version (this automatically updates package.json and creates a git tag)
+        echo "📝 Updating version ($VERSION_TYPE)..."
+        npm version $VERSION_TYPE
+
+        NEW_VERSION=$(node -p "require('./package.json').version")
+        echo "✅ New version: $NEW_VERSION"
+        CURRENT_VERSION=$NEW_VERSION
+        TAG_EXISTS=false
+    fi
 else
     echo "📋 Tag v$CURRENT_VERSION does not exist, will create it"
     TAG_EXISTS=false
@@ -95,13 +154,7 @@ if [ "$TAG_EXISTS" = false ]; then
     git push origin "v$CURRENT_VERSION"
 fi
 
-# Check if release already exists
-if gh release view "v$CURRENT_VERSION" > /dev/null 2>&1; then
-    echo "❌ Release v$CURRENT_VERSION already exists on GitHub"
-    echo "To update it, delete the existing release first:"
-    echo "  gh release delete v$CURRENT_VERSION"
-    exit 1
-fi
+
 
 # Create GitHub release
 echo "🏷️ Creating GitHub release..."
