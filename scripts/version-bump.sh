@@ -81,6 +81,21 @@ case $choice in
     *) echo "❌ Invalid choice"; exit 1 ;;
 esac
 
+# Check if the new version tag would already exist
+NEW_VERSION_PREVIEW=""
+case $VERSION_TYPE in
+    "patch") NEW_VERSION_PREVIEW=$PATCH_VERSION ;;
+    "minor") NEW_VERSION_PREVIEW=$MINOR_VERSION ;;
+    "major") NEW_VERSION_PREVIEW=$MAJOR_VERSION ;;
+esac
+
+if git tag -l | grep -q "^v$NEW_VERSION_PREVIEW$"; then
+    echo "❌ Tag v$NEW_VERSION_PREVIEW already exists"
+    echo "Available tags: $(git tag -l | tail -5 | tr '\n' ' ')"
+    echo "Please delete the tag first or choose a different version"
+    exit 1
+fi
+
 # Update version (this automatically updates package.json and creates a git tag)
 echo "📝 Updating version ($VERSION_TYPE)..."
 npm version $VERSION_TYPE
