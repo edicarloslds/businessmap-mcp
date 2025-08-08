@@ -41,4 +41,4 @@ bash scripts/generate-release-notes.sh "$VERSION" "$COMMIT_RANGE"
 echo ""
 echo "=" $(printf '%.0s=' {1..60})
 echo ""
-echo "💡 To publish with these notes, run: npm run publish" 
+echo "💡 To publish with these notes, run: npm run publish:npm && npm run publish:github" 

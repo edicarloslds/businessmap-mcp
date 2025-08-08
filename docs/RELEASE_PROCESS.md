@@ -85,7 +85,8 @@ chore: maintenance tasks
 
 ## 🔧 Available Scripts
 
-- `npm run publish` - Complete release process
+- `npm run publish:npm` - Publish to NPM only
+- `npm run publish:github` - Create GitHub release only
 - `npm run preview:release` - Preview release notes
 - `scripts/generate-release-notes.sh` - Generate release notes for specific version
 

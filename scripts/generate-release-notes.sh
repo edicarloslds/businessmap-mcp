@@ -41,13 +41,20 @@ categorize_commits() {
         fi
         
         # Extract GitHub username if available, fallback to git author
-        gh_user=$(gh api user --jq '.login' 2>/dev/null || echo "$author")
-        # If we got a git author name, try to extract a username format
-        if [[ "$gh_user" == "$author" && "$author" =~ ^[a-zA-Z0-9._-]+$ ]]; then
-            gh_user="$author"
-        elif [[ "$gh_user" == "$author" ]]; then
-            # Convert full name to a username-like format
-            gh_user=$(echo "$author" | tr '[:upper:]' '[:lower:]' | sed 's/ //g' | sed 's/[^a-zA-Z0-9._-]//g')
+        gh_user=""
+        if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+            gh_user=$(gh api user --jq '.login' 2>/dev/null || echo "")
+        fi
+        
+        # Fallback to git author if GitHub CLI failed or not available
+        if [[ -z "$gh_user" ]]; then
+            # If we got a git author name, try to extract a username format
+            if [[ "$author" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+                gh_user="$author"
+            else
+                # Convert full name to a username-like format
+                gh_user=$(echo "$author" | tr '[:upper:]' '[:lower:]' | sed 's/ //g' | sed 's/[^a-zA-Z0-9._-]//g')
+            fi
         fi
         
         # Categorize based on commit message prefix
