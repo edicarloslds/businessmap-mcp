@@ -39,7 +39,7 @@ npm run preview:release 1.2.3
 Execute the publish command:
 
 ```bash
-npm run publish:npm
+npm run publish
 ```
 
 The script will:
@@ -85,7 +85,7 @@ chore: maintenance tasks
 
 ## 🔧 Available Scripts
 
-- `npm run publish:npm` - Complete release process
+- `npm run publish` - Complete release process
 - `npm run preview:release` - Preview release notes
 - `scripts/generate-release-notes.sh` - Generate release notes for specific version
 

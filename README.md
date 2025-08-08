@@ -263,7 +263,7 @@ This project uses an automated release process. See [RELEASE_PROCESS.md](docs/RE
 npm run preview:release
 
 # Publish new version (interactive)
-npm run publish:npm
+npm run publish
 ```
 
 The release process automatically:
