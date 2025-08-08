@@ -3,12 +3,22 @@ import {
   Card,
   CardCustomField,
   CardCustomFieldsResponse,
+  CardHistoryItem,
+  CardHistoryResponse,
+  CardOutcomesResponse,
   CardType,
   CardTypesResponse,
   Comment,
   CommentListResponse,
   CommentResponse,
   CreateCardParams,
+  CreateSubtaskParams,
+  LinkedCardItem,
+  LinkedCardsResponse,
+  Outcome,
+  Subtask,
+  SubtaskResponse,
+  SubtasksResponse,
   UpdateCardParams,
 } from '../../types/index.js';
 import { BaseClientModuleImpl } from './base-client.js';
@@ -181,6 +191,57 @@ export class CardClient extends BaseClientModuleImpl {
    */
   async getCardTypes(): Promise<CardType[]> {
     const response = await this.http.get<CardTypesResponse>('/cardTypes');
+    return response.data.data;
+  }
+
+  /**
+   * Get card outcome history
+   */
+  async getCardHistory(cardId: number, outcomeId: number): Promise<CardHistoryItem[]> {
+    const response = await this.http.get<CardHistoryResponse>(
+      `/cards/${cardId}/outcomes/${outcomeId}/history`
+    );
+    return response.data.data;
+  }
+
+  /**
+   * Get card outcomes
+   */
+  async getCardOutcomes(cardId: number): Promise<Outcome[]> {
+    const response = await this.http.get<CardOutcomesResponse>(`/cards/${cardId}/outcomes`);
+    return response.data.data;
+  }
+
+  /**
+   * Get linked cards for a specific card
+   */
+  async getCardLinkedCards(cardId: number): Promise<LinkedCardItem[]> {
+    const response = await this.http.get<LinkedCardsResponse>(`/cards/${cardId}/linkedCards`);
+    return response.data.data;
+  }
+
+  /**
+   * Get subtasks for a specific card
+   */
+  async getCardSubtasks(cardId: number): Promise<Subtask[]> {
+    const response = await this.http.get<SubtasksResponse>(`/cards/${cardId}/subtasks`);
+    return response.data.data;
+  }
+
+  /**
+   * Get details of a specific subtask
+   */
+  async getCardSubtask(cardId: number, subtaskId: number): Promise<Subtask> {
+    const response = await this.http.get<SubtaskResponse>(`/cards/${cardId}/subtasks/${subtaskId}`);
+    return response.data.data;
+  }
+
+  /**
+   * Create a new subtask for a card
+   */
+  async createCardSubtask(cardId: number, params: CreateSubtaskParams): Promise<Subtask> {
+    this.checkReadOnlyMode('create subtask');
+    const response = await this.http.post<SubtaskResponse>(`/cards/${cardId}/subtasks`, params);
     return response.data.data;
   }
 }

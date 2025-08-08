@@ -288,6 +288,51 @@ export const getCardCommentSchema = z.object({
 // Schema para get card types (sem parâmetros)
 export const getCardTypesSchema = z.object({});
 
+// Schema para buscar histórico do card
+export const getCardHistorySchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+  outcome_id: z.number().describe('The ID of the outcome'),
+});
+
+// Schema para buscar outcomes do card
+export const getCardOutcomesSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+});
+
+// Schema para buscar linked cards do card
+export const getCardLinkedCardsSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+});
+
+// Schemas para subtasks
+export const getCardSubtasksSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+});
+
+export const getCardSubtaskSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+  subtask_id: z.number().describe('The ID of the subtask'),
+});
+
+export const createCardSubtaskSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+  description: z.string().describe('The description of the subtask'),
+  owner_user_id: z.number().optional().describe('The owner user ID for the subtask'),
+  is_finished: z.number().optional().describe('Whether the subtask is finished (0 or 1)'),
+  deadline: z.string().optional().describe('The deadline for the subtask (ISO date string)'),
+  position: z.number().optional().describe('The position of the subtask'),
+  attachments_to_add: z
+    .array(
+      z.object({
+        file_name: z.string().describe('The name of the file'),
+        link: z.string().describe('The link to the file'),
+        position: z.number().describe('The position of the attachment'),
+      })
+    )
+    .optional()
+    .describe('Attachments to add to the subtask'),
+});
+
 // Schemas complexos para criação de cards
 export const blockReasonSchema = z.object({
   reason_id: z.number(),

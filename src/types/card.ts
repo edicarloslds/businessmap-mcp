@@ -348,3 +348,58 @@ export interface CardType {
 export interface CardTypesResponse {
   data: CardType[];
 }
+
+// Card History types
+export interface CardHistoryItem {
+  history_id: number;
+  outcome_id: number;
+  event_type: number;
+  event_guid: string;
+  user_id: number;
+  old_value: number;
+  changes: string;
+  time: string;
+}
+
+export interface CardHistoryResponse {
+  data: CardHistoryItem[];
+}
+
+// Card Outcomes Response
+export interface CardOutcomesResponse {
+  data: Outcome[];
+}
+
+// Linked Cards Response (specific for /cards/{card_id}/linkedCards endpoint)
+export interface LinkedCardItem {
+  card_id: number;
+  position: number;
+  link_type: string;
+}
+
+export interface LinkedCardsResponse {
+  data: LinkedCardItem[];
+}
+
+// Subtasks Response types
+export interface SubtasksResponse {
+  data: Subtask[];
+}
+
+export interface SubtaskResponse {
+  data: Subtask;
+}
+
+// Create Subtask params
+export interface CreateSubtaskParams {
+  description: string;
+  owner_user_id?: number;
+  is_finished?: number;
+  deadline?: string;
+  position?: number;
+  attachments_to_add?: Array<{
+    file_name: string;
+    link: string;
+    position: number;
+  }>;
+}

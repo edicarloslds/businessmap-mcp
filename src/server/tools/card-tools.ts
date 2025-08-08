@@ -3,8 +3,14 @@ import { BusinessMapClient } from '../../client/businessmap-client.js';
 import {
   cardSizeSchema,
   createCardSchema,
+  createCardSubtaskSchema,
   getCardCommentSchema,
+  getCardHistorySchema,
+  getCardLinkedCardsSchema,
+  getCardOutcomesSchema,
   getCardSchema,
+  getCardSubtaskSchema,
+  getCardSubtasksSchema,
   getCardTypesSchema,
   listCardsSchema,
   moveCardSchema,
@@ -21,12 +27,18 @@ export class CardToolHandler implements BaseToolHandler {
     this.registerGetCardComment(server, client);
     this.registerGetCardCustomFields(server, client);
     this.registerGetCardTypes(server, client);
+    this.registerGetCardHistory(server, client);
+    this.registerGetCardOutcomes(server, client);
+    this.registerGetCardLinkedCards(server, client);
+    this.registerGetCardSubtasks(server, client);
+    this.registerGetCardSubtask(server, client);
 
     if (!readOnlyMode) {
       this.registerCreateCard(server, client);
       this.registerMoveCard(server, client);
       this.registerUpdateCard(server, client);
       this.registerSetCardSize(server, client);
+      this.registerCreateCardSubtask(server, client);
     }
   }
 
@@ -259,6 +271,133 @@ export class CardToolHandler implements BaseToolHandler {
           });
         } catch (error) {
           return createErrorResponse(error, 'getting card types');
+        }
+      }
+    );
+  }
+
+  private registerGetCardHistory(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_history',
+      {
+        title: 'Get Card History',
+        description: 'Get the history of a specific card outcome',
+        inputSchema: getCardHistorySchema.shape,
+      },
+      async ({ card_id, outcome_id }) => {
+        try {
+          const history = await client.getCardHistory(card_id, outcome_id);
+          return createSuccessResponse({
+            history,
+            count: history.length,
+          });
+        } catch (error) {
+          return createErrorResponse(error, 'getting card history');
+        }
+      }
+    );
+  }
+
+  private registerGetCardOutcomes(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_outcomes',
+      {
+        title: 'Get Card Outcomes',
+        description: 'Get all outcomes for a specific card',
+        inputSchema: getCardOutcomesSchema.shape,
+      },
+      async ({ card_id }) => {
+        try {
+          const outcomes = await client.getCardOutcomes(card_id);
+          return createSuccessResponse({
+            outcomes,
+            count: outcomes.length,
+          });
+        } catch (error) {
+          return createErrorResponse(error, 'getting card outcomes');
+        }
+      }
+    );
+  }
+
+  private registerGetCardLinkedCards(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_linked_cards',
+      {
+        title: 'Get Card Linked Cards',
+        description: 'Get all linked cards for a specific card',
+        inputSchema: getCardLinkedCardsSchema.shape,
+      },
+      async ({ card_id }) => {
+        try {
+          const linkedCards = await client.getCardLinkedCards(card_id);
+          return createSuccessResponse({
+            linkedCards,
+            count: linkedCards.length,
+          });
+        } catch (error) {
+          return createErrorResponse(error, 'getting card linked cards');
+        }
+      }
+    );
+  }
+
+  private registerGetCardSubtasks(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_subtasks',
+      {
+        title: 'Get Card Subtasks',
+        description: 'Get all subtasks for a specific card',
+        inputSchema: getCardSubtasksSchema.shape,
+      },
+      async ({ card_id }) => {
+        try {
+          const subtasks = await client.getCardSubtasks(card_id);
+          return createSuccessResponse({
+            subtasks,
+            count: subtasks.length,
+          });
+        } catch (error) {
+          return createErrorResponse(error, 'getting card subtasks');
+        }
+      }
+    );
+  }
+
+  private registerGetCardSubtask(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_subtask',
+      {
+        title: 'Get Card Subtask',
+        description: 'Get details of a specific subtask from a card',
+        inputSchema: getCardSubtaskSchema.shape,
+      },
+      async ({ card_id, subtask_id }) => {
+        try {
+          const subtask = await client.getCardSubtask(card_id, subtask_id);
+          return createSuccessResponse(subtask);
+        } catch (error) {
+          return createErrorResponse(error, 'getting card subtask');
+        }
+      }
+    );
+  }
+
+  private registerCreateCardSubtask(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'create_card_subtask',
+      {
+        title: 'Create Card Subtask',
+        description: 'Create a new subtask for a card',
+        inputSchema: createCardSubtaskSchema.shape,
+      },
+      async (params) => {
+        try {
+          const { card_id, ...subtaskData } = params;
+          const subtask = await client.createCardSubtask(card_id, subtaskData);
+          return createSuccessResponse(subtask, 'Subtask created successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'creating card subtask');
         }
       }
     );
