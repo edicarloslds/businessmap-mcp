@@ -92,28 +92,6 @@ if [ "$DID_BUMP" = true ]; then
     echo "📝 Updating version ($VERSION_TYPE)..."
     npm version $VERSION_TYPE
     CURRENT_VERSION=$(node -p "require('./package.json').version")
-else
-    # If user chose to keep current version but a release already exists, force a bump
-    if gh release view "v$CURRENT_VERSION" > /dev/null 2>&1; then
-        echo "❌ Release v$CURRENT_VERSION already exists on GitHub"
-        echo "You need to bump the version to create a new release."
-        echo ""
-        echo "Select version bump type:"
-        echo "1) patch ($CURRENT_VERSION -> $PATCH_VERSION)"
-        echo "2) minor ($CURRENT_VERSION -> $MINOR_VERSION)"
-        echo "3) major ($CURRENT_VERSION -> $MAJOR_VERSION)"
-        read -p "Enter choice (1-3): " choice2
-        case $choice2 in
-            1) VERSION_TYPE="patch" ;;
-            2) VERSION_TYPE="minor" ;;
-            3) VERSION_TYPE="major" ;;
-            *) echo "❌ Invalid choice"; exit 1 ;;
-        esac
-        echo "📝 Updating version ($VERSION_TYPE)..."
-        npm version $VERSION_TYPE
-        CURRENT_VERSION=$(node -p "require('./package.json').version")
-        DID_BUMP=true
-    fi
 fi
 
 # Compute commit range after potential bump so rules use the selected version
