@@ -141,6 +141,12 @@ echo "📋 Release notes preview:"
 echo "$RELEASE_NOTES"
 echo ""
 
+# If user chose to keep current, do not create/push tags or releases; just show notes and exit
+if [ "$DID_BUMP" = false ]; then
+    echo "ℹ️ Keep current selected: only showing release notes. No tag or release will be created."
+    exit 0
+fi
+
 # Confirm release creation for the (possibly new) CURRENT_VERSION
 read -p "🤔 Create GitHub release for version $CURRENT_VERSION? (y/N): " confirm
 if [[ $confirm != [yY] ]]; then
