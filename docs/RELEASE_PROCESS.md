@@ -56,25 +56,30 @@ The script will:
 Release notes are automatically generated based on commits since the last tag and organized by category:
 
 ### 🚀 New Features
+
 - Commits starting with `feat:`, `feature:` or `FEAT:`
 
 ### 🐛 Bug Fixes  
+
 - Commits starting with `fix:` or `FIX:`
 
 ### ♻️ Code Refactoring
+
 - Commits starting with `refactor:` or `REFACTOR:`
 
 ### 📚 Documentation
+
 - Commits starting with `docs:`, `doc:` or `DOCS:`
 
 ### 🔧 Other Changes
+
 - All other commits
 
 ## 🏷️ Commit Convention
 
 To maximize release notes quality, it's recommended to use the following prefixes:
 
-```
+```bash
 feat: add new functionality
 fix: fix bug
 docs: update documentation
@@ -112,16 +117,19 @@ chore: maintenance tasks
 ## 🚨 Troubleshooting
 
 ### NPM Authentication Error
+
 ```bash
 npm login
 ```
 
 ### GitHub Authentication Error
+
 ```bash
 gh auth login
 ```
 
 ### Working Directory not clean
+
 ```bash
 git status
 git add .
@@ -129,8 +137,10 @@ git commit -m "prepare for release"
 ```
 
 ### Tag already exists
+
 If something goes wrong during the process, you can remove the created tag:
+
 ```bash
 git tag -d v1.2.3
 git push origin :refs/tags/v1.2.3
-``` 
+```
