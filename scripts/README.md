@@ -4,20 +4,6 @@ Este diretório contém scripts para automatizar o processo de publicação do B
 
 ## Scripts Disponíveis
 
-### 📝 `version-bump.sh` - Bump de Versão
-Script dedicado apenas ao bump de versão com preview das release notes.
-
-**Uso:**
-```bash
-npm run version:bump
-```
-
-**Funcionalidades:**
-- Seleção interativa do tipo de versão (patch, minor, major)
-- Atualização automática do package.json
-- Criação automática da tag git
-- Preview das release notes que serão geradas
-
 ### 📦 `publish-npm.sh` - Publicação NPM
 Publica o pacote no NPM Registry.
 
@@ -80,18 +66,6 @@ npm run publish:npm
 npm run publish:github
 ```
 
-### Opção 2: Controle Manual da Versão
-```bash
-# 1. Bump de versão isolado
-npm run version:bump
-
-# 2. Publicar no NPM (sem bump adicional)
-npm run publish:npm
-
-# 3. Criar release no GitHub (sem bump adicional)
-npm run publish:github
-```
-
 ### Opção 3: Fluxos Independentes
 ```bash
 # Apenas publicar no NPM (com bump automático se necessário)
@@ -99,9 +73,6 @@ npm run publish:npm
 
 # Apenas criar release no GitHub (com bump automático se necessário)
 npm run publish:github
-
-# Apenas bump de versão (para preparar publicações futuras)
-npm run version:bump
 ```
 
 ## Recursos de Segurança
