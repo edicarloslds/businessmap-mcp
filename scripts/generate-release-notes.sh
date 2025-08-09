@@ -118,12 +118,20 @@ categorize_commits() {
     if [ -n "$COMMIT_RANGE" ]; then
         # Extract the previous tag from the commit range (everything before the dots)
         PREVIOUS_TAG=$(echo $COMMIT_RANGE | sed 's/\.\.\..*$//' | sed 's/\.\..*$//')
-        echo "**Full Changelog**: https://github.com/edicarloslds/businessmap-mcp/compare/$PREVIOUS_TAG...v$VERSION"
+        PREVIOUS_TAG_NO_V=$(echo "$PREVIOUS_TAG" | sed 's/^v//')
+        VERSION_NO_V=$(echo "$VERSION" | sed 's/^v//')
+        if [ "$PREVIOUS_TAG_NO_V" != "$VERSION_NO_V" ]; then
+            echo "**Full Changelog**: https://github.com/edicarloslds/businessmap-mcp/compare/$PREVIOUS_TAG...v$VERSION"
+        fi
     else
         # If no range provided, get the previous tag automatically
         PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -v "^v$VERSION$" | head -1)
         if [ -n "$PREVIOUS_TAG" ]; then
-            echo "**Full Changelog**: https://github.com/edicarloslds/businessmap-mcp/compare/$PREVIOUS_TAG...v$VERSION"
+            PREVIOUS_TAG_NO_V=$(echo "$PREVIOUS_TAG" | sed 's/^v//')
+            VERSION_NO_V=$(echo "$VERSION" | sed 's/^v//')
+            if [ "$PREVIOUS_TAG_NO_V" != "$VERSION_NO_V" ]; then
+                echo "**Full Changelog**: https://github.com/edicarloslds/businessmap-mcp/compare/$PREVIOUS_TAG...v$VERSION"
+            fi
         else
             # For first release
             FIRST_COMMIT=$(git rev-list --max-parents=0 HEAD)
