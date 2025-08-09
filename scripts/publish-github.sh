@@ -45,12 +45,24 @@ echo "📋 Current version: $CURRENT_VERSION"
 # Do not pre-validate tag existence; handle bump and tagging after confirmation
 TAG_EXISTS=false
 
-# Capture the latest tag at script start for later commit range calculation
+# Capture latest tags (remote preferred) for later commit range calculation
 START_LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-if [ -z "$START_LATEST_TAG" ]; then
-    echo "📋 No previous tags found yet"
+REMOTE_LATEST_TAG=$(git ls-remote --tags --refs origin 2>/dev/null \
+  | awk -F/ '{print $NF}' \
+  | grep -E '^v?[0-9]+(\.[0-9]+){2}$' \
+  | sed 's/^v//' \
+  | sort -t. -k1,1n -k2,2n -k3,3n \
+  | tail -1)
+if [ -n "$REMOTE_LATEST_TAG" ]; then
+  REMOTE_LATEST_TAG="v$REMOTE_LATEST_TAG"
+fi
+
+if [ -n "$REMOTE_LATEST_TAG" ]; then
+    echo "📋 Latest remote tag: $REMOTE_LATEST_TAG"
+elif [ -n "$START_LATEST_TAG" ]; then
+    echo "📋 Latest local tag: $START_LATEST_TAG"
 else
-    echo "📋 Latest tag at start: $START_LATEST_TAG"
+    echo "📋 No previous tags found yet (local or remote)"
 fi
 
 DID_BUMP=false
@@ -105,25 +117,17 @@ else
 fi
 
 # Compute commit range after potential bump so rules use the selected version
-if git tag -l | grep -q "^v$CURRENT_VERSION$"; then
-    # Tag exists locally (either pre-existing or created by npm version)
-    if [ "$DID_BUMP" = true ]; then
-        PREVIOUS_TAG="$START_LATEST_TAG"
-    else
-        PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -v "^v$CURRENT_VERSION$" | head -1)
-    fi
-    if [ -z "$PREVIOUS_TAG" ]; then
-        COMMIT_RANGE=""
-    else
-        COMMIT_RANGE="$PREVIOUS_TAG..v$CURRENT_VERSION"
-    fi
+# Prefer remote latest tag as the base; fallback to local
+if [ -n "$REMOTE_LATEST_TAG" ]; then
+    PREVIOUS_TAG="$REMOTE_LATEST_TAG"
 else
-    # Tag doesn't exist yet; compare from last known tag to HEAD
-    if [ -z "$START_LATEST_TAG" ]; then
-        COMMIT_RANGE=""
-    else
-        COMMIT_RANGE="$START_LATEST_TAG..HEAD"
-    fi
+    PREVIOUS_TAG="$START_LATEST_TAG"
+fi
+
+if [ -n "$PREVIOUS_TAG" ]; then
+    COMMIT_RANGE="$PREVIOUS_TAG..HEAD"
+else
+    COMMIT_RANGE=""
 fi
 
 # Generate release notes AFTER bump selection
