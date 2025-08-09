@@ -35,8 +35,8 @@ categorize_commits() {
     
     # Process each commit
     while IFS='|' read -r message author; do
-        # Skip version bump commits
-        if [[ $message =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+        # Skip version bump commits (e.g., "1.2.3" or "v1.2.3")
+        if [[ $message =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             continue
         fi
         

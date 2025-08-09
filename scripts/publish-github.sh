@@ -45,26 +45,15 @@ echo "📋 Current version: $CURRENT_VERSION"
 # Do not pre-validate tag existence; handle bump and tagging after confirmation
 TAG_EXISTS=false
 
-# Determine previous tag for commit range (always up to HEAD before creating new tag)
-LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-if [ -z "$LATEST_TAG" ]; then
-    echo "📋 No previous tags found, will include all commits"
-    COMMIT_RANGE=""
+# Capture the latest tag at script start for later commit range calculation
+START_LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+if [ -z "$START_LATEST_TAG" ]; then
+    echo "📋 No previous tags found yet"
 else
-    echo "📋 Latest tag: $LATEST_TAG"
-    COMMIT_RANGE="$LATEST_TAG..HEAD"
+    echo "📋 Latest tag at start: $START_LATEST_TAG"
 fi
 
-# Generate release notes
-echo "📝 Generating release notes..."
-if ! RELEASE_NOTES=$(bash scripts/generate-release-notes.sh "$CURRENT_VERSION" "$COMMIT_RANGE" 2>&1); then
-    echo "❌ Failed to generate release notes: $RELEASE_NOTES"
-    exit 1
-fi
-
-echo "📋 Release notes preview:"
-echo "$RELEASE_NOTES"
-echo ""
+DID_BUMP=false
 
 # Offer bump if release already exists for current tag version
 if gh release view "v$CURRENT_VERSION" > /dev/null 2>&1; then
@@ -99,7 +88,41 @@ if gh release view "v$CURRENT_VERSION" > /dev/null 2>&1; then
     echo "📝 Updating version ($VERSION_TYPE)..."
     npm version $VERSION_TYPE
     CURRENT_VERSION=$(node -p "require('./package.json').version")
+    DID_BUMP=true
 fi
+
+# Compute commit range after potential bump so rules use the selected version
+if git tag -l | grep -q "^v$CURRENT_VERSION$"; then
+    # Tag exists locally (either pre-existing or created by npm version)
+    if [ "$DID_BUMP" = true ]; then
+        PREVIOUS_TAG="$START_LATEST_TAG"
+    else
+        PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -v "^v$CURRENT_VERSION$" | head -1)
+    fi
+    if [ -z "$PREVIOUS_TAG" ]; then
+        COMMIT_RANGE=""
+    else
+        COMMIT_RANGE="$PREVIOUS_TAG..v$CURRENT_VERSION"
+    fi
+else
+    # Tag doesn't exist yet; compare from last known tag to HEAD
+    if [ -z "$START_LATEST_TAG" ]; then
+        COMMIT_RANGE=""
+    else
+        COMMIT_RANGE="$START_LATEST_TAG..HEAD"
+    fi
+fi
+
+# Generate release notes AFTER bump selection
+echo "📝 Generating release notes..."
+if ! RELEASE_NOTES=$(bash scripts/generate-release-notes.sh "$CURRENT_VERSION" "$COMMIT_RANGE" 2>&1); then
+    echo "❌ Failed to generate release notes: $RELEASE_NOTES"
+    exit 1
+fi
+
+echo "📋 Release notes preview:"
+echo "$RELEASE_NOTES"
+echo ""
 
 # Confirm release creation for the (possibly new) CURRENT_VERSION
 read -p "🤔 Create GitHub release for version $CURRENT_VERSION? (y/N): " confirm
