@@ -1,102 +1,119 @@
 # Publishing Scripts
 
-Este diretório contém scripts para automatizar o processo de publicação do BusinessMap MCP Server.
+This directory contains scripts to automate the release and publishing process of the BusinessMap MCP Server.
 
-## Scripts Disponíveis
+## Available Scripts
 
-### 📦 `publish-npm.sh` - Publicação NPM
-Publica o pacote no NPM Registry.
+### 📦 `publish-npm.sh` – NPM Publish
 
-**Uso:**
+Publishes the package to the NPM Registry.
+
+**Usage:**
+
 ```bash
 npm run publish:npm
 ```
 
-**Funcionalidades:**
-- Detecção automática se a versão já foi publicada
-- Bump automático de versão se necessário
-- Build e testes automáticos
-- Publicação no NPM
+**Features:**
 
-**Pré-requisitos:**
-- Usuário deve estar logado no NPM (`npm login`)
+- Automatically detects if the current version has already been published
+- Automatically bumps the version when needed
+- Runs build and tests automatically
+- Publishes to NPM
 
-### 🏷️ `publish-github.sh` - Release GitHub
-Cria uma release no GitHub com release notes automáticas.
+**Prerequisites:**
 
-**Uso:**
+- You must be logged in to NPM (`npm login`)
+
+### 🏷️ `publish-github.sh` – GitHub Release
+
+Creates a GitHub release with automatically generated release notes.
+
+**Usage:**
+
 ```bash
 npm run publish:github
 ```
 
-**Funcionalidades:**
-- Detecção automática se a release já existe
-- Bump automático de versão se necessário
-- Criação automática de tags git
-- Geração automática de release notes
-- Push automático das tags para o repositório
+**Features:**
 
-**Pré-requisitos:**
-- GitHub CLI deve estar autenticado (`gh auth login`)
+- Automatically detects if the release already exists
+- Automatically bumps the version when needed
+- Automatically creates git tags
+- Automatically generates release notes
+- Automatically pushes tags to the remote repository
 
-### 📝 `generate-release-notes.sh` - Geração de Release Notes
-Gera release notes baseadas nos commits desde a última tag.
+**Prerequisites:**
 
-**Uso:**
+- GitHub CLI must be authenticated (`gh auth login`)
+
+### 📝 `generate-release-notes.sh` – Release Notes Generation
+
+Generates release notes based on commits since the last tag.
+
+**Usage:**
+
 ```bash
 bash scripts/generate-release-notes.sh <version> [commit-range]
 ```
 
-### 👀 `preview-release-notes.sh` - Preview das Release Notes
-Visualiza as release notes que seriam geradas.
+### 👀 `preview-release-notes.sh` – Release Notes Preview
 
-**Uso:**
+Previews the release notes that would be generated.
+
+**Usage:**
+
 ```bash
 npm run preview:release
 ```
 
-## Fluxos de Trabalho
+## Workflows
 
-### Opção 1: Processo Completamente Automático
+### Option 1: Fully Automated Process
+
 ```bash
-# NPM detecta versão publicada e oferece bump automático
+# NPM detects published version and offers automatic bump
 npm run publish:npm
 
-# GitHub detecta release existente e oferece bump automático  
+# GitHub detects existing release and offers automatic bump
 npm run publish:github
 ```
 
-### Opção 3: Fluxos Independentes
+### Option 2: Independent Flows
+
 ```bash
-# Apenas publicar no NPM (com bump automático se necessário)
+# Only publish to NPM (with automatic bump if needed)
 npm run publish:npm
 
-# Apenas criar release no GitHub (com bump automático se necessário)
+# Only create a GitHub release (with automatic bump if needed)
 npm run publish:github
 ```
 
-## Recursos de Segurança
+## Safety Features
 
-- ✅ **Lock files** previnem execução duplicada
-- ✅ **Validações** verificam autenticação e estado do repositório
-- ✅ **Rollback automático** em caso de erro durante bump de versão
-- ✅ **Confirmações** antes de executar ações irreversíveis
-- ✅ **Cleanup automático** remove lock files ao sair
+- ✅ **Lock files** prevent duplicate execution
+- ✅ **Validations** check authentication and repository state
+- ✅ **Automatic rollback** in case of errors during version bump
+- ✅ **Confirmations** before performing irreversible actions
+- ✅ **Automatic cleanup** removes lock files on exit
 
 ## Troubleshooting
 
-### Script já está executando
+### Script is already running
+
 ```bash
 rm /tmp/businessmap-mcp-publish*.lock
 ```
 
-### Reverter bump de versão manual
+### Manually revert a version bump
+
 ```bash
 git tag -d v<version>
 git reset --hard HEAD~1
 ```
 
-### Ver preview das release notes
+### Preview the release notes
+
 ```bash
 npm run preview:release
 ```

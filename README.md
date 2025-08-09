@@ -111,13 +111,6 @@ For other MCP clients, use the appropriate configuration format for your client,
 
    > **Note**: When using as an MCP server with Claude Desktop, you don't need a `.env` file. Configure the environment variables directly in your MCP client configuration instead.
 
-#### Environment Variables
-
-- **`BUSINESSMAP_API_TOKEN`** (required): Your BusinessMap API token
-- **`BUSINESSMAP_API_URL`** (required): Your BusinessMap API URL (e.g., `https://your-account.kanbanize.com/api/v2`)
-- **`BUSINESSMAP_READ_ONLY_MODE`** (optional): Set to `true` to prevent write operations (default: `false`)
-- **`BUSINESSMAP_DEFAULT_WORKSPACE_ID`** (optional): Default workspace ID to use when not specified in operations
-
 4. Build the project:
 
    ```bash
@@ -135,11 +128,13 @@ For other MCP clients, use the appropriate configuration format for your client,
 The BusinessMap MCP server provides the following tools:
 
 ### Workspace Management
+
 - `list_workspaces` - Get all workspaces
 - `get_workspace` - Get workspace details
 - `create_workspace` - Create new workspace
 
 ### Board Management
+
 - `list_boards` - List boards in workspace(s)
 - `search_board` - Search for boards by ID or name
 - `get_board` - Get board details with structure
@@ -150,6 +145,7 @@ The BusinessMap MCP server provides the following tools:
 - `create_lane` - Create new lane/swimlane (if not in read-only mode)
 
 ### Card Management
+
 - `list_cards` - Get cards from a board with optional filters
 - `get_card` - Get detailed card information
 - `get_card_size` - Get the size/points of a specific card
@@ -161,18 +157,22 @@ The BusinessMap MCP server provides the following tools:
 - `set_card_size` - Set the size/points of a specific card
 
 ### Custom Field Management
+
 - `get_custom_field` - Get details of a specific custom field by ID
 
 ### Workflow & Cycle Time Analysis
+
 - `get_workflow_cycle_time_columns` - Get workflow's cycle time columns
 - `get_workflow_effective_cycle_time_columns` - Get workflow's effective cycle time columns
 
 ### User Management
+
 - `list_users` - Get all users
 - `get_user` - Get user details
 - `get_current_user` - Get current logged user details
 
 ### System
+
 - `health_check` - Check API connection
 - `get_api_info` - Get API information
 
@@ -216,8 +216,6 @@ npm run docker:logs
 npm run docker:down
 ```
 
-
-
 ## Troubleshooting
 
 ### Connection Issues
@@ -225,12 +223,14 @@ npm run docker:down
 The server now includes automatic connection verification during startup. If you encounter connection issues:
 
 1. **Check your environment variables**:
+
    ```bash
    echo $BUSINESSMAP_API_URL
    echo $BUSINESSMAP_API_TOKEN
    ```
 
 2. **Test the connection manually**:
+
    ```bash
    chmod +x scripts/test-connection.sh
    ./scripts/test-connection.sh
@@ -251,13 +251,12 @@ The server now performs the following steps during initialization:
 
 If the connection fails, the server will display detailed error messages and retry automatically.
 
-## Development
-
 ### Release Process
 
 This project uses an automated release process. See [RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md) for detailed documentation.
 
 **Quick Start:**
+
 ```bash
 # Preview release notes
 npm run preview:release
@@ -267,6 +266,7 @@ npm run publish
 ```
 
 The release process automatically:
+
 - Bumps version (patch/minor/major)
 - Generates release notes from commits
 - Creates GitHub tags and releases
@@ -275,7 +275,8 @@ The release process automatically:
 ### Contributing
 
 1. Follow conventional commit format for better release notes:
-   ```
+
+   ```bash
    feat: add new feature
    fix: resolve bug
    docs: update documentation
@@ -283,6 +284,7 @@ The release process automatically:
    ```
 
 2. Ensure all tests pass before submitting PR:
+
    ```bash
    npm test
    npm run test:npx
@@ -295,6 +297,7 @@ MIT
 ## Support
 
 For issues and questions:
+
 1. Check the [Issues](../../issues) page
 2. Review BusinessMap API documentation
 3. Verify your environment configuration
@@ -304,4 +307,4 @@ For issues and questions:
 
 - [Model Context Protocol](https://modelcontextprotocol.io/) - Official MCP documentation
 - [BusinessMap API Documentation](https://businessmap.io/api) - Official API reference
-- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk) - Official MCP SDK 
+- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk) - Official MCP SDK
