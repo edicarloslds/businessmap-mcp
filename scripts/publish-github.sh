@@ -42,103 +42,17 @@ echo "✅ Working directory is clean"
 CURRENT_VERSION=$(node -p "require('./package.json').version")
 echo "📋 Current version: $CURRENT_VERSION"
 
-# Check if tag already exists
-if git tag -l | grep -q "^v$CURRENT_VERSION$"; then
-    echo "📋 Tag v$CURRENT_VERSION already exists"
-    TAG_EXISTS=true
-    
-    # Check if release already exists
-    if gh release view "v$CURRENT_VERSION" > /dev/null 2>&1; then
-        echo "❌ Release v$CURRENT_VERSION already exists on GitHub"
-        echo ""
-        echo "🔄 Would you like to bump the version and create a new release?"
-        read -p "Bump version and continue? (y/N): " bump_confirm
-        if [[ $bump_confirm != [yY] ]]; then
-            echo "❌ GitHub release creation cancelled"
-            echo "To update existing release, delete it first: gh release delete v$CURRENT_VERSION"
-            exit 1
-        fi
-        
-        # Calculate example versions
-        PATCH_VERSION=$(node -p "
-          const semver = require('./package.json').version.split('.');
-          semver[2] = parseInt(semver[2]) + 1;
-          semver.join('.');
-        ")
+# Do not pre-validate tag existence; handle bump and tagging after confirmation
+TAG_EXISTS=false
 
-        MINOR_VERSION=$(node -p "
-          const semver = require('./package.json').version.split('.');
-          semver[1] = parseInt(semver[1]) + 1;
-          semver[2] = 0;
-          semver.join('.');
-        ")
-
-        MAJOR_VERSION=$(node -p "
-          const semver = require('./package.json').version.split('.');
-          semver[0] = parseInt(semver[0]) + 1;
-          semver[1] = 0;
-          semver[2] = 0;
-          semver.join('.');
-        ")
-
-        # Ask for version type
-        echo ""
-        echo "Select version bump type:"
-        echo "1) patch ($CURRENT_VERSION -> $PATCH_VERSION)"
-        echo "2) minor ($CURRENT_VERSION -> $MINOR_VERSION)"
-        echo "3) major ($CURRENT_VERSION -> $MAJOR_VERSION)"
-        read -p "Enter choice (1-3): " choice
-
-        case $choice in
-            1) VERSION_TYPE="patch" ;;
-            2) VERSION_TYPE="minor" ;;
-            3) VERSION_TYPE="major" ;;
-            *) echo "❌ Invalid choice"; exit 1 ;;
-        esac
-
-        # Check if the new version tag would already exist
-        NEW_VERSION_PREVIEW=""
-        case $VERSION_TYPE in
-            "patch") NEW_VERSION_PREVIEW=$PATCH_VERSION ;;
-            "minor") NEW_VERSION_PREVIEW=$MINOR_VERSION ;;
-            "major") NEW_VERSION_PREVIEW=$MAJOR_VERSION ;;
-        esac
-        
-        if git tag -l | grep -q "^v$NEW_VERSION_PREVIEW$"; then
-            echo "❌ Tag v$NEW_VERSION_PREVIEW already exists"
-            echo "Available tags: $(git tag -l | tail -5 | tr '\n' ' ')"
-            echo "Please delete the tag first or choose a different version"
-            exit 1
-        fi
-
-        # Update version (this automatically updates package.json and creates a git tag)
-        echo "📝 Updating version ($VERSION_TYPE)..."
-        npm version $VERSION_TYPE
-
-        NEW_VERSION=$(node -p "require('./package.json').version")
-        echo "✅ New version: $NEW_VERSION"
-        CURRENT_VERSION=$NEW_VERSION
-        TAG_EXISTS=false
-    fi
-else
-    echo "📋 Tag v$CURRENT_VERSION does not exist, will create it"
-    TAG_EXISTS=false
-fi
-
-# Get the latest tag for commit range
+# Determine previous tag for commit range (always up to HEAD before creating new tag)
 LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
 if [ -z "$LATEST_TAG" ]; then
     echo "📋 No previous tags found, will include all commits"
     COMMIT_RANGE=""
 else
     echo "📋 Latest tag: $LATEST_TAG"
-    if [ "$TAG_EXISTS" = true ]; then
-        # If current tag exists, use it as the end of range
-        COMMIT_RANGE="$LATEST_TAG..v$CURRENT_VERSION"
-    else
-        # If current tag doesn't exist, use HEAD
-        COMMIT_RANGE="$LATEST_TAG..HEAD"
-    fi
+    COMMIT_RANGE="$LATEST_TAG..HEAD"
 fi
 
 # Generate release notes
@@ -152,22 +66,57 @@ echo "📋 Release notes preview:"
 echo "$RELEASE_NOTES"
 echo ""
 
-# Confirm release creation
+# Offer bump if release already exists for current tag version
+if gh release view "v$CURRENT_VERSION" > /dev/null 2>&1; then
+    echo "❌ Release v$CURRENT_VERSION already exists on GitHub"
+    echo ""
+    echo "🔄 Would you like to bump the version and create a new release?"
+    read -p "Bump version and continue? (y/N): " bump_confirm
+    if [[ $bump_confirm != [yY] ]]; then
+        echo "❌ GitHub release creation cancelled"
+        echo "To update existing release, delete it first: gh release delete v$CURRENT_VERSION"
+        exit 1
+    fi
+
+    PATCH_VERSION=$(node -p "const s=require('./package.json').version.split('.');s[2]=parseInt(s[2])+1;s.join('.')")
+    MINOR_VERSION=$(node -p "const s=require('./package.json').version.split('.');s[1]=parseInt(s[1])+1;s[2]=0;s.join('.')")
+    MAJOR_VERSION=$(node -p "const s=require('./package.json').version.split('.');s[0]=parseInt(s[0])+1;s[1]=0;s[2]=0;s.join('.')")
+
+    echo ""
+    echo "Select version bump type:"
+    echo "1) patch ($CURRENT_VERSION -> $PATCH_VERSION)"
+    echo "2) minor ($CURRENT_VERSION -> $MINOR_VERSION)"
+    echo "3) major ($CURRENT_VERSION -> $MAJOR_VERSION)"
+    read -p "Enter choice (1-3): " choice
+
+    case $choice in
+        1) VERSION_TYPE="patch" ;;
+        2) VERSION_TYPE="minor" ;;
+        3) VERSION_TYPE="major" ;;
+        *) echo "❌ Invalid choice"; exit 1 ;;
+    esac
+
+    echo "📝 Updating version ($VERSION_TYPE)..."
+    npm version $VERSION_TYPE
+    CURRENT_VERSION=$(node -p "require('./package.json').version")
+fi
+
+# Confirm release creation for the (possibly new) CURRENT_VERSION
 read -p "🤔 Create GitHub release for version $CURRENT_VERSION? (y/N): " confirm
 if [[ $confirm != [yY] ]]; then
     echo "❌ GitHub release creation cancelled"
     exit 1
 fi
 
-# Create tag if it doesn't exist
-if [ "$TAG_EXISTS" = false ]; then
+# Ensure tag exists locally (npm version already created it if bump happened; otherwise create now)
+if ! git tag -l | grep -q "^v$CURRENT_VERSION$"; then
     echo "🏷️ Creating tag v$CURRENT_VERSION..."
     git tag "v$CURRENT_VERSION"
-    
-    # Push the tag to remote
-    echo "📤 Pushing tag to GitHub..."
-    git push origin "v$CURRENT_VERSION"
 fi
+
+# Push the tag to remote after confirmation
+echo "📤 Pushing tag to GitHub..."
+git push origin "v$CURRENT_VERSION"
 
 
 
