@@ -119,17 +119,51 @@ echo "📋 Release notes preview:"
 echo "$RELEASE_NOTES"
 echo ""
 
-# If user chose to keep current, do not create/push tags or releases; just show notes and exit
+# If user chose to keep current, check if tag exists and ask for confirmation
 if [ "$DID_BUMP" = false ]; then
-    echo "ℹ️ Keep current selected: only showing release notes. No tag or release will be created."
-    exit 0
+    # Check if current version tag exists
+    if git tag -l | grep -q "^v$CURRENT_VERSION$"; then
+        echo "📋 Tag v$CURRENT_VERSION already exists locally"
+        
+        # Check if release already exists on GitHub
+        if gh release view "v$CURRENT_VERSION" > /dev/null 2>&1; then
+            echo "❌ Release v$CURRENT_VERSION already exists on GitHub"
+            echo "ℹ️ Keep current selected but release already exists. No action needed."
+            exit 0
+        else
+            echo "🔄 Tag exists but no GitHub release found"
+            read -p "🤔 Create GitHub release for existing version $CURRENT_VERSION? (y/N): " create_release_confirm
+            if [[ $create_release_confirm != [yY] ]]; then
+                echo "ℹ️ GitHub release creation cancelled. Only showing release notes."
+                exit 0
+            fi
+            # Continue with release creation flow
+        fi
+    else
+        echo "📋 Tag v$CURRENT_VERSION does not exist"
+        read -p "🤔 Create tag and GitHub release for current version $CURRENT_VERSION? (y/N): " create_tag_release_confirm
+        if [[ $create_tag_release_confirm != [yY] ]]; then
+            echo "ℹ️ Tag and release creation cancelled. Only showing release notes."
+            exit 0
+        fi
+        # Continue with tag creation and release flow
+    fi
 fi
 
 # Confirm release creation for the (possibly new) CURRENT_VERSION
-read -p "🤔 Create GitHub release for version $CURRENT_VERSION? (y/N): " confirm
-if [[ $confirm != [yY] ]]; then
-    echo "❌ GitHub release creation cancelled"
-    exit 1
+# Skip this confirmation if user already confirmed in the "keep current" flow above
+if [ "$DID_BUMP" = true ]; then
+    read -p "🤔 Create GitHub release for version $CURRENT_VERSION? (y/N): " confirm
+    if [[ $confirm != [yY] ]]; then
+        echo "❌ GitHub release creation cancelled"
+        # Revert the version bump if user cancels after bump
+        if [ "$DID_BUMP" = true ]; then
+            echo "🔄 Reverting version bump..."
+            git tag -d "v$CURRENT_VERSION" 2>/dev/null || true
+            git reset --hard HEAD~1
+        fi
+        exit 1
+    fi
 fi
 
 # Ensure tag exists locally (npm version already created it if bump happened; otherwise create now)
