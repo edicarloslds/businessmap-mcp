@@ -198,6 +198,10 @@ export class BusinessMapClient {
     return this.boardClient.createLane(params);
   }
 
+  async getCurrentBoardStructure(boardId: number) {
+    return this.boardClient.getCurrentBoardStructure(boardId);
+  }
+
   // Card Management - Delegated to CardClient
   async getCards(boardId: number, filters?: CardFilters) {
     return this.cardClient.getCards(boardId, filters);

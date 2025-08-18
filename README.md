@@ -138,6 +138,7 @@ The BusinessMap MCP server provides the following tools:
 - `list_boards` - List boards in workspace(s)
 - `search_board` - Search for boards by ID or name
 - `get_board` - Get board details with structure
+- `get_current_board_structure` - Get the complete current structure of a board including workflows, columns, lanes, and configurations
 - `create_board` - Create new board (if not in read-only mode)
 - `get_columns` - Get all columns for a board
 - `get_lanes` - Get all lanes for a board
@@ -211,10 +212,10 @@ The BusinessMap MCP server provides the following tools:
 
 ## Tool Summary
 
-The BusinessMap MCP server provides **41 tools** across 7 categories:
+The BusinessMap MCP server provides **42 tools** across 7 categories:
 
 - **Workspace Management**: 3 tools
-- **Board Management**: 8 tools
+- **Board Management**: 9 tools
 - **Card Management**: 22 tools (organized in 6 subcategories)
 - **Custom Field Management**: 1 tool
 - **Workflow & Cycle Time Analysis**: 2 tools

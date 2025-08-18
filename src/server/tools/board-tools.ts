@@ -4,6 +4,7 @@ import {
   createBoardSchema,
   createLaneSchema,
   getBoardSchema,
+  getCurrentBoardStructureSchema,
   getLaneSchema,
   listBoardsSchema,
   searchBoardSchema,
@@ -18,6 +19,7 @@ export class BoardToolHandler implements BaseToolHandler {
     this.registerGetColumns(server, client);
     this.registerGetLanes(server, client);
     this.registerGetLane(server, client);
+    this.registerGetCurrentBoardStructure(server, client);
 
     if (!readOnlyMode) {
       this.registerCreateBoard(server, client);
@@ -313,6 +315,26 @@ export class BoardToolHandler implements BaseToolHandler {
           return createSuccessResponse(lane, 'Lane created successfully:');
         } catch (error) {
           return createErrorResponse(error, 'creating lane');
+        }
+      }
+    );
+  }
+
+  private registerGetCurrentBoardStructure(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_current_board_structure',
+      {
+        title: 'Get Current Board Structure',
+        description:
+          'Get the complete current structure of a board including workflows, columns, lanes, and configurations',
+        inputSchema: getCurrentBoardStructureSchema.shape,
+      },
+      async ({ board_id }) => {
+        try {
+          const structure = await client.getCurrentBoardStructure(board_id);
+          return createSuccessResponse(structure, 'Board structure retrieved successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'getting current board structure');
         }
       }
     );

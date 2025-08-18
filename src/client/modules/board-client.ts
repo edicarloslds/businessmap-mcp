@@ -4,6 +4,8 @@ import {
   Column,
   CreateBoardParams,
   CreateLaneParams,
+  CurrentBoardStructure,
+  CurrentBoardStructureResponse,
   Lane,
 } from '../../types/index.js';
 import { BaseClientModuleImpl } from './base-client.js';
@@ -111,6 +113,16 @@ export class BoardClient extends BaseClientModuleImpl {
   async createLane(params: CreateLaneParams): Promise<Lane> {
     this.checkReadOnlyMode('create lane');
     const response = await this.http.post<ApiResponse<Lane>>('/lanes', params);
+    return response.data.data;
+  }
+
+  /**
+   * Get current board structure with detailed configuration
+   */
+  async getCurrentBoardStructure(boardId: number): Promise<CurrentBoardStructure> {
+    const response = await this.http.get<CurrentBoardStructureResponse>(
+      `/boards/${boardId}/currentStructure`
+    );
     return response.data.data;
   }
 }

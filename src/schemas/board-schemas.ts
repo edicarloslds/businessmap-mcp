@@ -53,10 +53,7 @@ export const listBoardsSchema = z.object({
 export const searchBoardSchema = z.object({
   board_id: z.number().optional().describe('The ID of the board to search for'),
   board_name: z.string().optional().describe('The name of the board to search for'),
-  workspace_id: z
-    .number()
-    .optional()
-    .describe('Optional workspace ID to limit search scope'),
+  workspace_id: z.number().optional().describe('Optional workspace ID to limit search scope'),
 });
 
 // Schema para obter detalhes de um board específico
@@ -94,4 +91,9 @@ export const createLaneSchema = z.object({
   workflow_id: z.number().describe('The workflow ID'),
   position: z.number().describe('The position of the lane'),
   color: z.string().describe('The color for the lane'),
+});
+
+// Schema para obter estrutura atual do board
+export const getCurrentBoardStructureSchema = z.object({
+  board_id: z.number().describe('The ID of the board'),
 });
