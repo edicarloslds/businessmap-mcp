@@ -403,3 +403,30 @@ export interface CreateSubtaskParams {
     position: number;
   }>;
 }
+
+// Parent Cards Response types
+export interface ParentCardItem {
+  card_id: number;
+  position: number;
+}
+
+export interface ParentCardsResponse {
+  data: ParentCardItem[];
+}
+
+export interface ParentCardPositionResponse {
+  data: {
+    position: number;
+  };
+}
+
+// Parent Graph Response types
+export interface ParentGraphItem {
+  parent_id: number;
+  child_id: number;
+  depth: number;
+}
+
+export interface ParentGraphResponse {
+  data: ParentGraphItem[];
+}

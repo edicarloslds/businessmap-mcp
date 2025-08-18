@@ -550,3 +550,27 @@ export const updateCardSchema = z.object({
   priority: z.string().optional().describe('New priority level'),
   deadline: z.string().optional().describe('New deadline (ISO date string)'),
 });
+
+// Schemas para parent cards
+export const getCardParentsSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+});
+
+export const getCardParentSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+  parent_card_id: z.number().describe('The ID of the parent card'),
+});
+
+export const addCardParentSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+  parent_card_id: z.number().describe('The ID of the parent card'),
+});
+
+export const removeCardParentSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+  parent_card_id: z.number().describe('The ID of the parent card'),
+});
+
+export const getCardParentGraphSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+});

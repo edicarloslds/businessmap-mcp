@@ -16,6 +16,11 @@ import {
   LinkedCardItem,
   LinkedCardsResponse,
   Outcome,
+  ParentCardItem,
+  ParentCardPositionResponse,
+  ParentCardsResponse,
+  ParentGraphItem,
+  ParentGraphResponse,
   Subtask,
   SubtaskResponse,
   SubtasksResponse,
@@ -242,6 +247,51 @@ export class CardClient extends BaseClientModuleImpl {
   async createCardSubtask(cardId: number, params: CreateSubtaskParams): Promise<Subtask> {
     this.checkReadOnlyMode('create subtask');
     const response = await this.http.post<SubtaskResponse>(`/cards/${cardId}/subtasks`, params);
+    return response.data.data;
+  }
+
+  /**
+   * Get parent cards for a specific card
+   */
+  async getCardParents(cardId: number): Promise<ParentCardItem[]> {
+    const response = await this.http.get<ParentCardsResponse>(`/cards/${cardId}/parents`);
+    return response.data.data;
+  }
+
+  /**
+   * Check if a card is a parent of a given card
+   */
+  async getCardParent(cardId: number, parentCardId: number): Promise<{ position: number }> {
+    const response = await this.http.get<ParentCardPositionResponse>(
+      `/cards/${cardId}/parents/${parentCardId}`
+    );
+    return response.data.data;
+  }
+
+  /**
+   * Make a card a parent of a given card
+   */
+  async addCardParent(cardId: number, parentCardId: number): Promise<{ position: number }> {
+    this.checkReadOnlyMode('add card parent');
+    const response = await this.http.put<ParentCardPositionResponse>(
+      `/cards/${cardId}/parents/${parentCardId}`
+    );
+    return response.data.data;
+  }
+
+  /**
+   * Remove the link between a child card and a parent card
+   */
+  async removeCardParent(cardId: number, parentCardId: number): Promise<void> {
+    this.checkReadOnlyMode('remove card parent');
+    await this.http.delete(`/cards/${cardId}/parents/${parentCardId}`);
+  }
+
+  /**
+   * Get parent graph for a specific card (including parent's parents)
+   */
+  async getCardParentGraph(cardId: number): Promise<ParentGraphItem[]> {
+    const response = await this.http.get<ParentGraphResponse>(`/cards/${cardId}/parentGraph`);
     return response.data.data;
   }
 }

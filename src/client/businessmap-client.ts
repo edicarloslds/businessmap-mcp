@@ -263,6 +263,26 @@ export class BusinessMapClient {
     return this.cardClient.createCardSubtask(cardId, params);
   }
 
+  async getCardParents(cardId: number) {
+    return this.cardClient.getCardParents(cardId);
+  }
+
+  async getCardParent(cardId: number, parentCardId: number) {
+    return this.cardClient.getCardParent(cardId, parentCardId);
+  }
+
+  async addCardParent(cardId: number, parentCardId: number) {
+    return this.cardClient.addCardParent(cardId, parentCardId);
+  }
+
+  async removeCardParent(cardId: number, parentCardId: number) {
+    return this.cardClient.removeCardParent(cardId, parentCardId);
+  }
+
+  async getCardParentGraph(cardId: number) {
+    return this.cardClient.getCardParentGraph(cardId);
+  }
+
   // User Management - Delegated to UserClient
   async getUsers() {
     return this.userClient.getUsers();

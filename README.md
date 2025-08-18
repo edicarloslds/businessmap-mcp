@@ -8,7 +8,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![MCP](https://img.shields.io/badge/Model%20Context%20Protocol-000000?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io/)
 
-Model Context Protocol server for BusinessMap (Kanbanize) integration.
+Model Context Protocol server for BusinessMap (Kanbanize) integration. Provides comprehensive access to BusinessMap's project management features including workspaces, boards, cards, subtasks, parent-child relationships, outcomes, custom fields, and more.
 
 ## Installation
 
@@ -146,15 +146,48 @@ The BusinessMap MCP server provides the following tools:
 
 ### Card Management
 
+#### Basic Card Operations
+
 - `list_cards` - Get cards from a board with optional filters
 - `get_card` - Get detailed card information
 - `get_card_size` - Get the size/points of a specific card
-- `get_card_comments` - Get all comments for a specific card
-- `get_card_comment` - Get details of a specific comment from a card
 - `create_card` - Create new card
 - `move_card` - Move card to different column/swimlane
 - `update_card` - Update card properties
 - `set_card_size` - Set the size/points of a specific card
+
+#### Card Comments
+
+- `get_card_comments` - Get all comments for a specific card
+- `get_card_comment` - Get details of a specific comment from a card
+
+#### Card Custom Fields & Types
+
+- `get_card_custom_fields` - Get all custom fields for a specific card
+- `get_card_types` - Get all available card types
+
+#### Card Outcomes & History
+
+- `get_card_outcomes` - Get all outcomes for a specific card
+- `get_card_history` - Get the history of a specific card outcome
+
+#### Card Relationships
+
+- `get_card_linked_cards` - Get all linked cards for a specific card
+
+#### Card Subtasks
+
+- `get_card_subtasks` - Get all subtasks for a specific card
+- `get_card_subtask` - Get details of a specific subtask from a card
+- `create_card_subtask` - Create a new subtask for a card
+
+#### Card Parent Relationships
+
+- `get_card_parents` - Get a list of parent cards for a specific card
+- `get_card_parent` - Check if a card is a parent of a given card
+- `add_card_parent` - Make a card a parent of a given card
+- `remove_card_parent` - Remove the link between a child card and a parent card
+- `get_card_parent_graph` - Get a list of parent cards including their parent cards too
 
 ### Custom Field Management
 
@@ -175,6 +208,47 @@ The BusinessMap MCP server provides the following tools:
 
 - `health_check` - Check API connection
 - `get_api_info` - Get API information
+
+## Tool Summary
+
+The BusinessMap MCP server provides **41 tools** across 7 categories:
+
+- **Workspace Management**: 3 tools
+- **Board Management**: 8 tools
+- **Card Management**: 22 tools (organized in 6 subcategories)
+- **Custom Field Management**: 1 tool
+- **Workflow & Cycle Time Analysis**: 2 tools
+- **User Management**: 3 tools
+- **System**: 2 tools
+
+## Key Features
+
+### Advanced Card Management
+
+- **Complete CRUD operations** for cards, subtasks, and relationships
+- **Parent-child card hierarchies** with full graph traversal
+- **Outcome tracking and history** for detailed progress monitoring
+- **Linked cards management** for cross-project dependencies
+- **Custom fields and types** support for flexible workflows
+
+### Comprehensive Board Operations
+
+- **Multi-workspace board management** with search capabilities
+- **Column and lane (swimlane) operations** for workflow customization
+- **Board structure analysis** with detailed metadata
+
+### Workflow Intelligence
+
+- **Cycle time analysis** with configurable column sets
+- **Effective cycle time tracking** for performance optimization
+- **Custom field integration** for enhanced reporting
+
+### Enterprise Features
+
+- **Read-only mode** for safe data exploration
+- **Robust error handling** with detailed error messages
+- **Automatic connection verification** with retry logic
+- **Docker support** for containerized deployments
 
 ## Development
 

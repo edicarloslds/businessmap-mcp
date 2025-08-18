@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
 import {
+  addCardParentSchema,
   cardSizeSchema,
   createCardSchema,
   createCardSubtaskSchema,
@@ -8,12 +9,16 @@ import {
   getCardHistorySchema,
   getCardLinkedCardsSchema,
   getCardOutcomesSchema,
+  getCardParentGraphSchema,
+  getCardParentSchema,
+  getCardParentsSchema,
   getCardSchema,
   getCardSubtaskSchema,
   getCardSubtasksSchema,
   getCardTypesSchema,
   listCardsSchema,
   moveCardSchema,
+  removeCardParentSchema,
   updateCardSchema,
 } from '../../schemas/index.js';
 import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
@@ -32,6 +37,9 @@ export class CardToolHandler implements BaseToolHandler {
     this.registerGetCardLinkedCards(server, client);
     this.registerGetCardSubtasks(server, client);
     this.registerGetCardSubtask(server, client);
+    this.registerGetCardParents(server, client);
+    this.registerGetCardParent(server, client);
+    this.registerGetCardParentGraph(server, client);
 
     if (!readOnlyMode) {
       this.registerCreateCard(server, client);
@@ -39,6 +47,8 @@ export class CardToolHandler implements BaseToolHandler {
       this.registerUpdateCard(server, client);
       this.registerSetCardSize(server, client);
       this.registerCreateCardSubtask(server, client);
+      this.registerAddCardParent(server, client);
+      this.registerRemoveCardParent(server, client);
     }
   }
 
@@ -398,6 +408,110 @@ export class CardToolHandler implements BaseToolHandler {
           return createSuccessResponse(subtask, 'Subtask created successfully:');
         } catch (error) {
           return createErrorResponse(error, 'creating card subtask');
+        }
+      }
+    );
+  }
+
+  private registerGetCardParents(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_parents',
+      {
+        title: 'Get Card Parents',
+        description: 'Get a list of parent cards for a specific card',
+        inputSchema: getCardParentsSchema.shape,
+      },
+      async ({ card_id }) => {
+        try {
+          const parents = await client.getCardParents(card_id);
+          return createSuccessResponse({
+            parents,
+            count: parents.length,
+          });
+        } catch (error) {
+          return createErrorResponse(error, 'getting card parents');
+        }
+      }
+    );
+  }
+
+  private registerGetCardParent(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_parent',
+      {
+        title: 'Get Card Parent',
+        description: 'Check if a card is a parent of a given card',
+        inputSchema: getCardParentSchema.shape,
+      },
+      async ({ card_id, parent_card_id }) => {
+        try {
+          const parent = await client.getCardParent(card_id, parent_card_id);
+          return createSuccessResponse(parent);
+        } catch (error) {
+          return createErrorResponse(error, 'getting card parent');
+        }
+      }
+    );
+  }
+
+  private registerAddCardParent(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'add_card_parent',
+      {
+        title: 'Add Card Parent',
+        description: 'Make a card a parent of a given card',
+        inputSchema: addCardParentSchema.shape,
+      },
+      async ({ card_id, parent_card_id }) => {
+        try {
+          const result = await client.addCardParent(card_id, parent_card_id);
+          return createSuccessResponse(result, 'Card parent added successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'adding card parent');
+        }
+      }
+    );
+  }
+
+  private registerRemoveCardParent(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'remove_card_parent',
+      {
+        title: 'Remove Card Parent',
+        description: 'Remove the link between a child card and a parent card',
+        inputSchema: removeCardParentSchema.shape,
+      },
+      async ({ card_id, parent_card_id }) => {
+        try {
+          await client.removeCardParent(card_id, parent_card_id);
+          return createSuccessResponse(
+            { card_id, parent_card_id },
+            'Card parent removed successfully:'
+          );
+        } catch (error) {
+          return createErrorResponse(error, 'removing card parent');
+        }
+      }
+    );
+  }
+
+  private registerGetCardParentGraph(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_parent_graph',
+      {
+        title: 'Get Card Parent Graph',
+        description: 'Get a list of parent cards including their parent cards too',
+        inputSchema: getCardParentGraphSchema.shape,
+      },
+      async ({ card_id }) => {
+        try {
+          const parentGraph = await client.getCardParentGraph(card_id);
+          return createSuccessResponse({
+            parentGraph,
+            count: parentGraph.length,
+          });
+        } catch (error) {
+          return createErrorResponse(error, 'getting card parent graph');
         }
       }
     );
