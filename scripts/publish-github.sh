@@ -172,7 +172,10 @@ if ! git tag -l | grep -q "^v$CURRENT_VERSION$"; then
     git tag "v$CURRENT_VERSION"
 fi
 
-# Push the tag to remote after confirmation
+# Push commits and tag to remote after confirmation
+echo "📤 Pushing commits to GitHub..."
+git push origin main
+
 echo "📤 Pushing tag to GitHub..."
 git push origin "v$CURRENT_VERSION"
 
