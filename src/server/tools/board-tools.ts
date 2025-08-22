@@ -15,7 +15,6 @@ export class BoardToolHandler implements BaseToolHandler {
   registerTools(server: McpServer, client: BusinessMapClient, readOnlyMode: boolean): void {
     this.registerListBoards(server, client);
     this.registerSearchBoard(server, client);
-    this.registerGetBoard(server, client);
     this.registerGetColumns(server, client);
     this.registerGetLanes(server, client);
     this.registerGetLane(server, client);
@@ -179,37 +178,6 @@ export class BoardToolHandler implements BaseToolHandler {
           );
         } catch (error) {
           return createErrorResponse(error, 'searching for board');
-        }
-      }
-    );
-  }
-
-  private registerGetBoard(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_board',
-      {
-        title: 'Get Board',
-        description:
-          'Get details of a specific board including its structure. For more robust search, use search_board tool instead.',
-        inputSchema: getBoardSchema.shape,
-      },
-      async ({ board_id }) => {
-        try {
-          const [board, structure] = await Promise.all([
-            client.getBoard(board_id),
-            client.getBoardStructure(board_id),
-          ]);
-          return createSuccessResponse({ ...board, structure });
-        } catch (error) {
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `Error fetching board ${board_id}: ${error instanceof Error ? error.message : 'Unknown error'}. Try using search_board tool for more robust search with fallback options.`,
-              },
-            ],
-            isError: true,
-          };
         }
       }
     );

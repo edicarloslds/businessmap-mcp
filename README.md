@@ -137,7 +137,7 @@ The BusinessMap MCP server provides the following tools:
 
 - `list_boards` - List boards in workspace(s)
 - `search_board` - Search for boards by ID or name
-- `get_board` - Get board details with structure
+
 - `get_current_board_structure` - Get the complete current structure of a board including workflows, columns, lanes, and configurations
 - `create_board` - Create new board (if not in read-only mode)
 - `get_columns` - Get all columns for a board
