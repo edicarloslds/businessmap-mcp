@@ -56,131 +56,123 @@ export class BoardToolHandler implements BaseToolHandler {
       },
       async ({ board_id, board_name, workspace_id }) => {
         try {
-          // If board_id is provided, try direct lookup first
           if (board_id) {
-            try {
-              const [board, structure] = await Promise.all([
-                client.getBoard(board_id),
-                client.getBoardStructure(board_id),
-              ]);
-              return createSuccessResponse({ ...board, structure }, 'Board found directly:');
-            } catch (directError) {
-              // If direct lookup fails, fallback to list and search
-              const boards = await client.getBoards(workspace_id ? { workspace_id } : undefined);
-              const foundBoard = boards.find((b) => b.board_id === board_id);
-
-              if (foundBoard) {
-                try {
-                  const structure = await client.getBoardStructure(board_id);
-                  return createSuccessResponse(
-                    { ...foundBoard, structure },
-                    'Board found via list search:'
-                  );
-                } catch (structureError) {
-                  return {
-                    content: [
-                      {
-                        type: 'text',
-                        text: `Board found but structure unavailable:\n${JSON.stringify(foundBoard, null, 2)}\nStructure error: ${structureError instanceof Error ? structureError.message : 'Unknown error'}`,
-                      },
-                    ],
-                  };
-                }
-              } else {
-                return {
-                  content: [
-                    {
-                      type: 'text',
-                      text: `Board with ID ${board_id} not found. Available boards:\n${JSON.stringify(
-                        boards.map((b) => ({
-                          board_id: b.board_id,
-                          name: b.name,
-                          workspace_id: b.workspace_id,
-                        })),
-                        null,
-                        2
-                      )}`,
-                    },
-                  ],
-                  isError: true,
-                };
-              }
-            }
+            return await this.searchBoardById(client, board_id, workspace_id);
           }
 
-          // If board_name is provided, search by name
           if (board_name) {
-            const boards = await client.getBoards(workspace_id ? { workspace_id } : undefined);
-            const foundBoards = boards.filter((b) =>
-              b.name.toLowerCase().includes(board_name.toLowerCase())
-            );
-
-            if (foundBoards.length === 0) {
-              return {
-                content: [
-                  {
-                    type: 'text',
-                    text: `No boards found matching name "${board_name}". Available boards:\n${JSON.stringify(
-                      boards.map((b) => ({
-                        board_id: b.board_id,
-                        name: b.name,
-                        workspace_id: b.workspace_id,
-                      })),
-                      null,
-                      2
-                    )}`,
-                  },
-                ],
-                isError: true,
-              };
-            }
-
-            if (foundBoards.length === 1) {
-              const foundBoard = foundBoards[0]!;
-              if (!foundBoard.board_id) {
-                return createErrorResponse(new Error('Board missing board_id'), 'board validation');
-              }
-              try {
-                const structure = await client.getBoardStructure(foundBoard.board_id);
-                return createSuccessResponse({ ...foundBoard, structure }, 'Board found by name:');
-              } catch (structureError) {
-                return createSuccessResponse(foundBoard, 'Board found but structure unavailable:');
-              }
-            }
-
-            return {
-              content: [
-                {
-                  type: 'text',
-                  text: `Multiple boards found matching "${board_name}":\n${JSON.stringify(
-                    foundBoards.map((b) => ({
-                      board_id: b.board_id,
-                      name: b.name,
-                      workspace_id: b.workspace_id,
-                    })),
-                    null,
-                    2
-                  )}`,
-                },
-              ],
-            };
+            return await this.searchBoardByName(client, board_name, workspace_id);
           }
 
           // If neither ID nor name provided, list all boards
-          const boards = await client.getBoards(workspace_id ? { workspace_id } : undefined);
-          return createSuccessResponse(
-            boards.map((b) => ({
-              board_id: b.board_id,
-              name: b.name,
-              workspace_id: b.workspace_id,
-            })),
-            'All available boards:'
-          );
+          return await this.getAllBoards(client, workspace_id);
         } catch (error) {
           return createErrorResponse(error, 'searching for board');
         }
       }
     );
+  }
+
+  private async searchBoardById(client: BusinessMapClient, boardId: number, workspaceId?: number) {
+    try {
+      const [board, structure] = await Promise.all([
+        client.getBoard(boardId),
+        client.getBoardStructure(boardId),
+      ]);
+      return createSuccessResponse({ ...board, structure }, 'Board found directly:');
+    } catch (directError) {
+      console.warn(
+        `Direct board lookup failed for ID ${boardId}:`,
+        directError instanceof Error ? directError.message : 'Unknown error'
+      );
+      return await this.searchBoardByIdFallback(client, boardId, workspaceId);
+    }
+  }
+
+  private async searchBoardByIdFallback(
+    client: BusinessMapClient,
+    boardId: number,
+    workspaceId?: number
+  ) {
+    const boards = await client.getBoards(workspaceId ? { workspace_id: workspaceId } : undefined);
+    const foundBoard = boards.find((b) => b.board_id === boardId);
+
+    if (!foundBoard) {
+      return createErrorResponse(
+        new Error(
+          `Board with ID ${boardId} not found. Available boards:\n${JSON.stringify(this.formatBoardsList(boards), null, 2)}`
+        ),
+        'searching for board'
+      );
+    }
+
+    return await this.getBoardWithStructure(client, foundBoard, 'Board found via list search:');
+  }
+
+  private async searchBoardByName(
+    client: BusinessMapClient,
+    boardName: string,
+    workspaceId?: number
+  ) {
+    const boards = await client.getBoards(workspaceId ? { workspace_id: workspaceId } : undefined);
+    const foundBoards = boards.filter((b) =>
+      b.name.toLowerCase().includes(boardName.toLowerCase())
+    );
+
+    if (foundBoards.length === 0) {
+      return createErrorResponse(
+        new Error(
+          `No boards found matching name "${boardName}". Available boards:\n${JSON.stringify(this.formatBoardsList(boards), null, 2)}`
+        ),
+        'searching for board by name'
+      );
+    }
+
+    if (foundBoards.length === 1) {
+      const foundBoard = foundBoards[0]!;
+      if (!foundBoard.board_id) {
+        return createErrorResponse(new Error('Board missing board_id'), 'board validation');
+      }
+      return await this.getBoardWithStructure(client, foundBoard, 'Board found by name:');
+    }
+
+    return createSuccessResponse(
+      this.formatBoardsList(foundBoards),
+      `Multiple boards found matching "${boardName}":`
+    );
+  }
+
+  private async getAllBoards(client: BusinessMapClient, workspaceId?: number) {
+    const boards = await client.getBoards(workspaceId ? { workspace_id: workspaceId } : undefined);
+    return createSuccessResponse(this.formatBoardsList(boards), 'All available boards:');
+  }
+
+  private async getBoardWithStructure(
+    client: BusinessMapClient,
+    board: any,
+    successMessage: string
+  ) {
+    try {
+      const structure = await client.getBoardStructure(board.board_id);
+      return createSuccessResponse({ ...board, structure }, successMessage);
+    } catch (structureError) {
+      console.warn(
+        `Structure lookup failed for board ID ${board.board_id}:`,
+        structureError instanceof Error ? structureError.message : 'Unknown error'
+      );
+      return createSuccessResponse(
+        board,
+        `Board found but structure unavailable. Structure error: ${structureError instanceof Error ? structureError.message : 'Unknown error'}`
+      );
+    }
+  }
+
+  private formatBoardsList(boards: any[]) {
+    return boards.map((b) => ({
+      board_id: b.board_id,
+      name: b.name,
+      workspace_id: b.workspace_id,
+    }));
   }
 
   private registerGetColumns(server: McpServer, client: BusinessMapClient): void {
