@@ -8,6 +8,8 @@ import {
   CardOutcomesResponse,
   CardType,
   CardTypesResponse,
+  ChildCardItem,
+  ChildCardsResponse,
   Comment,
   CommentListResponse,
   CommentResponse,
@@ -292,6 +294,14 @@ export class CardClient extends BaseClientModuleImpl {
    */
   async getCardParentGraph(cardId: number): Promise<ParentGraphItem[]> {
     const response = await this.http.get<ParentGraphResponse>(`/cards/${cardId}/parentGraph`);
+    return response.data.data;
+  }
+
+  /**
+   * Get child cards for a specific card
+   */
+  async getCardChildren(cardId: number): Promise<ChildCardItem[]> {
+    const response = await this.http.get<ChildCardsResponse>(`/cards/${cardId}/children`);
     return response.data.data;
   }
 }

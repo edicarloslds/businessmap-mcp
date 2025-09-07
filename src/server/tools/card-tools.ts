@@ -5,6 +5,7 @@ import {
   cardSizeSchema,
   createCardSchema,
   createCardSubtaskSchema,
+  getCardChildrenSchema,
   getCardCommentSchema,
   getCardHistorySchema,
   getCardLinkedCardsSchema,
@@ -40,6 +41,7 @@ export class CardToolHandler implements BaseToolHandler {
     this.registerGetCardParents(server, client);
     this.registerGetCardParent(server, client);
     this.registerGetCardParentGraph(server, client);
+    this.registerGetCardChildren(server, client);
 
     if (!readOnlyMode) {
       this.registerCreateCard(server, client);
@@ -512,6 +514,28 @@ export class CardToolHandler implements BaseToolHandler {
           });
         } catch (error) {
           return createErrorResponse(error, 'getting card parent graph');
+        }
+      }
+    );
+  }
+
+  private registerGetCardChildren(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_children',
+      {
+        title: 'Get Card Children',
+        description: 'Get a list of child cards of a specified parent card',
+        inputSchema: getCardChildrenSchema.shape,
+      },
+      async ({ card_id }) => {
+        try {
+          const children = await client.getCardChildren(card_id);
+          return createSuccessResponse({
+            children,
+            count: children.length,
+          });
+        } catch (error) {
+          return createErrorResponse(error, 'getting card children');
         }
       }
     );

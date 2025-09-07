@@ -287,6 +287,10 @@ export class BusinessMapClient {
     return this.cardClient.getCardParentGraph(cardId);
   }
 
+  async getCardChildren(cardId: number) {
+    return this.cardClient.getCardChildren(cardId);
+  }
+
   // User Management - Delegated to UserClient
   async getUsers() {
     return this.userClient.getUsers();

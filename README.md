@@ -41,8 +41,6 @@ The server requires the following environment variables:
 
 Add the following configuration to your `claude_desktop_config.json` file:
 
-**Using NPX:**
-
 ```json
 {
   "mcpServers": {
@@ -60,18 +58,45 @@ Add the following configuration to your `claude_desktop_config.json` file:
 }
 ```
 
-**Using Global Installation:**
+#### Cursor
+
+To use the BusinessMap MCP server with Cursor, add the following configuration to your Cursor settings:
+
+1. Open Cursor Settings (Cmd/Ctrl + ,)
+2. Click on "MCP & Integrations" and then "Add Custom MCP"
+3. Add a new MCP server with the following configuration:
 
 ```json
 {
-  "mcpServers": {
-    "Businessmap": {
-      "command": "businessmap-mcp",
+  "name": "BusinessMap",
+  "command": "npx",
+  "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
+  "env": {
+    "BUSINESSMAP_API_TOKEN": "your_token_here",
+    "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
+    "BUSINESSMAP_READ_ONLY_MODE": "false",
+    "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1"
+  }
+}
+```
+
+#### VSCode
+
+To use the BusinessMap MCP server with VSCode, add the following configuration:
+
+1. Edit or create `.vscode/mcp.json` and add the MCP extension settings:
+
+```json
+{
+  "servers": {
+    "businessmap": {
+      "command": "npx",
+      "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
       "env": {
         "BUSINESSMAP_API_TOKEN": "your_token_here",
         "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
-        "BUSINESSMAP_READ_ONLY_MODE": "false", // optional
-        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1" // optional
+        "BUSINESSMAP_READ_ONLY_MODE": "false",
+        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1"
       }
     }
   }
@@ -189,6 +214,7 @@ The BusinessMap MCP server provides the following tools:
 - `add_card_parent` - Make a card a parent of a given card
 - `remove_card_parent` - Remove the link between a child card and a parent card
 - `get_card_parent_graph` - Get a list of parent cards including their parent cards too
+- `get_card_children` - Get a list of child cards of a specified parent card
 
 ### Custom Field Management
 
@@ -212,11 +238,11 @@ The BusinessMap MCP server provides the following tools:
 
 ## Tool Summary
 
-The BusinessMap MCP server provides **42 tools** across 7 categories:
+The BusinessMap MCP server provides **43 tools** across 7 categories:
 
 - **Workspace Management**: 3 tools
 - **Board Management**: 9 tools
-- **Card Management**: 22 tools (organized in 6 subcategories)
+- **Card Management**: 23 tools (organized in 6 subcategories)
 - **Custom Field Management**: 1 tool
 - **Workflow & Cycle Time Analysis**: 2 tools
 - **User Management**: 3 tools
@@ -382,4 +408,5 @@ For issues and questions:
 
 - [Model Context Protocol](https://modelcontextprotocol.io/) - Official MCP documentation
 - [BusinessMap API Documentation](https://businessmap.io/api) - Official API reference
+- [BusinessMap Demo API](https://demo.kanbanize.com/openapi#/) - Interactive API documentation and testing environment
 - [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk) - Official MCP SDK

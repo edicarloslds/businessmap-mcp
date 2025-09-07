@@ -430,3 +430,12 @@ export interface ParentGraphItem {
 export interface ParentGraphResponse {
   data: ParentGraphItem[];
 }
+
+export interface ChildCardItem {
+  card_id: number;
+  position: number;
+}
+
+export interface ChildCardsResponse {
+  data: ChildCardItem[];
+}

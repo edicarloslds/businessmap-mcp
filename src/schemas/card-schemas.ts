@@ -574,3 +574,7 @@ export const removeCardParentSchema = z.object({
 export const getCardParentGraphSchema = z.object({
   card_id: z.number().describe('The ID of the card'),
 });
+
+export const getCardChildrenSchema = z.object({
+  card_id: z.number().describe('The ID of the parent card'),
+});
