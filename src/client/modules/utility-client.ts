@@ -1,3 +1,4 @@
+import { logger } from '../../utils/logger.js';
 import { BaseClientModuleImpl } from './base-client.js';
 
 export class UtilityClient extends BaseClientModuleImpl {
@@ -11,9 +12,8 @@ export class UtilityClient extends BaseClientModuleImpl {
       return true;
     } catch (error) {
       // Log the actual error for debugging
-      console.error(
-        'Health check failed:',
-        error instanceof Error ? error.message : 'Unknown error'
+      logger.error(
+        `Health check failed: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
       return false;
     }
@@ -29,7 +29,7 @@ export class UtilityClient extends BaseClientModuleImpl {
       return response.data;
     } catch (error) {
       // Fallback: verificar conectividade com /me
-      console.warn('Endpoint /info não disponível na API oficial, testando conectividade...');
+      logger.warn('Endpoint /info não disponível na API oficial, testando conectividade...');
       try {
         await this.http.get('/me');
         return {

@@ -36,6 +36,7 @@ The server requires the following environment variables:
 - `BUSINESSMAP_API_URL`: Your BusinessMap API URL (e.g., `https://your-account.kanbanize.com/api/v2`)
 - `BUSINESSMAP_READ_ONLY_MODE`: Set to `"true"` for read-only mode, `"false"` to allow modifications (optional, defaults to `"false"`)
 - `BUSINESSMAP_DEFAULT_WORKSPACE_ID`: Set the BusinessMap workspace ID (optional)
+- `LOG_LEVEL`: Set logging verbosity - `0` (DEBUG), `1` (INFO), `2` (WARN), `3` (ERROR), `4` (NONE) (optional, defaults to `1`)
 
 #### Claude Desktop
 
@@ -276,6 +277,37 @@ The BusinessMap MCP server provides **43 tools** across 7 categories:
 - **Robust error handling** with detailed error messages
 - **Automatic connection verification** with retry logic
 - **Docker support** for containerized deployments
+- **Structured logging** with multiple log levels (DEBUG, INFO, WARN, ERROR)
+
+## Logging
+
+The server uses a structured logging system that outputs to STDERR (required for MCP protocol compatibility). You can control the verbosity using the `LOG_LEVEL` environment variable:
+
+- `0` (DEBUG): All messages including detailed debugging information
+- `1` (INFO): Informational messages, warnings, and errors (default)
+- `2` (WARN): Only warnings and errors
+- `3` (ERROR): Only error messages
+- `4` (NONE): Disable all logging
+
+Example configuration with custom log level:
+
+```json
+{
+  "mcpServers": {
+    "Businessmap": {
+      "command": "npx",
+      "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
+      "env": {
+        "BUSINESSMAP_API_TOKEN": "your_token_here",
+        "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
+        "LOG_LEVEL": "0"
+      }
+    }
+  }
+}
+```
+
+**Note**: All logging uses STDERR to maintain compatibility with the MCP JSON-RPC protocol, which requires STDOUT to be reserved exclusively for protocol communication.
 
 ## Development
 

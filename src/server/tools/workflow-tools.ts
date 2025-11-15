@@ -1,6 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
 import { getWorkflowCycleTimeColumnsSchema } from '../../schemas/workflow-schemas.js';
+import { logger } from '../../utils/logger.js';
 import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
 
 export class WorkflowToolHandler implements BaseToolHandler {
@@ -42,17 +43,17 @@ export class WorkflowToolHandler implements BaseToolHandler {
       },
       async ({ board_id, workflow_id }) => {
         try {
-          console.log(
-            `[DEBUG] Fetching effective cycle time columns for board ${board_id}, workflow ${workflow_id}`
+          logger.debug(
+            `Fetching effective cycle time columns for board ${board_id}, workflow ${workflow_id}`
           );
           const columns = await client.getWorkflowEffectiveCycleTimeColumns(board_id, workflow_id);
-          console.log(`[DEBUG] Received ${columns.length} effective cycle time columns`);
+          logger.debug(`Received ${columns.length} effective cycle time columns`);
           return createSuccessResponse(
             columns,
             `Retrieved ${columns.length} effective cycle time columns for board ${board_id}, workflow ${workflow_id}`
           );
         } catch (error) {
-          console.error(`[DEBUG] Error fetching effective cycle time columns:`, error);
+          logger.error(`Error fetching effective cycle time columns:`, error);
           return createErrorResponse(error, 'fetching workflow effective cycle time columns');
         }
       }

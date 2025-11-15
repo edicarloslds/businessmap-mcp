@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import { BusinessMapConfig } from '../types/index.js';
+import { logger } from '../utils/logger.js';
 
 // Load environment variables
 dotenv.config();
@@ -72,7 +73,7 @@ export function validateConfig(): void {
     throw new Error('BUSINESSMAP_API_TOKEN cannot be empty');
   }
 
-  console.log(`✅ Configuration validated for ${config.server.name} v${config.server.version}`);
-  console.log(`📡 BusinessMap API: ${config.businessMap.apiUrl}`);
-  console.log(`🔒 Read-only mode: ${config.businessMap.readOnlyMode ? 'enabled' : 'disabled'}`);
+  logger.success(`Configuration validated for ${config.server.name} v${config.server.version}`);
+  logger.info(`📡 BusinessMap API: ${config.businessMap.apiUrl}`);
+  logger.info(`🔒 Read-only mode: ${config.businessMap.readOnlyMode ? 'enabled' : 'disabled'}`);
 }
