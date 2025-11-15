@@ -422,8 +422,8 @@ export interface ParentCardPositionResponse {
 
 // Parent Graph Response types
 export interface ParentGraphItem {
-  parent_id: number;
-  child_id: number;
+  child_card_id: number;
+  parent_card_id: number;
   depth: number;
 }
 
