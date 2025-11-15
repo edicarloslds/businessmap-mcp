@@ -36,10 +36,10 @@ npm run preview:release 1.2.3
 
 ### 3. Publication
 
-Execute the publish command:
+Execute the publish npm command:
 
 ```bash
-npm run publish
+npm run publish:npm
 ```
 
 The script will:
