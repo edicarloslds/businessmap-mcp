@@ -9,6 +9,7 @@ import {
   listBoardsSchema,
   searchBoardSchema,
 } from '../../schemas/index.js';
+import { logger } from '../../utils/logger.js';
 import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
 
 export class BoardToolHandler implements BaseToolHandler {
@@ -81,9 +82,8 @@ export class BoardToolHandler implements BaseToolHandler {
       ]);
       return createSuccessResponse({ ...board, structure }, 'Board found directly:');
     } catch (directError) {
-      console.warn(
-        `Direct board lookup failed for ID ${boardId}:`,
-        directError instanceof Error ? directError.message : 'Unknown error'
+      logger.warn(
+        `Direct board lookup failed for ID ${boardId}: ${directError instanceof Error ? directError.message : 'Unknown error'}`
       );
       return await this.searchBoardByIdFallback(client, boardId, workspaceId);
     }
@@ -156,9 +156,8 @@ export class BoardToolHandler implements BaseToolHandler {
       const structure = await client.getBoardStructure(board.board_id);
       return createSuccessResponse({ ...board, structure }, successMessage);
     } catch (structureError) {
-      console.warn(
-        `Structure lookup failed for board ID ${board.board_id}:`,
-        structureError instanceof Error ? structureError.message : 'Unknown error'
+      logger.warn(
+        `Structure lookup failed for board ID ${board.board_id}: ${structureError instanceof Error ? structureError.message : 'Unknown error'}`
       );
       return createSuccessResponse(
         board,
