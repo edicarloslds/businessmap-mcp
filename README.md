@@ -7,6 +7,7 @@
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![MCP](https://img.shields.io/badge/Model%20Context%20Protocol-000000?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io/)
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/edicarloslds)](https://github.com/sponsors/edicarloslds)
 
 Model Context Protocol server for BusinessMap (Kanbanize) integration. Provides comprehensive access to BusinessMap's project management features including workspaces, boards, cards, subtasks, parent-child relationships, outcomes, custom fields, and more.
 
@@ -423,6 +424,10 @@ The release process automatically:
    npm test
    npm run test:npx
    ```
+
+## Sponsors
+
+If you find this project helpful and would like to support its development, please consider becoming a sponsor through [GitHub Sponsors](https://github.com/sponsors/edicarloslds).
 
 ## License
 
