@@ -39,7 +39,7 @@ import { logger } from './utils/logger.js';
 logger.success('Successfully connected to BusinessMap API');
 
 // Informational messages (shown at INFO level)
-logger.info('🚀 Starting BusinessMap MCP Server v1.5.6');
+logger.info('🚀 Starting BusinessMap MCP Server v1.0.0');
 logger.info('📡 BusinessMap API: https://account.kanbanize.com/api/v2');
 
 // Debug messages (shown at DEBUG level only)
@@ -58,7 +58,7 @@ All log messages include timestamps and clear prefixes:
 
 ```
 [2025-11-15T10:30:45.123Z] ✅ SUCCESS: Successfully connected to BusinessMap API
-[2025-11-15T10:30:45.456Z] ℹ️  INFO: 🚀 Starting BusinessMap MCP Server v1.5.6
+[2025-11-15T10:30:45.456Z] ℹ️  INFO: 🚀 Starting BusinessMap MCP Server v1.0.0
 [2025-11-15T10:30:46.789Z] 🔍 DEBUG: Fetching effective cycle time columns for board 123
 [2025-11-15T10:30:47.012Z] ⚠️  WARN: Direct board lookup failed, trying fallback method
 [2025-11-15T10:30:47.345Z] ❌ ERROR: Failed to connect to API

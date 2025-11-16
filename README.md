@@ -239,10 +239,10 @@ The BusinessMap MCP server provides the following tools:
 
 ## Tool Summary
 
-The BusinessMap MCP server provides **43 tools** across 7 categories:
+The BusinessMap MCP server provides **42 tools** across 7 categories:
 
 - **Workspace Management**: 3 tools
-- **Board Management**: 9 tools
+- **Board Management**: 8 tools
 - **Card Management**: 23 tools (organized in 6 subcategories)
 - **Custom Field Management**: 1 tool
 - **Workflow & Cycle Time Analysis**: 2 tools
@@ -395,7 +395,8 @@ This project uses an automated release process. See [RELEASE_PROCESS.md](docs/RE
 npm run preview:release
 
 # Publish new version (interactive)
-npm run publish
+# Publish to NPM and create GitHub release (interactive flows)
+npm run publish:npm && npm run publish:github
 ```
 
 The release process automatically:
