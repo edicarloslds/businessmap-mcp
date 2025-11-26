@@ -33,8 +33,7 @@ export class BusinessMapMcpServer {
     try {
       await this.businessMapClient.initialize();
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to initialize BusinessMap MCP Server: ${message}`);
+      const message = error instanceof Error ? error.message : 'Unknown error'; throw new Error(`Failed to initialize BusinessMap MCP Server: ${message}`);
     }
   }
 
