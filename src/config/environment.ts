@@ -1,20 +1,32 @@
 import dotenv from 'dotenv';
+import path from 'path';
 import { BusinessMapConfig } from '../types/index.js';
 import { logger } from '../utils/logger.js';
 
 // Load environment variables
-dotenv.config();
+// Load environment variables from current working directory
+const envPath = path.resolve(process.cwd(), '.env');
+const result = dotenv.config({ path: envPath });
+
+if (result.error) {
+  // If .env file doesn't exist, dotenv returns an error. 
+  // We'll try loading without path (default behavior) as fallback, 
+  // but also log that we checked CWD.
+  logger.info(`No .env file found at ${envPath}, checking default locations...`);
+  dotenv.config();
+} else {
+  logger.info(`Loaded environment variables from ${envPath}`);
+}
 
 export interface EnvironmentConfig {
   businessMap: BusinessMapConfig;
   server: {
     name: string;
     version: string;
-    port?: number;
+    port: number;
   };
   transport: {
-    sse: boolean;
-    streamableHttp: boolean;
+    type: 'stdio' | 'sse' | 'http';
   };
 }
 
@@ -34,7 +46,7 @@ function getBooleanEnvVar(name: string, defaultValue: boolean = false): boolean 
 
 function getNumberEnvVar(name: string, defaultValue?: number): number | undefined {
   const value = process.env[name];
-  if (value === undefined) return defaultValue;
+  if (value === undefined || value === '') return defaultValue;
   const parsed = parseInt(value, 10);
   if (isNaN(parsed)) {
     throw new Error(`Environment variable ${name} must be a valid number`);
@@ -52,11 +64,10 @@ export const config: EnvironmentConfig = {
   server: {
     name: process.env.MCP_SERVER_NAME || 'businessmap-mcp',
     version: process.env.MCP_SERVER_VERSION || '1.0.0',
-    port: getNumberEnvVar('PORT'),
+    port: getNumberEnvVar('PORT') || 3000,
   },
   transport: {
-    sse: getBooleanEnvVar('SSE', false),
-    streamableHttp: getBooleanEnvVar('STREAMABLE_HTTP', true),
+    type: (process.env.TRANSPORT as 'stdio' | 'sse' | 'http') || 'stdio',
   },
 };
 

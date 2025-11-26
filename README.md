@@ -38,6 +38,21 @@ The server requires the following environment variables:
 - `BUSINESSMAP_READ_ONLY_MODE`: Set to `"true"` for read-only mode, `"false"` to allow modifications (optional, defaults to `"false"`)
 - `BUSINESSMAP_DEFAULT_WORKSPACE_ID`: Set the BusinessMap workspace ID (optional)
 - `LOG_LEVEL`: Set logging verbosity - `0` (DEBUG), `1` (INFO), `2` (WARN), `3` (ERROR), `4` (NONE) (optional, defaults to `1`)
+- `PORT`: Server port for HTTP/SSE mode (optional, defaults to `3000`)
+- `TRANSPORT`: Set to `stdio` (default), `sse`, or `http` to switch transport modes
+
+### Local Usage with .env
+
+When running locally (e.g., via `npx` or `npm start`), the server will automatically look for a `.env` file in your current working directory.
+
+```bash
+# Create a .env file
+echo "BUSINESSMAP_API_TOKEN=your_token" > .env
+echo "BUSINESSMAP_API_URL=https://..." >> .env
+
+# Run the server
+npx @edicarlos.lds/businessmap-mcp
+```
 
 #### Claude Desktop
 
@@ -111,6 +126,23 @@ For other MCP clients, use the appropriate configuration format for your client,
 
 - Command: `npx @edicarlos.lds/businessmap-mcp` (or `businessmap-mcp` if globally installed)
 - Environment variables: `BUSINESSMAP_API_TOKEN`, `BUSINESSMAP_API_URL`, and optionally `BUSINESSMAP_READ_ONLY_MODE`, `BUSINESSMAP_DEFAULT_WORKSPACE_ID`
+
+### Remote Usage (HTTP/SSE)
+
+You can run the server as a remote HTTP endpoint using Server-Sent Events (SSE). This is useful for deploying to cloud providers or using with clients that support remote MCP servers.
+
+1.  **Start the server in HTTP mode:**
+
+    ```bash
+    export TRANSPORT=sse
+    export PORT=3000
+    npm start
+    ```
+
+2.  **Connect your client:**
+
+    Configure your MCP client to connect to the SSE endpoint:
+    - **URL**: `http://your-server:3000/sse`
 
 ### Manual Setup
 

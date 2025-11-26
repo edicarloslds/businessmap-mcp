@@ -48,14 +48,17 @@ async function main() {
       }
     }
 
-    // Setup transport
-    const transport = new StdioServerTransport();
-
-    // Connect server to transport
-    await businessMapServer.server.connect(transport);
-
-    logger.success('BusinessMap MCP Server is running');
-    logger.info('💡 Use Ctrl+C to stop the server');
+    // Setup transport based on configuration
+    if (config.transport.type === 'sse' || config.transport.type === 'http') {
+      const { startHttpServer } = await import('./server/http.js');
+      await startHttpServer(businessMapServer);
+    } else {
+      // Default to Stdio
+      const transport = new StdioServerTransport();
+      await businessMapServer.server.connect(transport);
+      logger.success('BusinessMap MCP Server is running on Stdio');
+      logger.info('💡 Use Ctrl+C to stop the server');
+    }
   } catch (error) {
     logger.error('Failed to start BusinessMap MCP Server:', error);
     process.exit(1);
