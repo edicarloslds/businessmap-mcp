@@ -6,74 +6,74 @@ import { config } from '../config/environment.js';
 import { logger } from '../utils/logger.js';
 
 export async function startHttpServer(mcpServer: BusinessMapMcpServer) {
-    const app = express();
-    const transports = new Map<string, SSEServerTransport>();
+  const app = express();
+  const transports = new Map<string, SSEServerTransport>();
 
-    // Enable CORS
-    app.use(cors());
+  // Enable CORS
+  app.use(cors());
 
-    // Set up SSE endpoint
-    app.get('/sse', async (req, res) => {
-        logger.info('New SSE connection request');
+  // Set up SSE endpoint
+  app.get('/sse', async (req, res) => {
+    logger.info('New SSE connection request');
 
-        const transport = new SSEServerTransport(
-            '/message',
-            res
-        );
+    const transport = new SSEServerTransport(
+      '/message',
+      res
+    );
 
-        const sessionId = transport.sessionId;
-        transports.set(sessionId, transport);
+    const sessionId = transport.sessionId;
+    transports.set(sessionId, transport);
 
-        logger.info(`Created new transport with session ID: ${sessionId}`);
+    logger.info(`Created new transport with session ID: ${sessionId}`);
 
-        // Clean up on close
-        res.on('close', () => {
-            logger.info(`SSE connection closed for session ${sessionId}`);
-            transports.delete(sessionId);
-        });
-
-        try {
-            await mcpServer.server.connect(transport);
-            await transport.start();
-        } catch (error) {
-            logger.error(`Failed to start transport for session ${sessionId}:`, error);
-            transports.delete(sessionId);
-            if (!res.headersSent) {
-                res.status(500).send('Failed to start SSE transport');
-            }
-        }
+    // Clean up on close
+    res.on('close', () => {
+      logger.info(`SSE connection closed for session ${sessionId}`);
+      transports.delete(sessionId);
     });
 
-    // Set up message endpoint
-    app.post('/message', async (req, res) => {
-        const sessionId = req.query.sessionId as string;
+    try {
+      await mcpServer.server.connect(transport);
+      await transport.start();
+    } catch (error) {
+      logger.error(`Failed to start transport for session ${sessionId}:`, error);
+      transports.delete(sessionId);
+      if (!res.headersSent) {
+        res.status(500).send('Failed to start SSE transport');
+      }
+    }
+  });
 
-        if (!sessionId) {
-            res.status(400).send('Missing sessionId query parameter');
-            return;
-        }
+  // Set up message endpoint
+  app.post('/message', async (req, res) => {
+    const sessionId = req.query.sessionId as string;
 
-        const transport = transports.get(sessionId);
+    if (!sessionId) {
+      res.status(400).send('Missing sessionId query parameter');
+      return;
+    }
 
-        if (!transport) {
-            res.status(404).send(`Session not found: ${sessionId}`);
-            return;
-        }
+    const transport = transports.get(sessionId);
 
-        logger.debug(`Received JSON-RPC message for session ${sessionId}`);
-        await transport.handlePostMessage(req, res);
-    });
+    if (!transport) {
+      res.status(404).send(`Session not found: ${sessionId}`);
+      return;
+    }
 
-    // Health check endpoint
-    app.get('/health', (req, res) => {
-        res.json({ status: 'ok', version: config.server.version });
-    });
+    logger.debug(`Received JSON-RPC message for session ${sessionId}`);
+    await transport.handlePostMessage(req, res);
+  });
 
-    const port = config.server.port;
+  // Health check endpoint
+  app.get('/health', (req, res) => {
+    res.json({ status: 'ok', version: config.server.version });
+  });
 
-    app.listen(port, () => {
-        logger.success(`HTTP Server running on port ${port}`);
-        logger.info(`SSE Endpoint: http://localhost:${port}/sse`);
-        logger.info(`Message Endpoint: http://localhost:${port}/message`);
-    });
+  const port = config.server.port;
+
+  app.listen(port, () => {
+    logger.success(`HTTP Server running on port ${port}`);
+    logger.info(`SSE Endpoint: http://localhost:${port}/sse`);
+    logger.info(`Message Endpoint: http://localhost:${port}/message`);
+  });
 }

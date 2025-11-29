@@ -30,7 +30,7 @@ class Logger {
   /**
    * Debug messages for development and troubleshooting
    */
-  debug(message: string, ...args: any[]): void {
+  debug(message: string, ...args: unknown[]): void {
     if (this.currentLevel <= LogLevel.DEBUG) {
       this.log('🔍 DEBUG', message, ...args);
     }
@@ -39,7 +39,7 @@ class Logger {
   /**
    * Informational messages (successful operations, status updates)
    */
-  info(message: string, ...args: any[]): void {
+  info(message: string, ...args: unknown[]): void {
     if (this.currentLevel <= LogLevel.INFO) {
       this.log('ℹ️  INFO', message, ...args);
     }
@@ -48,7 +48,7 @@ class Logger {
   /**
    * Warning messages (non-critical issues, fallbacks)
    */
-  warn(message: string, ...args: any[]): void {
+  warn(message: string, ...args: unknown[]): void {
     if (this.currentLevel <= LogLevel.WARN) {
       this.log('⚠️  WARN', message, ...args);
     }
@@ -57,7 +57,7 @@ class Logger {
   /**
    * Error messages (failures, exceptions)
    */
-  error(message: string, ...args: any[]): void {
+  error(message: string, ...args: unknown[]): void {
     if (this.currentLevel <= LogLevel.ERROR) {
       this.log('❌ ERROR', message, ...args);
     }
@@ -66,18 +66,18 @@ class Logger {
   /**
    * Success messages (operations completed successfully)
    */
-  success(message: string, ...args: any[]): void {
+  success(message: string, ...args: unknown[]): void {
     if (this.currentLevel <= LogLevel.INFO) {
       this.log('✅ SUCCESS', message, ...args);
     }
   }
 
-  private log(prefix: string, message: string, ...args: any[]): void {
+  private log(prefix: string, message: string, ...args: unknown[]): void {
     // CRITICAL: Always use STDERR for MCP servers
     // STDOUT is reserved for JSON-RPC protocol only
     const timestamp = new Date().toISOString();
     const formattedMessage = `[${timestamp}] ${prefix}: ${message}`;
-    
+
     if (args.length > 0) {
       console.error(formattedMessage, ...args);
     } else {
