@@ -10,6 +10,11 @@ import {
   WorkflowToolHandler,
   WorkspaceToolHandler,
 } from './tools/index.js';
+import {
+  BoardResourceHandler,
+  CardResourceHandler,
+  WorkspaceResourceHandler,
+} from './resources/index.js';
 
 export class BusinessMapMcpServer {
   private mcpServer: McpServer;
@@ -58,8 +63,15 @@ export class BusinessMapMcpServer {
   }
 
   private setupResources(): void {
-    // TODO: Implement resource endpoints for reading workspace/board/card data
-    // This would allow LLMs to access current state without performing actions
+    const resourceHandlers = [
+      new WorkspaceResourceHandler(),
+      new BoardResourceHandler(),
+      new CardResourceHandler(),
+    ];
+
+    resourceHandlers.forEach((handler) => {
+      handler.registerResources(this.mcpServer, this.businessMapClient);
+    });
   }
 
   get server(): McpServer {
