@@ -1,4 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
 import { getApiInfoSchema, healthCheckSchema } from '../../schemas/utility-schemas.js';
 import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
@@ -15,7 +16,7 @@ export class UtilityToolHandler implements BaseToolHandler {
       {
         title: 'Health Check',
         description: 'Check the connection to BusinessMap API',
-        inputSchema: healthCheckSchema.shape,
+        inputSchema: healthCheckSchema.shape as Record<string, z.ZodTypeAny>,
       },
       async () => {
         try {
@@ -42,7 +43,7 @@ export class UtilityToolHandler implements BaseToolHandler {
         title: 'Get API Info',
         description:
           'Get information about the BusinessMap API (nota: endpoint /info não existe na API oficial)',
-        inputSchema: getApiInfoSchema.shape,
+        inputSchema: getApiInfoSchema.shape as Record<string, z.ZodTypeAny>,
       },
       async () => {
         try {

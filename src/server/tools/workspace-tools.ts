@@ -1,4 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
 import {
   createWorkspaceSchema,
@@ -23,7 +24,7 @@ export class WorkspaceToolHandler implements BaseToolHandler {
       {
         title: 'List Workspaces',
         description: 'Get a list of all workspaces',
-        inputSchema: listWorkspacesSchema.shape,
+        inputSchema: listWorkspacesSchema.shape as Record<string, z.ZodTypeAny>,
       },
       async () => {
         try {
@@ -42,9 +43,9 @@ export class WorkspaceToolHandler implements BaseToolHandler {
       {
         title: 'Get Workspace',
         description: 'Get details of a specific workspace',
-        inputSchema: getWorkspaceSchema.shape,
+        inputSchema: getWorkspaceSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ workspace_id }) => {
+      async ({ workspace_id }: any) => {
         try {
           const workspace = await client.getWorkspace(workspace_id);
           return createSuccessResponse(workspace);
@@ -61,9 +62,9 @@ export class WorkspaceToolHandler implements BaseToolHandler {
       {
         title: 'Create Workspace',
         description: 'Create a new workspace',
-        inputSchema: createWorkspaceSchema.shape,
+        inputSchema: createWorkspaceSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ name, description }) => {
+      async ({ name, description }: any) => {
         try {
           const workspace = await client.createWorkspace({ name, description });
           return createSuccessResponse(workspace, 'Workspace created successfully:');

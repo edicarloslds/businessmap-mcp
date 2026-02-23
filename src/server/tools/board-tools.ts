@@ -1,4 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
 import {
   createBoardSchema,
@@ -39,9 +40,10 @@ export class BoardToolHandler implements BaseToolHandler {
       {
         title: 'List Boards',
         description: 'Get a list of boards with optional filters',
-        inputSchema: listBoardsSchema.shape,
+        inputSchema: listBoardsSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async (params) => {
+      // @ts-ignore TS2589 - Complex Zod schema depth limit with MCP SDK registerTool generics
+      async (params: any) => {
         try {
           const boards = await client.getBoards(params);
           return createSuccessResponse(boards);
@@ -59,9 +61,9 @@ export class BoardToolHandler implements BaseToolHandler {
         title: 'Search Board',
         description:
           'Search for a board by ID or name, with intelligent fallback to list all boards if direct search fails',
-        inputSchema: searchBoardSchema.shape,
+        inputSchema: searchBoardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ board_id, board_name, workspace_id }) => {
+      async ({ board_id, board_name, workspace_id }: any) => {
         try {
           if (board_id) {
             return await this.searchBoardById(client, board_id, workspace_id);
@@ -186,9 +188,9 @@ export class BoardToolHandler implements BaseToolHandler {
       {
         title: 'Get Board Columns',
         description: 'Get all columns for a board (válido na API oficial)',
-        inputSchema: getBoardSchema.shape,
+        inputSchema: getBoardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ board_id }) => {
+      async ({ board_id }: any) => {
         try {
           const columns = await client.getColumns(board_id);
           return createSuccessResponse(columns);
@@ -205,9 +207,9 @@ export class BoardToolHandler implements BaseToolHandler {
       {
         title: 'Get Board Lanes',
         description: 'Get all lanes/swimlanes for a board (válido na API oficial)',
-        inputSchema: getBoardSchema.shape,
+        inputSchema: getBoardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ board_id }) => {
+      async ({ board_id }: any) => {
         try {
           const lanes = await client.getLanes(board_id);
           return createSuccessResponse(lanes);
@@ -224,9 +226,9 @@ export class BoardToolHandler implements BaseToolHandler {
       {
         title: 'Get Lane Details',
         description: 'Get details of a specific lane/swimlane (válido na API oficial)',
-        inputSchema: getLaneSchema.shape,
+        inputSchema: getLaneSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ lane_id }) => {
+      async ({ lane_id }: any) => {
         try {
           const lane = await client.getLane(lane_id);
           return createSuccessResponse(lane);
@@ -243,9 +245,9 @@ export class BoardToolHandler implements BaseToolHandler {
       {
         title: 'Create Board',
         description: 'Create a new board in a workspace',
-        inputSchema: createBoardSchema.shape,
+        inputSchema: createBoardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ name, workspace_id, description }) => {
+      async ({ name, workspace_id, description }: any) => {
         try {
           const board = await client.createBoard({
             name,
@@ -266,9 +268,9 @@ export class BoardToolHandler implements BaseToolHandler {
       {
         title: 'Create Lane',
         description: 'Create a new lane/swimlane in a board (válido na API oficial)',
-        inputSchema: createLaneSchema.shape,
+        inputSchema: createLaneSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ workflow_id, name, description, color, position }) => {
+      async ({ workflow_id, name, description, color, position }: any) => {
         try {
           const lane = await client.createLane({
             workflow_id,
@@ -292,9 +294,9 @@ export class BoardToolHandler implements BaseToolHandler {
         title: 'Get Current Board Structure',
         description:
           'Get the complete current structure of a board including workflows, columns, lanes, and configurations',
-        inputSchema: getCurrentBoardStructureSchema.shape,
+        inputSchema: getCurrentBoardStructureSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ board_id }) => {
+      async ({ board_id }: any) => {
         try {
           const structure = await client.getCurrentBoardStructure(board_id);
           return createSuccessResponse(structure, 'Board structure retrieved successfully:');
@@ -312,9 +314,9 @@ export class BoardToolHandler implements BaseToolHandler {
         title: 'Create Column',
         description:
           'Create a new column on a board. Supports both main columns (requires workflow_id and section) and sub-columns (requires parent_column_id). Section values: 1=Backlog, 2=Requested, 3=Progress, 4=Done.',
-        inputSchema: createColumnSchema.shape,
+        inputSchema: createColumnSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ board_id, workflow_id, section, parent_column_id, position, name, limit, description }) => {
+      async ({ board_id, workflow_id, section, parent_column_id, position, name, limit, description }: any) => {
         try {
           const params = parent_column_id
             ? { parent_column_id, position, name, ...(limit !== undefined && { limit }), ...(description && { description }) }
@@ -334,9 +336,9 @@ export class BoardToolHandler implements BaseToolHandler {
       {
         title: 'Update Column',
         description: 'Update the details of a specific column on a board',
-        inputSchema: updateColumnSchema.shape,
+        inputSchema: updateColumnSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ board_id, column_id, name, limit, section, position, description }) => {
+      async ({ board_id, column_id, name, limit, section, position, description }: any) => {
         try {
           const params: Record<string, unknown> = {};
           if (name !== undefined) params['name'] = name;
@@ -359,9 +361,9 @@ export class BoardToolHandler implements BaseToolHandler {
       {
         title: 'Delete Column',
         description: 'Delete a column from a board',
-        inputSchema: deleteColumnSchema.shape,
+        inputSchema: deleteColumnSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ board_id, column_id }) => {
+      async ({ board_id, column_id }: any) => {
         try {
           await client.deleteColumn(board_id, column_id);
           return createSuccessResponse({ board_id, column_id }, 'Column deleted successfully:');

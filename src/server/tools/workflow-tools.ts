@@ -1,4 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
 import { getWorkflowCycleTimeColumnsSchema } from '../../schemas/workflow-schemas.js';
 import { logger } from '../../utils/logger.js';
@@ -16,9 +17,9 @@ export class WorkflowToolHandler implements BaseToolHandler {
       {
         title: 'Get Workflow Cycle Time Columns',
         description: "Get workflow's cycle time columns",
-        inputSchema: getWorkflowCycleTimeColumnsSchema.shape,
+        inputSchema: getWorkflowCycleTimeColumnsSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ board_id, workflow_id }) => {
+      async ({ board_id, workflow_id }: any) => {
         try {
           const columns = await client.getWorkflowCycleTimeColumns(board_id, workflow_id);
           return createSuccessResponse(columns);
@@ -39,9 +40,9 @@ export class WorkflowToolHandler implements BaseToolHandler {
         title: 'Get Workflow Effective Cycle Time Columns',
         description:
           "Get workflow's effective cycle time columns (the columns actually used for cycle time calculation with applied filters/logic)",
-        inputSchema: getWorkflowCycleTimeColumnsSchema.shape,
+        inputSchema: getWorkflowCycleTimeColumnsSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ board_id, workflow_id }) => {
+      async ({ board_id, workflow_id }: any) => {
         try {
           logger.debug(
             `Fetching effective cycle time columns for board ${board_id}, workflow ${workflow_id}`

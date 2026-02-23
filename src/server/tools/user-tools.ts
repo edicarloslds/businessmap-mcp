@@ -1,4 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
 import {
   getCurrentUserSchema,
@@ -25,7 +26,7 @@ export class UserToolHandler implements BaseToolHandler {
       {
         title: 'List Users',
         description: 'Get a list of all users',
-        inputSchema: listUsersSchema.shape,
+        inputSchema: listUsersSchema.shape as Record<string, z.ZodTypeAny>,
       },
       async () => {
         try {
@@ -44,9 +45,9 @@ export class UserToolHandler implements BaseToolHandler {
       {
         title: 'Get User',
         description: 'Get details of a specific user',
-        inputSchema: getUserSchema.shape,
+        inputSchema: getUserSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ user_id }) => {
+      async ({ user_id }: any) => {
         try {
           const user = await client.getUser(user_id);
           return createSuccessResponse(user);
@@ -63,7 +64,7 @@ export class UserToolHandler implements BaseToolHandler {
       {
         title: 'Get Current User',
         description: 'Get details of the current logged user',
-        inputSchema: getCurrentUserSchema.shape,
+        inputSchema: getCurrentUserSchema.shape as Record<string, z.ZodTypeAny>,
       },
       async () => {
         try {
@@ -83,9 +84,9 @@ export class UserToolHandler implements BaseToolHandler {
         title: 'Invite User',
         description:
           'Add and invite a new user by email. Sends an invitation email with a link to set their password and log in.',
-        inputSchema: inviteUserSchema.shape,
+        inputSchema: inviteUserSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ email, do_not_send_confirmation_email }) => {
+      async ({ email, do_not_send_confirmation_email }: any) => {
         try {
           const params: Record<string, unknown> = { email };
           if (do_not_send_confirmation_email !== undefined) {

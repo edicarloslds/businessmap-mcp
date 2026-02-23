@@ -1,4 +1,5 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
 import {
   addCardParentSchema,
@@ -91,9 +92,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'List Cards',
         description: 'Get a list of cards from a board with optional filters',
-        inputSchema: listCardsSchema.shape,
+        inputSchema: listCardsSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async (params) => {
+      async (params: any) => {
         try {
           const { board_id, ...filters } = params;
           const cards = await client.getCards(board_id, filters);
@@ -111,9 +112,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Get Card',
         description: 'Get details of a specific card',
-        inputSchema: getCardSchema.shape,
+        inputSchema: getCardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id }) => {
+      async ({ card_id }: any) => {
         try {
           const card = await client.getCard(card_id);
           return createSuccessResponse(card);
@@ -130,9 +131,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Get Card Size',
         description: 'Get the size/points of a specific card',
-        inputSchema: getCardSchema.shape,
+        inputSchema: getCardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id }) => {
+      async ({ card_id }: any) => {
         try {
           const card = await client.getCard(card_id);
           const size = card.size || 0;
@@ -157,9 +158,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Create Card',
         description: 'Create a new card in a board',
-        inputSchema: createCardSchema.shape,
+        inputSchema: createCardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async (params) => {
+      async (params: any) => {
         try {
           const card = await client.createCard(params);
           return createSuccessResponse(card, 'Card created successfully:');
@@ -176,9 +177,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Move Card',
         description: 'Move a card to a different column or lane',
-        inputSchema: moveCardSchema.shape,
+        inputSchema: moveCardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, column_id, lane_id, position }) => {
+      async ({ card_id, column_id, lane_id, position }: any) => {
         try {
           const card = await client.moveCard(card_id, column_id, lane_id, position);
           return createSuccessResponse(card, 'Card moved successfully:');
@@ -195,9 +196,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Update Card',
         description: "Update a card's properties",
-        inputSchema: updateCardSchema.shape,
+        inputSchema: updateCardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async (params) => {
+      async (params: any) => {
         try {
           const card = await client.updateCard(params);
           return createSuccessResponse(card, 'Card updated successfully:');
@@ -214,9 +215,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Set Card Size',
         description: 'Set the size/points of a specific card',
-        inputSchema: cardSizeSchema.shape,
+        inputSchema: cardSizeSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, size }) => {
+      async ({ card_id, size }: any) => {
         try {
           const card = await client.updateCard({ card_id, size });
           return {
@@ -240,9 +241,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Get Card Comments',
         description: 'Get all comments for a specific card',
-        inputSchema: getCardSchema.shape,
+        inputSchema: getCardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id }) => {
+      async ({ card_id }: any) => {
         try {
           const comments = await client.getCardComments(card_id);
           return createSuccessResponse({
@@ -262,9 +263,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Get Card Comment',
         description: 'Get details of a specific comment from a card',
-        inputSchema: getCardCommentSchema.shape,
+        inputSchema: getCardCommentSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, comment_id }) => {
+      async ({ card_id, comment_id }: any) => {
         try {
           const comment = await client.getCardComment(card_id, comment_id);
           return createSuccessResponse(comment);
@@ -281,9 +282,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Get Card Custom Fields',
         description: 'Get all custom fields for a specific card',
-        inputSchema: getCardSchema.shape,
+        inputSchema: getCardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id }) => {
+      async ({ card_id }: any) => {
         try {
           const customFields = await client.getCardCustomFields(card_id);
           return createSuccessResponse({
@@ -303,7 +304,7 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Get Card Types',
         description: 'Get all available card types',
-        inputSchema: getCardTypesSchema.shape,
+        inputSchema: getCardTypesSchema.shape as Record<string, z.ZodTypeAny>,
       },
       async () => {
         try {
@@ -325,9 +326,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Get Card History',
         description: 'Get the history of a specific card outcome',
-        inputSchema: getCardHistorySchema.shape,
+        inputSchema: getCardHistorySchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, outcome_id }) => {
+      async ({ card_id, outcome_id }: any) => {
         try {
           const history = await client.getCardHistory(card_id, outcome_id);
           return createSuccessResponse({
@@ -347,9 +348,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Get Card Outcomes',
         description: 'Get all outcomes for a specific card',
-        inputSchema: getCardOutcomesSchema.shape,
+        inputSchema: getCardOutcomesSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id }) => {
+      async ({ card_id }: any) => {
         try {
           const outcomes = await client.getCardOutcomes(card_id);
           return createSuccessResponse({
@@ -369,9 +370,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Get Card Linked Cards',
         description: 'Get all linked cards for a specific card',
-        inputSchema: getCardLinkedCardsSchema.shape,
+        inputSchema: getCardLinkedCardsSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id }) => {
+      async ({ card_id }: any) => {
         try {
           const linkedCards = await client.getCardLinkedCards(card_id);
           return createSuccessResponse({
@@ -391,9 +392,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Get Card Subtasks',
         description: 'Get all subtasks for a specific card',
-        inputSchema: getCardSubtasksSchema.shape,
+        inputSchema: getCardSubtasksSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id }) => {
+      async ({ card_id }: any) => {
         try {
           const subtasks = await client.getCardSubtasks(card_id);
           return createSuccessResponse({
@@ -413,9 +414,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Get Card Subtask',
         description: 'Get details of a specific subtask from a card',
-        inputSchema: getCardSubtaskSchema.shape,
+        inputSchema: getCardSubtaskSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, subtask_id }) => {
+      async ({ card_id, subtask_id }: any) => {
         try {
           const subtask = await client.getCardSubtask(card_id, subtask_id);
           return createSuccessResponse(subtask);
@@ -432,9 +433,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Create Card Subtask',
         description: 'Create a new subtask for a card',
-        inputSchema: createCardSubtaskSchema.shape,
+        inputSchema: createCardSubtaskSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async (params) => {
+      async (params: any) => {
         try {
           const { card_id, ...subtaskData } = params;
           const subtask = await client.createCardSubtask(card_id, subtaskData);
@@ -452,9 +453,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Get Card Parents',
         description: 'Get a list of parent cards for a specific card',
-        inputSchema: getCardParentsSchema.shape,
+        inputSchema: getCardParentsSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id }) => {
+      async ({ card_id }: any) => {
         try {
           const parents = await client.getCardParents(card_id);
           return createSuccessResponse({
@@ -474,9 +475,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Get Card Parent',
         description: 'Check if a card is a parent of a given card',
-        inputSchema: getCardParentSchema.shape,
+        inputSchema: getCardParentSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, parent_card_id }) => {
+      async ({ card_id, parent_card_id }: any) => {
         try {
           const parent = await client.getCardParent(card_id, parent_card_id);
           return createSuccessResponse(parent);
@@ -493,9 +494,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Add Card Parent',
         description: 'Make a card a parent of a given card',
-        inputSchema: addCardParentSchema.shape,
+        inputSchema: addCardParentSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, parent_card_id }) => {
+      async ({ card_id, parent_card_id }: any) => {
         try {
           const result = await client.addCardParent(card_id, parent_card_id);
           return createSuccessResponse(result, 'Card parent added successfully:');
@@ -512,9 +513,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Remove Card Parent',
         description: 'Remove the link between a child card and a parent card',
-        inputSchema: removeCardParentSchema.shape,
+        inputSchema: removeCardParentSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, parent_card_id }) => {
+      async ({ card_id, parent_card_id }: any) => {
         try {
           await client.removeCardParent(card_id, parent_card_id);
           return createSuccessResponse(
@@ -534,9 +535,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Get Card Parent Graph',
         description: 'Get a list of parent cards including their parent cards too',
-        inputSchema: getCardParentGraphSchema.shape,
+        inputSchema: getCardParentGraphSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id }) => {
+      async ({ card_id }: any) => {
         try {
           const parentGraph = await client.getCardParentGraph(card_id);
           return createSuccessResponse({
@@ -556,9 +557,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Get Card Children',
         description: 'Get a list of child cards of a specified parent card',
-        inputSchema: getCardChildrenSchema.shape,
+        inputSchema: getCardChildrenSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id }) => {
+      async ({ card_id }: any) => {
         try {
           const children = await client.getCardChildren(card_id);
           return createSuccessResponse({
@@ -580,9 +581,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Block Card',
         description: 'Block a card and set a reason/comment explaining why it is blocked',
-        inputSchema: blockCardSchema.shape,
+        inputSchema: blockCardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, reason }) => {
+      async ({ card_id, reason }: any) => {
         try {
           await client.blockCard(card_id, reason);
           return createSuccessResponse({ card_id, reason }, 'Card blocked successfully:');
@@ -599,9 +600,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Unblock Card',
         description: 'Unblock a card by removing its block reason',
-        inputSchema: unblockCardSchema.shape,
+        inputSchema: unblockCardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id }) => {
+      async ({ card_id }: any) => {
         try {
           await client.unblockCard(card_id);
           return createSuccessResponse({ card_id }, 'Card unblocked successfully:');
@@ -620,9 +621,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Create Comment',
         description: 'Add a new comment to a card',
-        inputSchema: createCommentSchema.shape,
+        inputSchema: createCommentSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, text }) => {
+      async ({ card_id, text }: any) => {
         try {
           const comment = await client.createCardComment(card_id, { text });
           return createSuccessResponse(comment, 'Comment created successfully:');
@@ -639,9 +640,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Update Comment',
         description: 'Update the text of an existing comment on a card',
-        inputSchema: updateCommentSchema.shape,
+        inputSchema: updateCommentSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, comment_id, text }) => {
+      async ({ card_id, comment_id, text }: any) => {
         try {
           const comment = await client.updateCardComment(card_id, comment_id, { text });
           return createSuccessResponse(comment, 'Comment updated successfully:');
@@ -658,9 +659,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Delete Comment',
         description: 'Delete a comment from a card',
-        inputSchema: deleteCommentSchema.shape,
+        inputSchema: deleteCommentSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, comment_id }) => {
+      async ({ card_id, comment_id }: any) => {
         try {
           await client.deleteCardComment(card_id, comment_id);
           return createSuccessResponse({ card_id, comment_id }, 'Comment deleted successfully:');
@@ -679,9 +680,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Create Tag',
         description: 'Create a new tag in the workspace',
-        inputSchema: createTagSchema.shape,
+        inputSchema: createTagSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ label, color }) => {
+      async ({ label, color }: any) => {
         try {
           const tag = await client.createTag({ label, color });
           return createSuccessResponse(tag, 'Tag created successfully:');
@@ -698,9 +699,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Add Tag to Card',
         description: 'Add an existing tag to a card',
-        inputSchema: addTagToCardSchema.shape,
+        inputSchema: addTagToCardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, tag_id }) => {
+      async ({ card_id, tag_id }: any) => {
         try {
           await client.addTagToCard(card_id, tag_id);
           return createSuccessResponse({ card_id, tag_id }, 'Tag added to card successfully:');
@@ -717,9 +718,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Remove Tag from Card',
         description: 'Remove a tag from a card',
-        inputSchema: removeTagFromCardSchema.shape,
+        inputSchema: removeTagFromCardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, tag_id }) => {
+      async ({ card_id, tag_id }: any) => {
         try {
           await client.removeTagFromCard(card_id, tag_id);
           return createSuccessResponse(
@@ -741,9 +742,9 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Add Sticker to Card',
         description: 'Add a sticker to a card',
-        inputSchema: addStickerToCardSchema.shape,
+        inputSchema: addStickerToCardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, sticker_id }) => {
+      async ({ card_id, sticker_id }: any) => {
         try {
           const result = await client.addStickerToCard(card_id, sticker_id);
           return createSuccessResponse(result, 'Sticker added to card successfully:');
@@ -762,9 +763,9 @@ export class CardToolHandler implements BaseToolHandler {
         description:
           'Remove a sticker from a card using the sticker-card association ID ' +
           '(the "id" field returned when listing or adding stickers to a card)',
-        inputSchema: removeStickerFromCardSchema.shape,
+        inputSchema: removeStickerFromCardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, sticker_card_id }) => {
+      async ({ card_id, sticker_card_id }: any) => {
         try {
           await client.removeStickerFromCard(card_id, sticker_card_id);
           return createSuccessResponse(
@@ -787,9 +788,9 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Delete Card',
         description:
           'Permanently delete a card. This action cannot be undone and the card cannot be recovered.',
-        inputSchema: deleteCardSchema.shape,
+        inputSchema: deleteCardSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id }) => {
+      async ({ card_id }: any) => {
         try {
           await client.deleteCard(card_id);
           return createSuccessResponse({ card_id }, 'Card deleted successfully:');
@@ -809,9 +810,9 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Add Predecessor',
         description:
           'Establish or update a predecessor-successor relationship between two cards. The predecessor_card_id becomes a prerequisite that must be completed before the card.',
-        inputSchema: addPredecessorSchema.shape,
+        inputSchema: addPredecessorSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, predecessor_card_id, linked_card_position, card_position }) => {
+      async ({ card_id, predecessor_card_id, linked_card_position, card_position }: any) => {
         try {
           const params: Record<string, number> = {};
           if (linked_card_position !== undefined) params['linked_card_position'] = linked_card_position;
@@ -835,9 +836,9 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Remove Predecessor',
         description:
           'Remove the predecessor-successor relationship between two cards.',
-        inputSchema: removePredecessorSchema.shape,
+        inputSchema: removePredecessorSchema.shape as Record<string, z.ZodTypeAny>,
       },
-      async ({ card_id, predecessor_card_id }) => {
+      async ({ card_id, predecessor_card_id }: any) => {
         try {
           await client.removePredecessor(card_id, predecessor_card_id);
           return createSuccessResponse(
