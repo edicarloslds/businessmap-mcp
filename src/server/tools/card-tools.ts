@@ -2,9 +2,15 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
 import {
   addCardParentSchema,
+  addStickerToCardSchema,
+  addTagToCardSchema,
+  blockCardSchema,
   cardSizeSchema,
   createCardSchema,
   createCardSubtaskSchema,
+  createCommentSchema,
+  createTagSchema,
+  deleteCommentSchema,
   getCardChildrenSchema,
   getCardCommentSchema,
   getCardHistorySchema,
@@ -20,7 +26,11 @@ import {
   listCardsSchema,
   moveCardSchema,
   removeCardParentSchema,
+  removeStickerFromCardSchema,
+  removeTagFromCardSchema,
+  unblockCardSchema,
   updateCardSchema,
+  updateCommentSchema,
 } from '../../schemas/index.js';
 import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
 
@@ -51,6 +61,20 @@ export class CardToolHandler implements BaseToolHandler {
       this.registerCreateCardSubtask(server, client);
       this.registerAddCardParent(server, client);
       this.registerRemoveCardParent(server, client);
+      // Block / Unblock
+      this.registerBlockCard(server, client);
+      this.registerUnblockCard(server, client);
+      // Comments
+      this.registerCreateComment(server, client);
+      this.registerUpdateComment(server, client);
+      this.registerDeleteComment(server, client);
+      // Tags
+      this.registerCreateTag(server, client);
+      this.registerAddTagToCard(server, client);
+      this.registerRemoveTagFromCard(server, client);
+      // Stickers
+      this.registerAddStickerToCard(server, client);
+      this.registerRemoveStickerFromCard(server, client);
     }
   }
 
@@ -559,6 +583,212 @@ export class CardToolHandler implements BaseToolHandler {
           });
         } catch (error) {
           return createErrorResponse(error, 'getting card children');
+        }
+      }
+    );
+  }
+
+  // ─── Block / Unblock ────────────────────────────────────────────────────────
+
+  private registerBlockCard(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'block_card',
+      {
+        title: 'Block Card',
+        description: 'Block a card and set a reason/comment explaining why it is blocked',
+        inputSchema: blockCardSchema.shape,
+      },
+      async ({ card_id, reason }) => {
+        try {
+          await client.blockCard(card_id, reason);
+          return createSuccessResponse({ card_id, reason }, 'Card blocked successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'blocking card');
+        }
+      }
+    );
+  }
+
+  private registerUnblockCard(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'unblock_card',
+      {
+        title: 'Unblock Card',
+        description: 'Unblock a card by removing its block reason',
+        inputSchema: unblockCardSchema.shape,
+      },
+      async ({ card_id }) => {
+        try {
+          await client.unblockCard(card_id);
+          return createSuccessResponse({ card_id }, 'Card unblocked successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'unblocking card');
+        }
+      }
+    );
+  }
+
+  // ─── Comments ───────────────────────────────────────────────────────────────
+
+  private registerCreateComment(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'create_comment',
+      {
+        title: 'Create Comment',
+        description: 'Add a new comment to a card',
+        inputSchema: createCommentSchema.shape,
+      },
+      async ({ card_id, text }) => {
+        try {
+          const comment = await client.createCardComment(card_id, { text });
+          return createSuccessResponse(comment, 'Comment created successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'creating comment');
+        }
+      }
+    );
+  }
+
+  private registerUpdateComment(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'update_comment',
+      {
+        title: 'Update Comment',
+        description: 'Update the text of an existing comment on a card',
+        inputSchema: updateCommentSchema.shape,
+      },
+      async ({ card_id, comment_id, text }) => {
+        try {
+          const comment = await client.updateCardComment(card_id, comment_id, { text });
+          return createSuccessResponse(comment, 'Comment updated successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'updating comment');
+        }
+      }
+    );
+  }
+
+  private registerDeleteComment(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'delete_comment',
+      {
+        title: 'Delete Comment',
+        description: 'Delete a comment from a card',
+        inputSchema: deleteCommentSchema.shape,
+      },
+      async ({ card_id, comment_id }) => {
+        try {
+          await client.deleteCardComment(card_id, comment_id);
+          return createSuccessResponse({ card_id, comment_id }, 'Comment deleted successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'deleting comment');
+        }
+      }
+    );
+  }
+
+  // ─── Tags ────────────────────────────────────────────────────────────────────
+
+  private registerCreateTag(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'create_tag',
+      {
+        title: 'Create Tag',
+        description: 'Create a new tag in the workspace',
+        inputSchema: createTagSchema.shape,
+      },
+      async ({ label, color }) => {
+        try {
+          const tag = await client.createTag({ label, color });
+          return createSuccessResponse(tag, 'Tag created successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'creating tag');
+        }
+      }
+    );
+  }
+
+  private registerAddTagToCard(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'add_tag_to_card',
+      {
+        title: 'Add Tag to Card',
+        description: 'Add an existing tag to a card',
+        inputSchema: addTagToCardSchema.shape,
+      },
+      async ({ card_id, tag_id }) => {
+        try {
+          await client.addTagToCard(card_id, tag_id);
+          return createSuccessResponse({ card_id, tag_id }, 'Tag added to card successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'adding tag to card');
+        }
+      }
+    );
+  }
+
+  private registerRemoveTagFromCard(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'remove_tag_from_card',
+      {
+        title: 'Remove Tag from Card',
+        description: 'Remove a tag from a card',
+        inputSchema: removeTagFromCardSchema.shape,
+      },
+      async ({ card_id, tag_id }) => {
+        try {
+          await client.removeTagFromCard(card_id, tag_id);
+          return createSuccessResponse(
+            { card_id, tag_id },
+            'Tag removed from card successfully:'
+          );
+        } catch (error) {
+          return createErrorResponse(error, 'removing tag from card');
+        }
+      }
+    );
+  }
+
+  // ─── Stickers ───────────────────────────────────────────────────────────────
+
+  private registerAddStickerToCard(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'add_sticker_to_card',
+      {
+        title: 'Add Sticker to Card',
+        description: 'Add a sticker to a card',
+        inputSchema: addStickerToCardSchema.shape,
+      },
+      async ({ card_id, sticker_id }) => {
+        try {
+          const result = await client.addStickerToCard(card_id, sticker_id);
+          return createSuccessResponse(result, 'Sticker added to card successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'adding sticker to card');
+        }
+      }
+    );
+  }
+
+  private registerRemoveStickerFromCard(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'remove_sticker_from_card',
+      {
+        title: 'Remove Sticker from Card',
+        description:
+          'Remove a sticker from a card using the sticker-card association ID ' +
+          '(the "id" field returned when listing or adding stickers to a card)',
+        inputSchema: removeStickerFromCardSchema.shape,
+      },
+      async ({ card_id, sticker_card_id }) => {
+        try {
+          await client.removeStickerFromCard(card_id, sticker_card_id);
+          return createSuccessResponse(
+            { card_id, sticker_card_id },
+            'Sticker removed from card successfully:'
+          );
+        } catch (error) {
+          return createErrorResponse(error, 'removing sticker from card');
         }
       }
     );

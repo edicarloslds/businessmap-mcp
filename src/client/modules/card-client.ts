@@ -1,11 +1,16 @@
 import {
+  AddStickerParams,
   ApiResponse,
   Card,
+  CardBlockReasonResponse,
   CardCustomField,
   CardCustomFieldsResponse,
   CardHistoryItem,
   CardHistoryResponse,
   CardOutcomesResponse,
+  CardStickerItem,
+  CardStickerResponse,
+  CardStickersListResponse,
   CardType,
   CardTypesResponse,
   ChildCardItem,
@@ -13,8 +18,8 @@ import {
   Comment,
   CommentListResponse,
   CommentResponse,
-  CreateCardParams,
-  CreateSubtaskParams,
+  CreateCommentParams,
+  CreateTagParams,
   LinkedCardItem,
   LinkedCardsResponse,
   Outcome,
@@ -26,7 +31,10 @@ import {
   Subtask,
   SubtaskResponse,
   SubtasksResponse,
+  Tag,
+  TagResponse,
   UpdateCardParams,
+  UpdateCommentParams,
 } from '../../types/index.js';
 import { BaseClientModuleImpl } from './base-client.js';
 
@@ -303,5 +311,108 @@ export class CardClient extends BaseClientModuleImpl {
   async getCardChildren(cardId: number): Promise<ChildCardItem[]> {
     const response = await this.http.get<ChildCardsResponse>(`/cards/${cardId}/children`);
     return response.data.data;
+  }
+
+  // ─── Block / Unblock ────────────────────────────────────────────────────────
+
+  /**
+   * Block a card with a reason comment
+   */
+  async blockCard(cardId: number, reason: string): Promise<void> {
+    this.checkReadOnlyMode('block card');
+    await this.http.put(`/cards/${cardId}/blockReason`, [{ comment: reason }]);
+  }
+
+  /**
+   * Unblock a card by removing its block reason
+   */
+  async unblockCard(cardId: number): Promise<void> {
+    this.checkReadOnlyMode('unblock card');
+    await this.http.delete(`/cards/${cardId}/blockReason`);
+  }
+
+  // ─── Comments ───────────────────────────────────────────────────────────────
+
+  /**
+   * Create a new comment on a card
+   */
+  async createCardComment(cardId: number, params: CreateCommentParams): Promise<Comment> {
+    this.checkReadOnlyMode('create comment');
+    const response = await this.http.post<CommentResponse>(`/cards/${cardId}/comments`, params);
+    return response.data.data;
+  }
+
+  /**
+   * Update an existing comment on a card
+   */
+  async updateCardComment(
+    cardId: number,
+    commentId: number,
+    params: UpdateCommentParams
+  ): Promise<Comment> {
+    this.checkReadOnlyMode('update comment');
+    const response = await this.http.patch<CommentResponse>(
+      `/cards/${cardId}/comments/${commentId}`,
+      params
+    );
+    return response.data.data;
+  }
+
+  /**
+   * Delete a comment from a card
+   */
+  async deleteCardComment(cardId: number, commentId: number): Promise<void> {
+    this.checkReadOnlyMode('delete comment');
+    await this.http.delete(`/cards/${cardId}/comments/${commentId}`);
+  }
+
+  // ─── Tags ────────────────────────────────────────────────────────────────────
+
+  /**
+   * Create a new tag
+   */
+  async createTag(params: CreateTagParams): Promise<Tag> {
+    this.checkReadOnlyMode('create tag');
+    const response = await this.http.post<TagResponse>('/tags', params);
+    return response.data.data;
+  }
+
+  /**
+   * Add a tag to a card
+   */
+  async addTagToCard(cardId: number, tagId: number): Promise<void> {
+    this.checkReadOnlyMode('add tag to card');
+    await this.http.put(`/cards/${cardId}/tags/${tagId}`);
+  }
+
+  /**
+   * Remove a tag from a card
+   */
+  async removeTagFromCard(cardId: number, tagId: number): Promise<void> {
+    this.checkReadOnlyMode('remove tag from card');
+    await this.http.delete(`/cards/${cardId}/tags/${tagId}`);
+  }
+
+  // ─── Stickers ───────────────────────────────────────────────────────────────
+
+  /**
+   * Add a sticker to a card
+   */
+  async addStickerToCard(cardId: number, stickerId: number): Promise<CardStickerItem> {
+    this.checkReadOnlyMode('add sticker to card');
+    const params: AddStickerParams = { sticker_id: stickerId };
+    const response = await this.http.post<CardStickerResponse>(
+      `/cards/${cardId}/stickers`,
+      params
+    );
+    return response.data.data;
+  }
+
+  /**
+   * Remove a sticker from a card (sticker_card_id is the association ID, not sticker_id)
+   */
+  async removeStickerFromCard(cardId: number, stickerCardId: number): Promise<void> {
+    this.checkReadOnlyMode('remove sticker from card');
+    await this.http.delete(`/cards/${cardId}/stickers/${stickerCardId}`);
   }
 }
