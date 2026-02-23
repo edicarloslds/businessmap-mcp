@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
 import {
   addCardParentSchema,
+  addPredecessorSchema,
   addStickerToCardSchema,
   addTagToCardSchema,
   blockCardSchema,
@@ -10,6 +11,7 @@ import {
   createCardSubtaskSchema,
   createCommentSchema,
   createTagSchema,
+  deleteCardSchema,
   deleteCommentSchema,
   getCardChildrenSchema,
   getCardCommentSchema,
@@ -26,6 +28,7 @@ import {
   listCardsSchema,
   moveCardSchema,
   removeCardParentSchema,
+  removePredecessorSchema,
   removeStickerFromCardSchema,
   removeTagFromCardSchema,
   unblockCardSchema,
@@ -58,6 +61,7 @@ export class CardToolHandler implements BaseToolHandler {
       this.registerMoveCard(server, client);
       this.registerUpdateCard(server, client);
       this.registerSetCardSize(server, client);
+      this.registerDeleteCard(server, client);
       this.registerCreateCardSubtask(server, client);
       this.registerAddCardParent(server, client);
       this.registerRemoveCardParent(server, client);
@@ -75,6 +79,9 @@ export class CardToolHandler implements BaseToolHandler {
       // Stickers
       this.registerAddStickerToCard(server, client);
       this.registerRemoveStickerFromCard(server, client);
+      // Predecessors
+      this.registerAddPredecessor(server, client);
+      this.registerRemovePredecessor(server, client);
     }
   }
 
@@ -766,6 +773,79 @@ export class CardToolHandler implements BaseToolHandler {
           );
         } catch (error) {
           return createErrorResponse(error, 'removing sticker from card');
+        }
+      }
+    );
+  }
+
+  // ─── Delete Card ─────────────────────────────────────────────────────────────
+
+  private registerDeleteCard(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'delete_card',
+      {
+        title: 'Delete Card',
+        description:
+          'Permanently delete a card. This action cannot be undone and the card cannot be recovered.',
+        inputSchema: deleteCardSchema.shape,
+      },
+      async ({ card_id }) => {
+        try {
+          await client.deleteCard(card_id);
+          return createSuccessResponse({ card_id }, 'Card deleted successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'deleting card');
+        }
+      }
+    );
+  }
+
+  // ─── Predecessors ─────────────────────────────────────────────────────────────
+
+  private registerAddPredecessor(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'add_predecessor',
+      {
+        title: 'Add Predecessor',
+        description:
+          'Establish or update a predecessor-successor relationship between two cards. The predecessor_card_id becomes a prerequisite that must be completed before the card.',
+        inputSchema: addPredecessorSchema.shape,
+      },
+      async ({ card_id, predecessor_card_id, linked_card_position, card_position }) => {
+        try {
+          const params: Record<string, number> = {};
+          if (linked_card_position !== undefined) params['linked_card_position'] = linked_card_position;
+          if (card_position !== undefined) params['card_position'] = card_position;
+          await client.addPredecessor(card_id, predecessor_card_id, params);
+          return createSuccessResponse(
+            { card_id, predecessor_card_id },
+            'Predecessor added successfully:'
+          );
+        } catch (error) {
+          return createErrorResponse(error, 'adding predecessor');
+        }
+      }
+    );
+  }
+
+  private registerRemovePredecessor(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'remove_predecessor',
+      {
+        title: 'Remove Predecessor',
+        description:
+          'Remove the predecessor-successor relationship between two cards.',
+        inputSchema: removePredecessorSchema.shape,
+      },
+      async ({ card_id, predecessor_card_id }) => {
+        try {
+          await client.removePredecessor(card_id, predecessor_card_id);
+          return createSuccessResponse(
+            { card_id, predecessor_card_id },
+            'Predecessor removed successfully:'
+          );
+        } catch (error) {
+          return createErrorResponse(error, 'removing predecessor');
         }
       }
     );

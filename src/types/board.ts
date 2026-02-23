@@ -112,3 +112,21 @@ export interface CurrentBoardStructure {
 export interface CurrentBoardStructureResponse {
   data: CurrentBoardStructure;
 }
+
+export interface CreateColumnParams {
+  workflow_id?: number;
+  section?: number;
+  parent_column_id?: number;
+  position: number;
+  name: string;
+  limit?: number;
+  description?: string;
+}
+
+export interface UpdateColumnParams {
+  name?: string;
+  limit?: number;
+  section?: number;
+  position?: number;
+  description?: string;
+}

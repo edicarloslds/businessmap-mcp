@@ -3,10 +3,12 @@ import {
   Board,
   Column,
   CreateBoardParams,
+  CreateColumnParams,
   CreateLaneParams,
   CurrentBoardStructure,
   CurrentBoardStructureResponse,
   Lane,
+  UpdateColumnParams,
 } from '../../types/index.js';
 import { BaseClientModuleImpl } from './base-client.js';
 
@@ -124,5 +126,37 @@ export class BoardClient extends BaseClientModuleImpl {
       `/boards/${boardId}/currentStructure`
     );
     return response.data.data;
+  }
+
+  /**
+   * Create a new column on a board (main column or sub-column)
+   */
+  async createColumn(boardId: number, params: CreateColumnParams): Promise<Column> {
+    this.checkReadOnlyMode('create column');
+    const response = await this.http.post<ApiResponse<Column>>(
+      `/boards/${boardId}/columns`,
+      params
+    );
+    return response.data.data;
+  }
+
+  /**
+   * Update an existing column on a board
+   */
+  async updateColumn(boardId: number, columnId: number, params: UpdateColumnParams): Promise<Column> {
+    this.checkReadOnlyMode('update column');
+    const response = await this.http.patch<ApiResponse<Column>>(
+      `/boards/${boardId}/columns/${columnId}`,
+      params
+    );
+    return response.data.data;
+  }
+
+  /**
+   * Delete a column from a board
+   */
+  async deleteColumn(boardId: number, columnId: number): Promise<void> {
+    this.checkReadOnlyMode('delete column');
+    await this.http.delete(`/boards/${boardId}/columns/${columnId}`);
   }
 }

@@ -415,4 +415,26 @@ export class CardClient extends BaseClientModuleImpl {
     this.checkReadOnlyMode('remove sticker from card');
     await this.http.delete(`/cards/${cardId}/stickers/${stickerCardId}`);
   }
+
+  // ─── Predecessors ────────────────────────────────────────────────────────────
+
+  /**
+   * Add or update a predecessor relationship between two cards
+   */
+  async addPredecessor(
+    cardId: number,
+    predecessorCardId: number,
+    params?: { linked_card_position?: number; card_position?: number }
+  ): Promise<void> {
+    this.checkReadOnlyMode('add predecessor');
+    await this.http.put(`/cards/${cardId}/predecessors/${predecessorCardId}`, params || {});
+  }
+
+  /**
+   * Remove the predecessor relationship between two cards
+   */
+  async removePredecessor(cardId: number, predecessorCardId: number): Promise<void> {
+    this.checkReadOnlyMode('remove predecessor');
+    await this.http.delete(`/cards/${cardId}/predecessors/${predecessorCardId}`);
+  }
 }
