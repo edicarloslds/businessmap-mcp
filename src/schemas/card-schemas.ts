@@ -578,3 +578,77 @@ export const getCardParentGraphSchema = z.object({
 export const getCardChildrenSchema = z.object({
   card_id: z.number().describe('The ID of the parent card'),
 });
+
+// ─── Block / Unblock Schemas ──────────────────────────────────────────────────
+
+export const blockCardSchema = z.object({
+  card_id: z.number().describe('The ID of the card to block'),
+  reason: z
+    .string()
+    .min(1)
+    .max(250)
+    .describe('The reason / comment explaining why the card is blocked'),
+});
+
+export const unblockCardSchema = z.object({
+  card_id: z.number().describe('The ID of the card to unblock'),
+});
+
+// ─── Comment Schemas ──────────────────────────────────────────────────────────
+
+export const createCommentSchema = z.object({
+  card_id: z.number().describe('The ID of the card to add a comment to'),
+  text: z.string().min(1).describe('The text content of the comment'),
+});
+
+export const updateCommentSchema = z.object({
+  card_id: z.number().describe('The ID of the card that contains the comment'),
+  comment_id: z.number().describe('The ID of the comment to update'),
+  text: z.string().min(1).describe('The new text content of the comment'),
+});
+
+export const deleteCommentSchema = z.object({
+  card_id: z.number().describe('The ID of the card that contains the comment'),
+  comment_id: z.number().describe('The ID of the comment to delete'),
+});
+
+// ─── Tag Schemas ──────────────────────────────────────────────────────────────
+
+export const createTagSchema = z.object({
+  label: z
+    .string()
+    .min(1)
+    .max(250)
+    .describe('The unique label (name) of the tag'),
+  color: z
+    .string()
+    .optional()
+    .describe('The color of the tag in hexadecimal format without the # symbol (e.g. "eceff1")'),
+});
+
+export const addTagToCardSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+  tag_id: z.number().describe('The ID of the tag to add to the card'),
+});
+
+export const removeTagFromCardSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+  tag_id: z.number().describe('The ID of the tag to remove from the card'),
+});
+
+// ─── Sticker Schemas ──────────────────────────────────────────────────────────
+
+export const addStickerToCardSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+  sticker_id: z.number().describe('The ID of the sticker to add to the card'),
+});
+
+export const removeStickerFromCardSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+  sticker_card_id: z
+    .number()
+    .describe(
+      'The unique ID of the sticker-card association (not the sticker_id). ' +
+        'This is the "id" field returned when adding or listing stickers on a card.'
+    ),
+});
