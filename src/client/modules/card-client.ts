@@ -320,7 +320,7 @@ export class CardClient extends BaseClientModuleImpl {
    */
   async blockCard(cardId: number, reason: string): Promise<void> {
     this.checkReadOnlyMode('block card');
-    await this.http.put(`/cards/${cardId}/blockReason`, [{ comment: reason }]);
+    await this.http.put(`/cards/${cardId}/blockReason`, { comment: reason });
   }
 
   /**
