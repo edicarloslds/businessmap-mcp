@@ -1,4 +1,4 @@
-import { ApiResponse, CurrentUser, User } from '../../types/index.js';
+import { ApiResponse, CurrentUser, InvitedUser, InviteUserParams, User } from '../../types/index.js';
 import { BaseClientModuleImpl } from './base-client.js';
 
 export class UserClient extends BaseClientModuleImpl {
@@ -23,6 +23,15 @@ export class UserClient extends BaseClientModuleImpl {
    */
   async getCurrentUser(): Promise<CurrentUser> {
     const response = await this.http.get<ApiResponse<CurrentUser>>('/me');
+    return response.data.data;
+  }
+
+  /**
+   * Invite a new user by email
+   */
+  async inviteUser(params: InviteUserParams): Promise<InvitedUser> {
+    this.checkReadOnlyMode('invite user');
+    const response = await this.http.post<ApiResponse<InvitedUser>>('/users/invite', params);
     return response.data.data;
   }
 }

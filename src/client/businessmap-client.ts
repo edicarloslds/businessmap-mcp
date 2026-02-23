@@ -203,6 +203,18 @@ export class BusinessMapClient {
     return this.boardClient.getCurrentBoardStructure(boardId);
   }
 
+  async createColumn(boardId: number, params: Parameters<BoardClient['createColumn']>[1]) {
+    return this.boardClient.createColumn(boardId, params);
+  }
+
+  async updateColumn(boardId: number, columnId: number, params: Parameters<BoardClient['updateColumn']>[2]) {
+    return this.boardClient.updateColumn(boardId, columnId, params);
+  }
+
+  async deleteColumn(boardId: number, columnId: number) {
+    return this.boardClient.deleteColumn(boardId, columnId);
+  }
+
   // Card Management - Delegated to CardClient
   async getCards(boardId: number, filters?: CardFilters) {
     return this.cardClient.getCards(boardId, filters);
@@ -336,6 +348,14 @@ export class BusinessMapClient {
     return this.cardClient.removeStickerFromCard(cardId, stickerCardId);
   }
 
+  async addPredecessor(cardId: number, predecessorCardId: number, params?: Parameters<CardClient['addPredecessor']>[2]) {
+    return this.cardClient.addPredecessor(cardId, predecessorCardId, params);
+  }
+
+  async removePredecessor(cardId: number, predecessorCardId: number) {
+    return this.cardClient.removePredecessor(cardId, predecessorCardId);
+  }
+
   // User Management - Delegated to UserClient
   async getUsers() {
     return this.userClient.getUsers();
@@ -347,6 +367,10 @@ export class BusinessMapClient {
 
   async getCurrentUser() {
     return this.userClient.getCurrentUser();
+  }
+
+  async inviteUser(params: Parameters<UserClient['inviteUser']>[0]) {
+    return this.userClient.inviteUser(params);
   }
 
   // Custom Fields - Delegated to CustomFieldClient
