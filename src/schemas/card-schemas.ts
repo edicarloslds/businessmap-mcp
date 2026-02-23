@@ -652,3 +652,29 @@ export const removeStickerFromCardSchema = z.object({
         'This is the "id" field returned when adding or listing stickers on a card.'
     ),
 });
+
+// ─── Delete Card Schema ───────────────────────────────────────────────────────
+
+export const deleteCardSchema = z.object({
+  card_id: z.number().describe('The ID of the card to permanently delete'),
+});
+
+// ─── Predecessor Schemas ──────────────────────────────────────────────────────
+
+export const addPredecessorSchema = z.object({
+  card_id: z.number().describe('The ID of the successor card'),
+  predecessor_card_id: z.number().describe('The ID of the predecessor card to link'),
+  linked_card_position: z
+    .number()
+    .optional()
+    .describe('The position of the predecessor card within the successor\'s list of linked cards'),
+  card_position: z
+    .number()
+    .optional()
+    .describe('The position of the successor card within the predecessor\'s list of linked cards'),
+});
+
+export const removePredecessorSchema = z.object({
+  card_id: z.number().describe('The ID of the successor card'),
+  predecessor_card_id: z.number().describe('The ID of the predecessor card to unlink'),
+});

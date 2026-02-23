@@ -33,3 +33,13 @@ export interface UserAttribute {
   attribute_id: number;
   value: string;
 }
+
+export interface InviteUserParams {
+  email: string;
+  do_not_send_confirmation_email?: number;
+}
+
+export interface InvitedUser {
+  user_id: number;
+  email: string;
+}
