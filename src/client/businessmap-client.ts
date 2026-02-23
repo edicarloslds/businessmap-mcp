@@ -11,6 +11,7 @@ import {
   WorkflowClient,
   WorkspaceClient,
 } from './modules/index.js';
+import { CreateCommentParams, CreateTagParams, UpdateCommentParams } from '../types/index.js';
 
 export class BusinessMapClient {
   private http: AxiosInstance;
@@ -289,6 +290,50 @@ export class BusinessMapClient {
 
   async getCardChildren(cardId: number) {
     return this.cardClient.getCardChildren(cardId);
+  }
+
+  // Block / Unblock - Delegated to CardClient
+  async blockCard(cardId: number, reason: string) {
+    return this.cardClient.blockCard(cardId, reason);
+  }
+
+  async unblockCard(cardId: number) {
+    return this.cardClient.unblockCard(cardId);
+  }
+
+  // Comments - Delegated to CardClient
+  async createCardComment(cardId: number, params: CreateCommentParams) {
+    return this.cardClient.createCardComment(cardId, params);
+  }
+
+  async updateCardComment(cardId: number, commentId: number, params: UpdateCommentParams) {
+    return this.cardClient.updateCardComment(cardId, commentId, params);
+  }
+
+  async deleteCardComment(cardId: number, commentId: number) {
+    return this.cardClient.deleteCardComment(cardId, commentId);
+  }
+
+  // Tags - Delegated to CardClient
+  async createTag(params: CreateTagParams) {
+    return this.cardClient.createTag(params);
+  }
+
+  async addTagToCard(cardId: number, tagId: number) {
+    return this.cardClient.addTagToCard(cardId, tagId);
+  }
+
+  async removeTagFromCard(cardId: number, tagId: number) {
+    return this.cardClient.removeTagFromCard(cardId, tagId);
+  }
+
+  // Stickers - Delegated to CardClient
+  async addStickerToCard(cardId: number, stickerId: number) {
+    return this.cardClient.addStickerToCard(cardId, stickerId);
+  }
+
+  async removeStickerFromCard(cardId: number, stickerCardId: number) {
+    return this.cardClient.removeStickerFromCard(cardId, stickerCardId);
   }
 
   // User Management - Delegated to UserClient

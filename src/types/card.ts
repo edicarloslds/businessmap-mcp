@@ -439,3 +439,65 @@ export interface ChildCardItem {
 export interface ChildCardsResponse {
   data: ChildCardItem[];
 }
+
+// Tag types
+export interface Tag {
+  tag_id: number;
+  label: string;
+  color: string;
+  availability: number;
+  is_enabled: number;
+}
+
+export interface TagResponse {
+  data: Tag;
+}
+
+export interface TagListResponse {
+  data: Tag[];
+}
+
+export interface CreateTagParams {
+  label: string;
+  color?: string;
+  availability?: number;
+  is_enabled?: number;
+}
+
+// Block reason types
+export interface CardBlockReasonResponse {
+  data: {
+    block_type: number;
+    comment: string | null;
+    reason_id: number | null;
+  };
+}
+
+// Create / update comment params
+export interface CreateCommentParams {
+  text: string;
+}
+
+export interface UpdateCommentParams {
+  text: string;
+}
+
+// Card sticker association type (returned by GET /cards/{id}/stickers)
+export interface CardStickerItem {
+  id: number;
+  card_id: number;
+  sticker_id: number;
+}
+
+export interface CardStickerResponse {
+  data: CardStickerItem;
+}
+
+export interface CardStickersListResponse {
+  data: CardStickerItem[];
+}
+
+export interface AddStickerParams {
+  sticker_id: number;
+  if_not_present?: number;
+}
