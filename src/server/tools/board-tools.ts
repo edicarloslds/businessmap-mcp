@@ -3,6 +3,7 @@ import { BusinessMapClient } from '../../client/businessmap-client.js';
 import {
   createBoardSchema,
   createColumnSchema,
+  createColumnInputSchema,
   createLaneSchema,
   deleteColumnSchema,
   getBoardSchema,
@@ -320,14 +321,24 @@ export class BoardToolHandler implements BaseToolHandler {
         title: 'Create Column',
         description:
           'Create a new column on a board. Supports both main columns (requires workflow_id and section) and sub-columns (requires parent_column_id). Section values: 1=Backlog, 2=Requested, 3=Progress, 4=Done.',
-        inputSchema: createColumnSchema.shape,
+        inputSchema: createColumnInputSchema.shape,
       },
-      async ({ board_id, workflow_id, section, parent_column_id, position, name, limit, description }) => {
+      async (params: any) => {
         try {
-          const params = parent_column_id
+          const {
+            board_id,
+            workflow_id,
+            section,
+            parent_column_id,
+            position,
+            name,
+            limit,
+            description,
+          } = createColumnSchema.parse(params);
+          const columnParams = parent_column_id
             ? { parent_column_id, position, name, ...(limit !== undefined && { limit }), ...(description && { description }) }
             : { workflow_id, section, position, name, ...(limit !== undefined && { limit }), ...(description && { description }) };
-          const column = await client.createColumn(board_id, params);
+          const column = await client.createColumn(board_id, columnParams);
           return createSuccessResponse(column, 'Column created successfully:');
         } catch (error) {
           return createErrorResponse(error, 'creating column');
