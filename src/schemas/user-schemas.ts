@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v3';
 
 // Schema básico para listar usuários (sem parâmetros)
 export const listUsersSchema = z.object({});

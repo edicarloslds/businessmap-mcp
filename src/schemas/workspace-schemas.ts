@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v3';
 
 // Schema básico para listar workspaces (sem parâmetros)
 export const listWorkspacesSchema = z.object({});

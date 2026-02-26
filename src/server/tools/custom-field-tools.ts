@@ -15,6 +15,7 @@ export class CustomFieldToolHandler implements BaseToolHandler {
         title: 'Get Custom Field',
         description: 'Get details of a specific custom field by ID',
         inputSchema: getCustomFieldSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ custom_field_id }) => {
         try {

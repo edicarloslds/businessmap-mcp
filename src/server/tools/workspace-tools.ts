@@ -24,6 +24,7 @@ export class WorkspaceToolHandler implements BaseToolHandler {
         title: 'List Workspaces',
         description: 'Get a list of all workspaces',
         inputSchema: listWorkspacesSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async () => {
         try {
@@ -43,6 +44,7 @@ export class WorkspaceToolHandler implements BaseToolHandler {
         title: 'Get Workspace',
         description: 'Get details of a specific workspace',
         inputSchema: getWorkspaceSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ workspace_id }) => {
         try {
@@ -62,6 +64,7 @@ export class WorkspaceToolHandler implements BaseToolHandler {
         title: 'Create Workspace',
         description: 'Create a new workspace',
         inputSchema: createWorkspaceSchema.shape,
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
       },
       async ({ name, description }) => {
         try {

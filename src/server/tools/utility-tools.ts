@@ -16,6 +16,7 @@ export class UtilityToolHandler implements BaseToolHandler {
         title: 'Health Check',
         description: 'Check the connection to BusinessMap API',
         inputSchema: healthCheckSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async () => {
         try {
@@ -43,6 +44,7 @@ export class UtilityToolHandler implements BaseToolHandler {
         description:
           'Get information about the BusinessMap API (nota: endpoint /info não existe na API oficial)',
         inputSchema: getApiInfoSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async () => {
         try {

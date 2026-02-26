@@ -38,8 +38,10 @@ The server requires the following environment variables:
 - `BUSINESSMAP_READ_ONLY_MODE`: Set to `"true"` for read-only mode, `"false"` to allow modifications (optional, defaults to `"false"`)
 - `BUSINESSMAP_DEFAULT_WORKSPACE_ID`: Set the BusinessMap workspace ID (optional)
 - `LOG_LEVEL`: Set logging verbosity - `0` (DEBUG), `1` (INFO), `2` (WARN), `3` (ERROR), `4` (NONE) (optional, defaults to `1`)
-- `PORT`: Server port for HTTP/SSE mode (optional, defaults to `3000`)
-- `TRANSPORT`: Set to `stdio` (default), `sse`, or `http` to switch transport modes
+- `PORT`: Server port for HTTP mode (optional, defaults to `3000`)
+- `TRANSPORT`: Set to `stdio` (default) or `http`
+- `ALLOWED_ORIGINS`: Comma-separated CORS origin allowlist for HTTP mode (optional, defaults to `http://localhost`)
+- `ALLOWED_HOSTS`: Comma-separated Host header allowlist for HTTP mode DNS rebinding protection (optional)
 
 ### Local Usage with .env
 
@@ -127,22 +129,24 @@ For other MCP clients, use the appropriate configuration format for your client,
 - Command: `npx @edicarlos.lds/businessmap-mcp` (or `businessmap-mcp` if globally installed)
 - Environment variables: `BUSINESSMAP_API_TOKEN`, `BUSINESSMAP_API_URL`, and optionally `BUSINESSMAP_READ_ONLY_MODE`, `BUSINESSMAP_DEFAULT_WORKSPACE_ID`
 
-### Remote Usage (HTTP/SSE)
+### Remote Usage (Streamable HTTP)
 
-You can run the server as a remote HTTP endpoint using Server-Sent Events (SSE). This is useful for deploying to cloud providers or using with clients that support remote MCP servers.
+You can run the server as a remote MCP endpoint over Streamable HTTP. This is useful for deploying to cloud providers or using clients that support remote MCP connections.
 
 1.  **Start the server in HTTP mode:**
 
     ```bash
-    export TRANSPORT=sse
+    export TRANSPORT=http
     export PORT=3000
+    export ALLOWED_ORIGINS=https://your-client.example.com
+    export ALLOWED_HOSTS=your-server.example.com
     npm start
     ```
 
 2.  **Connect your client:**
 
-    Configure your MCP client to connect to the SSE endpoint:
-    - **URL**: `http://your-server:3000/sse`
+    Configure your MCP client to connect to the Streamable HTTP endpoint:
+    - **URL**: `http://your-server:3000/mcp`
 
 ### Manual Setup
 

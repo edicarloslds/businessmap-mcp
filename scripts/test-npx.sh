@@ -1,13 +1,32 @@
 #!/bin/bash
 
+set -euo pipefail
+
+# Load variables from .env when available
+if [ -f .env ]; then
+  set -a
+  # shellcheck disable=SC1091
+  source .env
+  set +a
+fi
+
 # Test NPX functionality locally
 echo "🧪 Testing BusinessMap MCP Server via NPX..."
+echo ""
 
-# Set test environment variables
-export BUSINESSMAP_API_TOKEN="test_token"
-export BUSINESSMAP_API_URL="https://test.kanbanize.com/api/v2"
-export BUSINESSMAP_READ_ONLY_MODE="true"
-export BUSINESSMAP_DEFAULT_WORKSPACE_ID="1"
+# Check if required environment variables are set
+if [ -z "${BUSINESSMAP_API_URL:-}" ]; then
+    echo "❌ BUSINESSMAP_API_URL environment variable is not set"
+    exit 1
+fi
+
+if [ -z "${BUSINESSMAP_API_TOKEN:-}" ]; then
+    echo "❌ BUSINESSMAP_API_TOKEN environment variable is not set"
+    exit 1
+fi
+
+PORT="${PORT:-3000}"
+MCP_SERVER_URL="${MCP_SERVER_URL:-http://localhost:${PORT}/mcp}"
 
 echo "📦 Building package..."
 npm run build
@@ -15,22 +34,33 @@ npm run build
 echo "🔗 Creating global link..."
 npm link
 
-echo "🚀 Testing with npx..."
-echo "This should start the server and show startup messages..."
-echo "Press Ctrl+C to stop the test"
+echo "🚀 Starting server via npx in HTTP mode..."
+echo "Target MCP URL: ${MCP_SERVER_URL}"
 
-# Test the npx command (run for a few seconds then stop)
-(npx @edicarlos.lds/businessmap-mcp &
+cleanup() {
+  echo "🧹 Cleaning up..."
+  kill "${NPXPID:-}" 2>/dev/null || true
+  npm unlink -g @edicarlos.lds/businessmap-mcp >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+
+(
+  TRANSPORT=http PORT="$PORT" npx @edicarlos.lds/businessmap-mcp
+) &
 NPXPID=$!
-sleep 3
-kill $NPXPID 2>/dev/null
-wait $NPXPID 2>/dev/null) || echo "✅ Test completed (server started successfully)"
 
-echo "🧹 Cleaning up..."
-npm unlink -g @edicarlos.lds/businessmap-mcp
+echo "⏳ Waiting for server startup..."
+sleep 6
+
+echo "🔍 Verifying MCP tools through HTTP client..."
+MCP_SERVER_URL="$MCP_SERVER_URL" npx tsx scripts/verify-tools.ts
 
 echo "✅ NPX test completed!"
 echo ""
+echo "📋 Summary:"
+echo "  - Server started via npx: ✅"
+echo "  - MCP endpoint verified: ✅"
+
 echo "📋 To use in Claude Desktop, add this configuration:"
 echo "{"
 echo "  \"mcpServers\": {"

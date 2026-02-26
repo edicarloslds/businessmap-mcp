@@ -61,6 +61,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'List Cards',
         description: 'Get a list of cards from a board with optional filters',
         inputSchema: listCardsSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async (params) => {
         try {
@@ -81,6 +82,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Get Card',
         description: 'Get details of a specific card',
         inputSchema: getCardSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ card_id }) => {
         try {
@@ -100,6 +102,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Get Card Size',
         description: 'Get the size/points of a specific card',
         inputSchema: getCardSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ card_id }) => {
         try {
@@ -127,6 +130,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Create Card',
         description: 'Create a new card in a board',
         inputSchema: createCardSchema.shape,
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
       },
       async (params) => {
         try {
@@ -146,6 +150,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Move Card',
         description: 'Move a card to a different column or lane',
         inputSchema: moveCardSchema.shape,
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
       },
       async ({ card_id, column_id, lane_id, position }) => {
         try {
@@ -165,6 +170,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Update Card',
         description: "Update a card's properties",
         inputSchema: updateCardSchema.shape,
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
       },
       async (params) => {
         try {
@@ -184,6 +190,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Set Card Size',
         description: 'Set the size/points of a specific card',
         inputSchema: cardSizeSchema.shape,
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
       },
       async ({ card_id, size }) => {
         try {
@@ -210,6 +217,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Get Card Comments',
         description: 'Get all comments for a specific card',
         inputSchema: getCardSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ card_id }) => {
         try {
@@ -232,6 +240,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Get Card Comment',
         description: 'Get details of a specific comment from a card',
         inputSchema: getCardCommentSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ card_id, comment_id }) => {
         try {
@@ -251,6 +260,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Get Card Custom Fields',
         description: 'Get all custom fields for a specific card',
         inputSchema: getCardSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ card_id }) => {
         try {
@@ -273,6 +283,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Get Card Types',
         description: 'Get all available card types',
         inputSchema: getCardTypesSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async () => {
         try {
@@ -295,6 +306,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Get Card History',
         description: 'Get the history of a specific card outcome',
         inputSchema: getCardHistorySchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ card_id, outcome_id }) => {
         try {
@@ -317,6 +329,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Get Card Outcomes',
         description: 'Get all outcomes for a specific card',
         inputSchema: getCardOutcomesSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ card_id }) => {
         try {
@@ -339,6 +352,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Get Card Linked Cards',
         description: 'Get all linked cards for a specific card',
         inputSchema: getCardLinkedCardsSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ card_id }) => {
         try {
@@ -361,6 +375,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Get Card Subtasks',
         description: 'Get all subtasks for a specific card',
         inputSchema: getCardSubtasksSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ card_id }) => {
         try {
@@ -383,6 +398,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Get Card Subtask',
         description: 'Get details of a specific subtask from a card',
         inputSchema: getCardSubtaskSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ card_id, subtask_id }) => {
         try {
@@ -402,6 +418,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Create Card Subtask',
         description: 'Create a new subtask for a card',
         inputSchema: createCardSubtaskSchema.shape,
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
       },
       async (params) => {
         try {
@@ -422,6 +439,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Get Card Parents',
         description: 'Get a list of parent cards for a specific card',
         inputSchema: getCardParentsSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ card_id }) => {
         try {
@@ -444,6 +462,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Get Card Parent',
         description: 'Check if a card is a parent of a given card',
         inputSchema: getCardParentSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ card_id, parent_card_id }) => {
         try {
@@ -463,6 +482,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Add Card Parent',
         description: 'Make a card a parent of a given card',
         inputSchema: addCardParentSchema.shape,
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
       },
       async ({ card_id, parent_card_id }) => {
         try {
@@ -482,6 +502,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Remove Card Parent',
         description: 'Remove the link between a child card and a parent card',
         inputSchema: removeCardParentSchema.shape,
+        annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false },
       },
       async ({ card_id, parent_card_id }) => {
         try {
@@ -504,6 +525,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Get Card Parent Graph',
         description: 'Get a list of parent cards including their parent cards too',
         inputSchema: getCardParentGraphSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ card_id }) => {
         try {
@@ -526,6 +548,7 @@ export class CardToolHandler implements BaseToolHandler {
         title: 'Get Card Children',
         description: 'Get a list of child cards of a specified parent card',
         inputSchema: getCardChildrenSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ card_id }) => {
         try {

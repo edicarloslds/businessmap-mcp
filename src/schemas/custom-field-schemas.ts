@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v3';
 
 // Schema para obter detalhes de um custom field específico
 export const getCustomFieldSchema = z.object({

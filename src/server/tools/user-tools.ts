@@ -21,6 +21,7 @@ export class UserToolHandler implements BaseToolHandler {
         title: 'List Users',
         description: 'Get a list of all users',
         inputSchema: listUsersSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async () => {
         try {
@@ -40,6 +41,7 @@ export class UserToolHandler implements BaseToolHandler {
         title: 'Get User',
         description: 'Get details of a specific user',
         inputSchema: getUserSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ user_id }) => {
         try {
@@ -59,6 +61,7 @@ export class UserToolHandler implements BaseToolHandler {
         title: 'Get Current User',
         description: 'Get details of the current logged user',
         inputSchema: getCurrentUserSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async () => {
         try {

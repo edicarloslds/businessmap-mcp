@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v3';
 
 // Schema para listagem de boards
 export const listBoardsSchema = z.object({

@@ -1,15 +1,12 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import { EventSource } from 'eventsource';
-
-// Polyfill EventSource for Node.js
-global.EventSource = EventSource;
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 
 async function main() {
     console.log('🧪 Starting MCP Tool Verification...');
+    const serverUrl = process.env['MCP_SERVER_URL'] || 'http://localhost:3000/mcp';
 
-    const transport = new SSEClientTransport(
-        new URL('http://localhost:3000/sse')
+    const transport = new StreamableHTTPClientTransport(
+        new URL(serverUrl)
     );
 
     const client = new Client(
@@ -23,7 +20,7 @@ async function main() {
     );
 
     try {
-        console.log('🔌 Connecting to server...');
+        console.log(`🔌 Connecting to server at ${serverUrl}...`);
         await client.connect(transport);
         console.log('✅ Connected!');
 
@@ -37,7 +34,7 @@ async function main() {
             console.log('✅ Verified "list_workspaces" tool exists');
         } else {
             console.error('❌ "list_workspaces" tool not found');
-            process.exit(1);
+            process.exitCode = 1;
         }
 
         // Optional: Call a tool if we want to test execution (will fail without real API)
@@ -45,11 +42,13 @@ async function main() {
 
     } catch (error) {
         console.error('❌ Verification failed:', error);
-        process.exit(1);
+        process.exitCode = 1;
     } finally {
-        await client.close();
-        process.exit(0);
+        await client.close().catch(() => undefined);
     }
 }
 
-main();
+main().catch((error) => {
+    console.error('❌ Unexpected verification failure:', error);
+    process.exitCode = 1;
+});

@@ -1,71 +1,112 @@
+import { randomUUID } from 'node:crypto';
 import express from 'express';
 import cors from 'cors';
-import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { BusinessMapMcpServer } from './mcp-server.js';
 import { config } from '../config/environment.js';
 import { logger } from '../utils/logger.js';
 
-export async function startHttpServer(mcpServer: BusinessMapMcpServer) {
+interface SessionContext {
+  transport: StreamableHTTPServerTransport;
+  server: BusinessMapMcpServer;
+}
+
+export async function startHttpServer() {
   const app = express();
-  const transports = new Map<string, SSEServerTransport>();
 
-  // Enable CORS
-  app.use(cors());
+  // Parse JSON bodies (required for StreamableHTTP transport)
+  app.use(express.json());
 
-  // Set up SSE endpoint
-  app.get('/sse', async (req, res) => {
-    logger.info('New SSE connection request');
+  // Enable CORS with configured allowed origins
+  app.use(
+    cors({
+      origin: config.server.allowedOrigins,
+      methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'mcp-session-id', 'last-event-id'],
+      exposedHeaders: ['mcp-session-id'],
+    })
+  );
 
-    const transport = new SSEServerTransport(
-      '/message',
-      res
-    );
+  const sessions = new Map<string, SessionContext>();
 
-    const sessionId = transport.sessionId;
-    transports.set(sessionId, transport);
+  // Single /mcp endpoint handles GET, POST and DELETE (Streamable HTTP spec 2025-03-26)
+  const handleMcpRequest = async (
+    req: express.Request,
+    res: express.Response
+  ) => {
+    const sessionId = req.headers['mcp-session-id'] as string | undefined;
 
-    logger.info(`Created new transport with session ID: ${sessionId}`);
+    if (req.method === 'POST' && !sessionId) {
+      const sessionServer = new BusinessMapMcpServer();
 
-    // Clean up on close
-    res.on('close', () => {
-      logger.info(`SSE connection closed for session ${sessionId}`);
-      transports.delete(sessionId);
-    });
+      // New session: create a fresh transport
+      const transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: () => randomUUID(),
+        onsessioninitialized: (id) => {
+          sessions.set(id, { transport, server: sessionServer });
+          logger.info(`New MCP session initialized: ${id}`);
+        },
+        onsessionclosed: async (id) => {
+          const session = sessions.get(id);
+          sessions.delete(id);
 
-    try {
-      await mcpServer.server.connect(transport);
-      await transport.start();
-    } catch (error) {
-      logger.error(`Failed to start transport for session ${sessionId}:`, error);
-      transports.delete(sessionId);
-      if (!res.headersSent) {
-        res.status(500).send('Failed to start SSE transport');
+          try {
+            await session?.server.server.close();
+          } catch (error) {
+            logger.warn(`Error while closing MCP session ${id}:`, error);
+          }
+
+          logger.info(`MCP session closed: ${id}`);
+        },
+        allowedHosts: config.server.allowedHosts,
+        allowedOrigins: config.server.allowedOrigins,
+        enableDnsRebindingProtection: true,
+      });
+
+      try {
+        await sessionServer.server.connect(transport);
+        await transport.handleRequest(req, res, req.body);
+      } catch (error) {
+        logger.error('Failed to handle new MCP session:', error);
+        try {
+          await sessionServer.server.close();
+        } catch (closeError) {
+          logger.warn('Error while cleaning up failed session:', closeError);
+        }
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Failed to initialize MCP session' });
+        }
       }
-    }
-  });
-
-  // Set up message endpoint
-  app.post('/message', async (req, res) => {
-    const sessionId = req.query.sessionId as string;
-
-    if (!sessionId) {
-      res.status(400).send('Missing sessionId query parameter');
       return;
     }
 
-    const transport = transports.get(sessionId);
-
-    if (!transport) {
-      res.status(404).send(`Session not found: ${sessionId}`);
+    // Existing session
+    if (sessionId) {
+      const session = sessions.get(sessionId);
+      if (!session) {
+        res.status(404).json({ error: `Session not found: ${sessionId}` });
+        return;
+      }
+      try {
+        await session.transport.handleRequest(req, res, req.body);
+      } catch (error) {
+        logger.error(`Error handling request for session ${sessionId}:`, error);
+        if (!res.headersSent) {
+          res.status(500).json({ error: 'Internal server error' });
+        }
+      }
       return;
     }
 
-    logger.debug(`Received JSON-RPC message for session ${sessionId}`);
-    await transport.handlePostMessage(req, res);
-  });
+    res.status(400).json({ error: 'Missing mcp-session-id header' });
+  };
+
+  app.get('/mcp', handleMcpRequest);
+  app.post('/mcp', handleMcpRequest);
+  app.delete('/mcp', handleMcpRequest);
 
   // Health check endpoint
-  app.get('/health', (req, res) => {
+  app.get('/health', (_req, res) => {
     res.json({ status: 'ok', version: config.server.version });
   });
 
@@ -73,7 +114,9 @@ export async function startHttpServer(mcpServer: BusinessMapMcpServer) {
 
   app.listen(port, () => {
     logger.success(`HTTP Server running on port ${port}`);
-    logger.info(`SSE Endpoint: http://localhost:${port}/sse`);
-    logger.info(`Message Endpoint: http://localhost:${port}/message`);
+    logger.info(`MCP Endpoint: http://localhost:${port}/mcp`);
+    logger.info(`Health Check: http://localhost:${port}/health`);
+    logger.info(`Allowed origins: ${config.server.allowedOrigins.join(', ')}`);
+    logger.info(`Allowed hosts: ${config.server.allowedHosts.join(', ')}`);
   });
 }
