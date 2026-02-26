@@ -11,6 +11,7 @@ import {
   WorkflowClient,
   WorkspaceClient,
 } from './modules/index.js';
+import { CreateCommentParams, CreateTagParams, UpdateCommentParams } from '../types/index.js';
 
 export class BusinessMapClient {
   private http: AxiosInstance;
@@ -202,6 +203,18 @@ export class BusinessMapClient {
     return this.boardClient.getCurrentBoardStructure(boardId);
   }
 
+  async createColumn(boardId: number, params: Parameters<BoardClient['createColumn']>[1]) {
+    return this.boardClient.createColumn(boardId, params);
+  }
+
+  async updateColumn(boardId: number, columnId: number, params: Parameters<BoardClient['updateColumn']>[2]) {
+    return this.boardClient.updateColumn(boardId, columnId, params);
+  }
+
+  async deleteColumn(boardId: number, columnId: number) {
+    return this.boardClient.deleteColumn(boardId, columnId);
+  }
+
   // Card Management - Delegated to CardClient
   async getCards(boardId: number, filters?: CardFilters) {
     return this.cardClient.getCards(boardId, filters);
@@ -291,6 +304,58 @@ export class BusinessMapClient {
     return this.cardClient.getCardChildren(cardId);
   }
 
+  // Block / Unblock - Delegated to CardClient
+  async blockCard(cardId: number, reason: string) {
+    return this.cardClient.blockCard(cardId, reason);
+  }
+
+  async unblockCard(cardId: number) {
+    return this.cardClient.unblockCard(cardId);
+  }
+
+  // Comments - Delegated to CardClient
+  async createCardComment(cardId: number, params: CreateCommentParams) {
+    return this.cardClient.createCardComment(cardId, params);
+  }
+
+  async updateCardComment(cardId: number, commentId: number, params: UpdateCommentParams) {
+    return this.cardClient.updateCardComment(cardId, commentId, params);
+  }
+
+  async deleteCardComment(cardId: number, commentId: number) {
+    return this.cardClient.deleteCardComment(cardId, commentId);
+  }
+
+  // Tags - Delegated to CardClient
+  async createTag(params: CreateTagParams) {
+    return this.cardClient.createTag(params);
+  }
+
+  async addTagToCard(cardId: number, tagId: number) {
+    return this.cardClient.addTagToCard(cardId, tagId);
+  }
+
+  async removeTagFromCard(cardId: number, tagId: number) {
+    return this.cardClient.removeTagFromCard(cardId, tagId);
+  }
+
+  // Stickers - Delegated to CardClient
+  async addStickerToCard(cardId: number, stickerId: number) {
+    return this.cardClient.addStickerToCard(cardId, stickerId);
+  }
+
+  async removeStickerFromCard(cardId: number, stickerCardId: number) {
+    return this.cardClient.removeStickerFromCard(cardId, stickerCardId);
+  }
+
+  async addPredecessor(cardId: number, predecessorCardId: number, params?: Parameters<CardClient['addPredecessor']>[2]) {
+    return this.cardClient.addPredecessor(cardId, predecessorCardId, params);
+  }
+
+  async removePredecessor(cardId: number, predecessorCardId: number) {
+    return this.cardClient.removePredecessor(cardId, predecessorCardId);
+  }
+
   // User Management - Delegated to UserClient
   async getUsers() {
     return this.userClient.getUsers();
@@ -302,6 +367,10 @@ export class BusinessMapClient {
 
   async getCurrentUser() {
     return this.userClient.getCurrentUser();
+  }
+
+  async inviteUser(params: Parameters<UserClient['inviteUser']>[0]) {
+    return this.userClient.inviteUser(params);
   }
 
   // Custom Fields - Delegated to CustomFieldClient
