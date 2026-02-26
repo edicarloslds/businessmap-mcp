@@ -99,7 +99,7 @@ export const getCurrentBoardStructureSchema = z.object({
 });
 
 // Schema para criação de coluna
-export const createColumnSchema = z.object({
+export const createColumnInputSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
   // Main column fields
   workflow_id: z
@@ -126,6 +126,30 @@ export const createColumnSchema = z.object({
   name: z.string().describe('The name of the column'),
   limit: z.number().optional().describe('The WIP limit for the column'),
   description: z.string().optional().describe('Optional description for the column'),
+});
+
+export const createColumnSchema = createColumnInputSchema.superRefine((data, ctx) => {
+  const hasParent = data.parent_column_id !== undefined;
+  const hasMainColumnData = data.workflow_id !== undefined || data.section !== undefined;
+
+  if (hasParent) {
+    if (data.workflow_id !== undefined || data.section !== undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'When parent_column_id is provided (sub-column), do not provide workflow_id or section.',
+      });
+    }
+    return;
+  }
+
+  if (!hasMainColumnData || data.workflow_id === undefined || data.section === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        'For main columns, workflow_id and section are required when parent_column_id is not provided.',
+    });
+  }
 });
 
 // Schema para atualização de coluna
