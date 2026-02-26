@@ -97,3 +97,79 @@ export const createLaneSchema = z.object({
 export const getCurrentBoardStructureSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
 });
+
+// Schema para criação de coluna
+export const createColumnInputSchema = z.object({
+  board_id: z.number().describe('The ID of the board'),
+  // Main column fields
+  workflow_id: z
+    .number()
+    .optional()
+    .describe('The workflow ID (required for main columns, omit for sub-columns)'),
+  section: z
+    .number()
+    .min(1)
+    .max(4)
+    .optional()
+    .describe(
+      'The section where the column is located: 1=Backlog, 2=Requested, 3=Progress, 4=Done (required for main columns)'
+    ),
+  // Sub-column field
+  parent_column_id: z
+    .number()
+    .optional()
+    .describe(
+      'The ID of the parent column (required for sub-columns; when set, creates a sub-column instead of a main column)'
+    ),
+  // Shared fields
+  position: z.number().describe('The position of the column within the section'),
+  name: z.string().describe('The name of the column'),
+  limit: z.number().optional().describe('The WIP limit for the column'),
+  description: z.string().optional().describe('Optional description for the column'),
+});
+
+export const createColumnSchema = createColumnInputSchema.superRefine((data, ctx) => {
+  const hasParent = data.parent_column_id !== undefined;
+  const hasMainColumnData = data.workflow_id !== undefined || data.section !== undefined;
+
+  if (hasParent) {
+    if (data.workflow_id !== undefined || data.section !== undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          'When parent_column_id is provided (sub-column), do not provide workflow_id or section.',
+      });
+    }
+    return;
+  }
+
+  if (!hasMainColumnData || data.workflow_id === undefined || data.section === undefined) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        'For main columns, workflow_id and section are required when parent_column_id is not provided.',
+    });
+  }
+});
+
+// Schema para atualização de coluna
+export const updateColumnSchema = z.object({
+  board_id: z.number().describe('The ID of the board'),
+  column_id: z.number().describe('The ID of the column to update'),
+  name: z.string().optional().describe('The new name of the column'),
+  limit: z.number().optional().describe('The new WIP limit for the column'),
+  section: z
+    .number()
+    .min(1)
+    .max(4)
+    .optional()
+    .describe('The new section: 1=Backlog, 2=Requested, 3=Progress, 4=Done'),
+  position: z.number().optional().describe('The new position of the column within its section'),
+  description: z.string().optional().describe('The new description for the column'),
+});
+
+// Schema para exclusão de coluna
+export const deleteColumnSchema = z.object({
+  board_id: z.number().describe('The ID of the board'),
+  column_id: z.number().describe('The ID of the column to delete'),
+});

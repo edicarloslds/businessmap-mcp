@@ -2,12 +2,16 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
 import {
   createBoardSchema,
+  createColumnSchema,
+  createColumnInputSchema,
   createLaneSchema,
+  deleteColumnSchema,
   getBoardSchema,
   getCurrentBoardStructureSchema,
   getLaneSchema,
   listBoardsSchema,
   searchBoardSchema,
+  updateColumnSchema,
 } from '../../schemas/index.js';
 import { logger } from '../../utils/logger.js';
 import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
@@ -24,6 +28,9 @@ export class BoardToolHandler implements BaseToolHandler {
     if (!readOnlyMode) {
       this.registerCreateBoard(server, client);
       this.registerCreateLane(server, client);
+      this.registerCreateColumn(server, client);
+      this.registerUpdateColumn(server, client);
+      this.registerDeleteColumn(server, client);
     }
   }
 
@@ -302,6 +309,83 @@ export class BoardToolHandler implements BaseToolHandler {
           return createSuccessResponse(structure, 'Board structure retrieved successfully:');
         } catch (error) {
           return createErrorResponse(error, 'getting current board structure');
+        }
+      }
+    );
+  }
+
+  private registerCreateColumn(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'create_column',
+      {
+        title: 'Create Column',
+        description:
+          'Create a new column on a board. Supports both main columns (requires workflow_id and section) and sub-columns (requires parent_column_id). Section values: 1=Backlog, 2=Requested, 3=Progress, 4=Done.',
+        inputSchema: createColumnInputSchema.shape,
+      },
+      async (params: any) => {
+        try {
+          const {
+            board_id,
+            workflow_id,
+            section,
+            parent_column_id,
+            position,
+            name,
+            limit,
+            description,
+          } = createColumnSchema.parse(params);
+          const columnParams = parent_column_id
+            ? { parent_column_id, position, name, ...(limit !== undefined && { limit }), ...(description && { description }) }
+            : { workflow_id, section, position, name, ...(limit !== undefined && { limit }), ...(description && { description }) };
+          const column = await client.createColumn(board_id, columnParams);
+          return createSuccessResponse(column, 'Column created successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'creating column');
+        }
+      }
+    );
+  }
+
+  private registerUpdateColumn(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'update_column',
+      {
+        title: 'Update Column',
+        description: 'Update the details of a specific column on a board',
+        inputSchema: updateColumnSchema.shape,
+      },
+      async ({ board_id, column_id, name, limit, section, position, description }) => {
+        try {
+          const params: Record<string, unknown> = {};
+          if (name !== undefined) params['name'] = name;
+          if (limit !== undefined) params['limit'] = limit;
+          if (section !== undefined) params['section'] = section;
+          if (position !== undefined) params['position'] = position;
+          if (description !== undefined) params['description'] = description;
+          const column = await client.updateColumn(board_id, column_id, params);
+          return createSuccessResponse(column, 'Column updated successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'updating column');
+        }
+      }
+    );
+  }
+
+  private registerDeleteColumn(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'delete_column',
+      {
+        title: 'Delete Column',
+        description: 'Delete a column from a board',
+        inputSchema: deleteColumnSchema.shape,
+      },
+      async ({ board_id, column_id }) => {
+        try {
+          await client.deleteColumn(board_id, column_id);
+          return createSuccessResponse({ board_id, column_id }, 'Column deleted successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'deleting column');
         }
       }
     );
