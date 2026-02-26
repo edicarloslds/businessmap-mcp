@@ -1,4 +1,5 @@
-export { BaseClientModule, BaseClientModuleImpl, HttpClientConfig } from './base-client.js';
+export { BaseClientModuleImpl } from './base-client.js';
+export type { BaseClientModule, HttpClientConfig } from './base-client.js';
 export { BoardClient } from './board-client.js';
 export { CardClient, CardFilters } from './card-client.js';
 export { CustomFieldClient } from './custom-field-client.js';

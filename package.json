@@ -1,6 +1,6 @@
 {
   "name": "@edicarlos.lds/businessmap-mcp",
-  "version": "1.7.0",
+  "version": "2.0.0",
   "description": "Model Context Protocol server for BusinessMap (Kanbanize) integration",
   "type": "module",
   "main": "dist/index.js",
@@ -58,19 +58,18 @@
     "access": "public"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.17.0",
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "axios": "^1.12.0",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
-    "eventsource": "^4.1.0",
     "express": "^5.1.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
-    "@types/eventsource": "^1.1.15",
     "@types/express": "^5.0.5",
-    "@types/node": "^20.0.0",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^20.19.33",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.0.0",

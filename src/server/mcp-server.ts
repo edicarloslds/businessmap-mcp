@@ -15,10 +15,15 @@ import {
   CardResourceHandler,
   WorkspaceResourceHandler,
 } from './resources/index.js';
+import {
+  BoardPromptHandler,
+  CardPromptHandler,
+  WorkspacePromptHandler,
+} from './prompts/index.js';
 
 export class BusinessMapMcpServer {
-  private mcpServer: McpServer;
-  private businessMapClient: BusinessMapClient;
+  private readonly mcpServer: McpServer;
+  private readonly businessMapClient: BusinessMapClient;
 
   constructor() {
     this.mcpServer = new McpServer({
@@ -29,6 +34,7 @@ export class BusinessMapMcpServer {
     this.businessMapClient = new BusinessMapClient(config.businessMap);
     this.setupTools();
     this.setupResources();
+    this.setupPrompts();
   }
 
   /**
@@ -71,6 +77,18 @@ export class BusinessMapMcpServer {
 
     resourceHandlers.forEach((handler) => {
       handler.registerResources(this.mcpServer, this.businessMapClient);
+    });
+  }
+
+  private setupPrompts(): void {
+    const promptHandlers = [
+      new BoardPromptHandler(),
+      new CardPromptHandler(),
+      new WorkspacePromptHandler(),
+    ];
+
+    promptHandlers.forEach((handler) => {
+      handler.registerPrompts(this.mcpServer, this.businessMapClient);
     });
   }
 

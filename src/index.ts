@@ -5,54 +5,56 @@ import { config, validateConfig } from './config/environment.js';
 import { BusinessMapMcpServer } from './server/mcp-server.js';
 import { logger } from './utils/logger.js';
 
+async function initializeWithRetry(server: BusinessMapMcpServer): Promise<void> {
+  logger.info('🔄 Initializing connection to BusinessMap API...');
+  let retryCount = 0;
+  const maxRetries = 3;
+  const retryDelay = 2000; // 2 seconds
+
+  while (retryCount < maxRetries) {
+    try {
+      await server.initialize();
+      logger.success('Successfully connected to BusinessMap API');
+      return;
+    } catch (error) {
+      retryCount++;
+      const message = error instanceof Error ? error.message : 'Unknown error';
+
+      if (retryCount < maxRetries) {
+        logger.warn(`Connection attempt ${retryCount} failed: ${message}`);
+        logger.info(`🔄 Retrying in ${retryDelay / 1000} seconds... (${retryCount}/${maxRetries})`);
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      } else {
+        logger.error(`Failed to connect to BusinessMap API after ${maxRetries} attempts: ${message}`);
+        logger.error('💡 Please check your API URL and token configuration');
+        throw error;
+      }
+    }
+  }
+}
+
 async function main() {
   try {
     // Validate configuration
     validateConfig();
 
-    // Create and setup the MCP server
-    const businessMapServer = new BusinessMapMcpServer();
-
     logger.info(`🚀 Starting ${config.server.name} v${config.server.version}`);
     logger.info(`📡 BusinessMap API: ${config.businessMap.apiUrl}`);
     logger.info(`🔒 Read-only mode: ${config.businessMap.readOnlyMode ? 'enabled' : 'disabled'}`);
 
-    // Initialize BusinessMap client with retry logic
-    logger.info('🔄 Initializing connection to BusinessMap API...');
-    let retryCount = 0;
-    const maxRetries = 3;
-    const retryDelay = 2000; // 2 seconds
-
-    while (retryCount < maxRetries) {
-      try {
-        await businessMapServer.initialize();
-        logger.success('Successfully connected to BusinessMap API');
-        break;
-      } catch (error) {
-        retryCount++;
-        const message = error instanceof Error ? error.message : 'Unknown error';
-
-        if (retryCount < maxRetries) {
-          logger.warn(`Connection attempt ${retryCount} failed: ${message}`);
-          logger.info(
-            `🔄 Retrying in ${retryDelay / 1000} seconds... (${retryCount}/${maxRetries})`
-          );
-          await new Promise((resolve) => setTimeout(resolve, retryDelay));
-        } else {
-          logger.error(
-            `Failed to connect to BusinessMap API after ${maxRetries} attempts: ${message}`
-          );
-          logger.error('💡 Please check your API URL and token configuration');
-          throw error;
-        }
-      }
-    }
-
     // Setup transport based on configuration
-    if (config.transport.type === 'sse' || config.transport.type === 'http') {
+    if (config.transport.type === 'http') {
+      // Verify credentials and connectivity before starting remote HTTP mode
+      const verificationServer = new BusinessMapMcpServer();
+      await initializeWithRetry(verificationServer);
+
       const { startHttpServer } = await import('./server/http.js');
-      await startHttpServer(businessMapServer);
+      await startHttpServer();
     } else {
+      // Create and initialize the stdio MCP server
+      const businessMapServer = new BusinessMapMcpServer();
+      await initializeWithRetry(businessMapServer);
+
       // Default to Stdio
       const transport = new StdioServerTransport();
       await businessMapServer.server.connect(transport);
@@ -77,7 +79,9 @@ process.on('SIGTERM', () => {
 });
 
 // Start the server
-main().catch((error) => {
+try {
+  await main();
+} catch (error) {
   console.error('💥 Unhandled error:', error);
   process.exit(1);
-});
+}

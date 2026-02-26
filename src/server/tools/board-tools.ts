@@ -34,6 +34,7 @@ export class BoardToolHandler implements BaseToolHandler {
         title: 'List Boards',
         description: 'Get a list of boards with optional filters',
         inputSchema: listBoardsSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async (params) => {
         try {
@@ -54,6 +55,7 @@ export class BoardToolHandler implements BaseToolHandler {
         description:
           'Search for a board by ID or name, with intelligent fallback to list all boards if direct search fails',
         inputSchema: searchBoardSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ board_id, board_name, workspace_id }) => {
         try {
@@ -181,6 +183,7 @@ export class BoardToolHandler implements BaseToolHandler {
         title: 'Get Board Columns',
         description: 'Get all columns for a board (válido na API oficial)',
         inputSchema: getBoardSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ board_id }) => {
         try {
@@ -200,6 +203,7 @@ export class BoardToolHandler implements BaseToolHandler {
         title: 'Get Board Lanes',
         description: 'Get all lanes/swimlanes for a board (válido na API oficial)',
         inputSchema: getBoardSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ board_id }) => {
         try {
@@ -219,6 +223,7 @@ export class BoardToolHandler implements BaseToolHandler {
         title: 'Get Lane Details',
         description: 'Get details of a specific lane/swimlane (válido na API oficial)',
         inputSchema: getLaneSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ lane_id }) => {
         try {
@@ -238,6 +243,7 @@ export class BoardToolHandler implements BaseToolHandler {
         title: 'Create Board',
         description: 'Create a new board in a workspace',
         inputSchema: createBoardSchema.shape,
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
       },
       async ({ name, workspace_id, description }) => {
         try {
@@ -261,6 +267,7 @@ export class BoardToolHandler implements BaseToolHandler {
         title: 'Create Lane',
         description: 'Create a new lane/swimlane in a board (válido na API oficial)',
         inputSchema: createLaneSchema.shape,
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
       },
       async ({ workflow_id, name, description, color, position }) => {
         try {
@@ -287,6 +294,7 @@ export class BoardToolHandler implements BaseToolHandler {
         description:
           'Get the complete current structure of a board including workflows, columns, lanes, and configurations',
         inputSchema: getCurrentBoardStructureSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ board_id }) => {
         try {

@@ -32,7 +32,7 @@ export function createErrorResponse(error: unknown, operation: string) {
 /**
  * Standard success handler for tool responses
  */
-export function createSuccessResponse(data: any, message?: string) {
+export function createSuccessResponse(data: unknown, message?: string) {
   return {
     content: [
       {

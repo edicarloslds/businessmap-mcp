@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'zod/v3';
 
 // Schema para obter colunas de cycle time do workflow
 export const getWorkflowCycleTimeColumnsSchema = z.object({

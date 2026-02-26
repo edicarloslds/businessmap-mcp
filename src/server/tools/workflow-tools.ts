@@ -17,6 +17,7 @@ export class WorkflowToolHandler implements BaseToolHandler {
         title: 'Get Workflow Cycle Time Columns',
         description: "Get workflow's cycle time columns",
         inputSchema: getWorkflowCycleTimeColumnsSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ board_id, workflow_id }) => {
         try {
@@ -40,6 +41,7 @@ export class WorkflowToolHandler implements BaseToolHandler {
         description:
           "Get workflow's effective cycle time columns (the columns actually used for cycle time calculation with applied filters/logic)",
         inputSchema: getWorkflowCycleTimeColumnsSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ board_id, workflow_id }) => {
         try {
