@@ -9,7 +9,7 @@
 [![MCP](https://img.shields.io/badge/Model%20Context%20Protocol-000000?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io/)
 [![GitHub Sponsors](https://img.shields.io/github/sponsors/edicarloslds)](https://github.com/sponsors/edicarloslds)
 
-Model Context Protocol server for BusinessMap (Kanbanize) integration. Provides comprehensive access to BusinessMap's project management features including workspaces, boards, cards, subtasks, parent-child relationships, outcomes, custom fields, and more.
+Model Context Protocol server for BusinessMap (Kanbanize) integration. Provides comprehensive access to BusinessMap's project management features through **56 tools**, **5 resources**, and **4 guided prompts** — covering workspaces, boards, cards, subtasks, parent-child relationships, outcomes, comments, tags, stickers, predecessors, custom fields, and more.
 
 ## Installation
 
@@ -58,56 +58,15 @@ npx @edicarlos.lds/businessmap-mcp
 
 #### Claude Desktop
 
-Add the following configuration to your `claude_desktop_config.json` file:
+Config file location:
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+Open it via **Settings → Developer → Edit Config**, then add:
 
 ```json
 {
   "mcpServers": {
-    "Businessmap": {
-      "command": "npx",
-      "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
-      "env": {
-        "BUSINESSMAP_API_TOKEN": "your_token_here",
-        "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
-        "BUSINESSMAP_READ_ONLY_MODE": "false", // optional
-        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1" // optional
-      }
-    }
-  }
-}
-```
-
-#### Cursor
-
-To use the BusinessMap MCP server with Cursor, add the following configuration to your Cursor settings:
-
-1. Open Cursor Settings (Cmd/Ctrl + ,)
-2. Click on "MCP & Integrations" and then "Add Custom MCP"
-3. Add a new MCP server with the following configuration:
-
-```json
-{
-  "name": "BusinessMap",
-  "command": "npx",
-  "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
-  "env": {
-    "BUSINESSMAP_API_TOKEN": "your_token_here",
-    "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
-    "BUSINESSMAP_READ_ONLY_MODE": "false",
-    "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1"
-  }
-}
-```
-
-#### VSCode
-
-To use the BusinessMap MCP server with VSCode, add the following configuration:
-
-1. Edit or create `.vscode/mcp.json` and add the MCP extension settings:
-
-```json
-{
-  "servers": {
     "businessmap": {
       "command": "npx",
       "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
@@ -122,12 +81,159 @@ To use the BusinessMap MCP server with VSCode, add the following configuration:
 }
 ```
 
+> **Note**: Fully quit and restart Claude Desktop after editing (on macOS, quit from the Dock; on Windows, exit from the system tray). JSON does not support comments — remove any before saving.
+
+#### Claude Code
+
+Run the following command to add the server globally or per-project:
+
+```bash
+# Add globally (available across all projects)
+claude mcp add --transport stdio --scope user businessmap -- npx -y @edicarlos.lds/businessmap-mcp
+
+# Add to current project only (stored in ~/.claude.json)
+claude mcp add --transport stdio businessmap -- npx -y @edicarlos.lds/businessmap-mcp
+```
+
+To pass environment variables:
+
+```bash
+claude mcp add --transport stdio \
+  --env BUSINESSMAP_API_TOKEN=your_token_here \
+  --env BUSINESSMAP_API_URL=https://your-account.kanbanize.com/api/v2 \
+  businessmap -- npx -y @edicarlos.lds/businessmap-mcp
+```
+
+Alternatively, commit a `.mcp.json` file to your project root to share it with your team:
+
+```json
+{
+  "mcpServers": {
+    "businessmap": {
+      "command": "npx",
+      "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
+      "env": {
+        "BUSINESSMAP_API_TOKEN": "${BUSINESSMAP_API_TOKEN}",
+        "BUSINESSMAP_API_URL": "${BUSINESSMAP_API_URL}"
+      }
+    }
+  }
+}
+```
+
+> **Tip**: Use environment variable expansion (`${VAR}`) in `.mcp.json` to avoid hardcoding secrets in source control.
+
+#### Cursor
+
+Create or edit `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` at the project root (project-specific):
+
+```json
+{
+  "mcpServers": {
+    "businessmap": {
+      "command": "npx",
+      "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
+      "env": {
+        "BUSINESSMAP_API_TOKEN": "your_token_here",
+        "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
+        "BUSINESSMAP_READ_ONLY_MODE": "false",
+        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1"
+      }
+    }
+  }
+}
+```
+
+You can also manage servers via **Settings → Features → MCP** in the Cursor UI.
+
+#### VS Code
+
+VS Code uses `"servers"` as the top-level key (not `"mcpServers"`). Create or edit `.vscode/mcp.json` in your project root (workspace-scoped, safe to commit), or the user-level config at:
+- **macOS**: `~/Library/Application Support/Code/User/mcp.json`
+- **Windows**: `%APPDATA%\Code\User\mcp.json`
+
+```json
+{
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "businessmap-token",
+      "description": "BusinessMap API Token",
+      "password": true
+    }
+  ],
+  "servers": {
+    "businessmap": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
+      "env": {
+        "BUSINESSMAP_API_TOKEN": "${input:businessmap-token}",
+        "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
+        "BUSINESSMAP_READ_ONLY_MODE": "false",
+        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1"
+      }
+    }
+  }
+}
+```
+
+> **Note**: The `inputs` block lets VS Code prompt you for secrets at runtime instead of hardcoding them. Requires the GitHub Copilot Chat extension. Add via Command Palette: `MCP: Add Server`.
+
+#### Windsurf
+
+Edit `~/.codeium/windsurf/mcp_config.json` (open from the Cascade panel's MCPs icon → **Configure**):
+
+```json
+{
+  "mcpServers": {
+    "businessmap": {
+      "command": "npx",
+      "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
+      "env": {
+        "BUSINESSMAP_API_TOKEN": "your_token_here",
+        "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
+        "BUSINESSMAP_READ_ONLY_MODE": "false",
+        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1"
+      }
+    }
+  }
+}
+```
+
+> **Tip**: Windsurf supports `${env:VARIABLE_NAME}` syntax inside `env` values to reference host environment variables.
+
+#### Zed
+
+MCP servers are configured inside Zed's main settings file (`~/.config/zed/settings.json`) under the `context_servers` key. Open it via **Zed → Settings** or `Cmd+,`:
+
+```json
+{
+  "context_servers": {
+    "businessmap": {
+      "source": "custom",
+      "command": "npx",
+      "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
+      "env": {
+        "BUSINESSMAP_API_TOKEN": "your_token_here",
+        "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
+        "BUSINESSMAP_READ_ONLY_MODE": "false",
+        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1"
+      }
+    }
+  }
+}
+```
+
+You can also add servers via the Agent Panel's Settings view (**Add Custom Server**). A green indicator dot in the Agent Panel confirms the server is running.
+
 #### Other MCP Clients
 
-For other MCP clients, use the appropriate configuration format for your client, ensuring you specify:
+For any other MCP-compatible client, configure a `stdio` server with:
 
-- Command: `npx @edicarlos.lds/businessmap-mcp` (or `businessmap-mcp` if globally installed)
-- Environment variables: `BUSINESSMAP_API_TOKEN`, `BUSINESSMAP_API_URL`, and optionally `BUSINESSMAP_READ_ONLY_MODE`, `BUSINESSMAP_DEFAULT_WORKSPACE_ID`
+- **Command**: `npx -y @edicarlos.lds/businessmap-mcp`
+- **Required env vars**: `BUSINESSMAP_API_TOKEN`, `BUSINESSMAP_API_URL`
+- **Optional env vars**: `BUSINESSMAP_READ_ONLY_MODE`, `BUSINESSMAP_DEFAULT_WORKSPACE_ID`, `LOG_LEVEL`
 
 ### Remote Usage (Streamable HTTP)
 
@@ -188,64 +294,72 @@ You can run the server as a remote MCP endpoint over Streamable HTTP. This is us
 
 ## Usage
 
-The BusinessMap MCP server provides the following tools:
+The BusinessMap MCP server provides tools, resources, and prompts for comprehensive project management integration.
 
-### Workspace Management
+### Tools
+
+#### Workspace Management
 
 - `list_workspaces` - Get all workspaces
 - `get_workspace` - Get workspace details
 - `create_workspace` - Create new workspace
 
-### Board Management
+#### Board Management
 
 - `list_boards` - List boards in workspace(s)
 - `search_board` - Search for boards by ID or name
-
 - `get_current_board_structure` - Get the complete current structure of a board including workflows, columns, lanes, and configurations
 - `create_board` - Create new board (if not in read-only mode)
 - `get_columns` - Get all columns for a board
 - `get_lanes` - Get all lanes for a board
 - `get_lane` - Get details of a specific lane/swimlane
 - `create_lane` - Create new lane/swimlane (if not in read-only mode)
+- `create_column` - Create a new column on a board (supports main columns and sub-columns)
+- `update_column` - Update the details of a specific column on a board
+- `delete_column` - Delete a column from a board
 
-### Card Management
+#### Card Management
 
-#### Basic Card Operations
+##### Basic Card Operations
 
 - `list_cards` - Get cards from a board with optional filters
 - `get_card` - Get detailed card information
 - `get_card_size` - Get the size/points of a specific card
+- `get_card_types` - Get all available card types
 - `create_card` - Create new card
 - `move_card` - Move card to different column/swimlane
 - `update_card` - Update card properties
 - `set_card_size` - Set the size/points of a specific card
+- `delete_card` - Permanently delete a card (irreversible)
 
-#### Card Comments
+##### Card Comments
 
 - `get_card_comments` - Get all comments for a specific card
 - `get_card_comment` - Get details of a specific comment from a card
+- `create_comment` - Add a new comment to a card
+- `update_comment` - Update the text of an existing comment on a card
+- `delete_comment` - Delete a comment from a card
 
-#### Card Custom Fields & Types
+##### Card Custom Fields
 
 - `get_card_custom_fields` - Get all custom fields for a specific card
-- `get_card_types` - Get all available card types
 
-#### Card Outcomes & History
+##### Card Outcomes & History
 
 - `get_card_outcomes` - Get all outcomes for a specific card
 - `get_card_history` - Get the history of a specific card outcome
 
-#### Card Relationships
+##### Card Relationships
 
 - `get_card_linked_cards` - Get all linked cards for a specific card
 
-#### Card Subtasks
+##### Card Subtasks
 
 - `get_card_subtasks` - Get all subtasks for a specific card
 - `get_card_subtask` - Get details of a specific subtask from a card
 - `create_card_subtask` - Create a new subtask for a card
 
-#### Card Parent Relationships
+##### Card Parent Relationships
 
 - `get_card_parents` - Get a list of parent cards for a specific card
 - `get_card_parent` - Check if a card is a parent of a given card
@@ -254,37 +368,84 @@ The BusinessMap MCP server provides the following tools:
 - `get_card_parent_graph` - Get a list of parent cards including their parent cards too
 - `get_card_children` - Get a list of child cards of a specified parent card
 
-### Custom Field Management
+##### Card Blocking
+
+- `block_card` - Block a card and set a reason/comment explaining why it is blocked
+- `unblock_card` - Unblock a card by removing its block reason
+
+##### Card Tags
+
+- `create_tag` - Create a new tag in the workspace
+- `add_tag_to_card` - Add an existing tag to a card
+- `remove_tag_from_card` - Remove a tag from a card
+
+##### Card Stickers
+
+- `add_sticker_to_card` - Add a sticker to a card
+- `remove_sticker_from_card` - Remove a sticker from a card using the sticker-card association ID
+
+##### Card Predecessors
+
+- `add_predecessor` - Establish or update a predecessor-successor relationship between two cards
+- `remove_predecessor` - Remove the predecessor-successor relationship between two cards
+
+#### Custom Field Management
 
 - `get_custom_field` - Get details of a specific custom field by ID
 
-### Workflow & Cycle Time Analysis
+#### Workflow & Cycle Time Analysis
 
 - `get_workflow_cycle_time_columns` - Get workflow's cycle time columns
 - `get_workflow_effective_cycle_time_columns` - Get workflow's effective cycle time columns
 
-### User Management
+#### User Management
 
 - `list_users` - Get all users
 - `get_user` - Get user details
 - `get_current_user` - Get current logged user details
+- `invite_user` - Add and invite a new user by email
 
-### System
+#### System
 
 - `health_check` - Check API connection
 - `get_api_info` - Get API information
 
+### Resources
+
+The server exposes structured data resources accessible via URI:
+
+| URI | Description |
+|-----|-------------|
+| `businessmap://workspaces` | List all workspaces |
+| `businessmap://boards` | List all boards |
+| `businessmap://boards/{board_id}` | Get details of a specific board |
+| `businessmap://boards/{board_id}/cards` | List all cards for a specific board |
+| `businessmap://cards/{card_id}` | Get details of a specific card |
+
+### Prompts
+
+The server provides guided prompts for common AI-assisted workflows:
+
+| Prompt | Description |
+|--------|-------------|
+| `analyze-board-performance` | Analyze a board's performance: flow efficiency, bottlenecks, cycle time, and workload distribution |
+| `generate-board-report` | Generate a comprehensive status report for a board, including cards summary and highlights |
+| `create-card-from-description` | Guide the creation of a well-structured card from a natural language description |
+| `workspace-status-overview` | Generate a high-level status overview of a workspace, including all boards and their key metrics |
+
 ## Tool Summary
 
-The BusinessMap MCP server provides **42 tools** across 7 categories:
+The BusinessMap MCP server provides **56 tools**, **5 resources**, and **4 prompts**:
+
+### Tools by Category
 
 - **Workspace Management**: 3 tools
-- **Board Management**: 8 tools
-- **Card Management**: 23 tools (organized in 6 subcategories)
+- **Board Management**: 11 tools
+- **Card Management**: 36 tools (organized in 9 subcategories)
 - **Custom Field Management**: 1 tool
 - **Workflow & Cycle Time Analysis**: 2 tools
-- **User Management**: 3 tools
-- **System**: 2 tools
+- **User Management**: 4 tools
+- **System**: 2 tools (1 utility tool)
 
 ## Key Features
 
@@ -295,12 +456,22 @@ The BusinessMap MCP server provides **42 tools** across 7 categories:
 - **Outcome tracking and history** for detailed progress monitoring
 - **Linked cards management** for cross-project dependencies
 - **Custom fields and types** support for flexible workflows
+- **Card blocking/unblocking** with reason tracking
+- **Tags and stickers** for visual card organization
+- **Predecessor-successor relationships** for dependency management
+- **Comment management** (create, update, delete) for collaboration
 
 ### Comprehensive Board Operations
 
 - **Multi-workspace board management** with search capabilities
-- **Column and lane (swimlane) operations** for workflow customization
+- **Full column management** (create, update, delete) with section and sub-column support
+- **Lane (swimlane) operations** for workflow customization
 - **Board structure analysis** with detailed metadata
+
+### Resources & Prompts
+
+- **5 structured data resources** for direct URI-based data access
+- **4 guided prompts** for common AI-assisted workflows (board analysis, reporting, card creation, workspace overview)
 
 ### Workflow Intelligence
 
@@ -424,6 +595,10 @@ If the connection fails, the server will display detailed error messages and ret
 ### Release Process
 
 This project uses an automated release process. See [RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md) for detailed documentation.
+
+### Full Tools Reference
+
+For the complete list of all tools, resources, and prompts with detailed parameter descriptions, see [TOOLS.md](docs/TOOLS.md).
 
 **Quick Start:**
 
