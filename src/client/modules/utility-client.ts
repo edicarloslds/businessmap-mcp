@@ -24,19 +24,18 @@ export class UtilityClient extends BaseClientModuleImpl {
    */
   async getApiInfo() {
     try {
-      // Tentativa de usar /info (que não existe na API oficial)
+      // /info does not exist in the official BusinessMap API, try /me as fallback
       const response = await this.http.get('/info');
       return response.data;
     } catch (error) {
-      // Fallback: verificar conectividade com /me
-      logger.warn('Endpoint /info não disponível na API oficial, testando conectividade...');
+      logger.warn('Endpoint /info not available in the official API, falling back to connectivity check...');
       try {
         await this.http.get('/me');
         return {
           message: 'API is responding (fallback test)',
           endpoint: '/me',
           status: 'healthy',
-          note: 'Endpoint /info não existe na API oficial do BusinessMap',
+          note: 'Endpoint /info is not available in the official BusinessMap API',
           api_version: 'v2',
           documentation: 'https://rdsaude.kanbanize.com/openapi/#/',
         };

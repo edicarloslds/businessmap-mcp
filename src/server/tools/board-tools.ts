@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
+import { Board } from '../../types/index.js';
 import {
   createBoardSchema,
   createColumnSchema,
@@ -158,11 +159,11 @@ export class BoardToolHandler implements BaseToolHandler {
 
   private async getBoardWithStructure(
     client: BusinessMapClient,
-    board: any,
+    board: Board,
     successMessage: string
   ) {
     try {
-      const structure = await client.getBoardStructure(board.board_id);
+      const structure = await client.getBoardStructure(board.board_id!);
       return createSuccessResponse({ ...board, structure }, successMessage);
     } catch (structureError) {
       logger.warn(
@@ -175,7 +176,7 @@ export class BoardToolHandler implements BaseToolHandler {
     }
   }
 
-  private formatBoardsList(boards: any[]) {
+  private formatBoardsList(boards: Board[]) {
     return boards.map((b) => ({
       board_id: b.board_id,
       name: b.name,
@@ -188,7 +189,7 @@ export class BoardToolHandler implements BaseToolHandler {
       'get_columns',
       {
         title: 'Get Board Columns',
-        description: 'Get all columns for a board (válido na API oficial)',
+        description: 'Get all columns for a board',
         inputSchema: getBoardSchema.shape,
         annotations: { readOnlyHint: true, idempotentHint: true },
       },
@@ -208,7 +209,7 @@ export class BoardToolHandler implements BaseToolHandler {
       'get_lanes',
       {
         title: 'Get Board Lanes',
-        description: 'Get all lanes/swimlanes for a board (válido na API oficial)',
+        description: 'Get all lanes/swimlanes for a board',
         inputSchema: getBoardSchema.shape,
         annotations: { readOnlyHint: true, idempotentHint: true },
       },
@@ -228,7 +229,7 @@ export class BoardToolHandler implements BaseToolHandler {
       'get_lane',
       {
         title: 'Get Lane Details',
-        description: 'Get details of a specific lane/swimlane (válido na API oficial)',
+        description: 'Get details of a specific lane/swimlane',
         inputSchema: getLaneSchema.shape,
         annotations: { readOnlyHint: true, idempotentHint: true },
       },
@@ -272,7 +273,7 @@ export class BoardToolHandler implements BaseToolHandler {
       'create_lane',
       {
         title: 'Create Lane',
-        description: 'Create a new lane/swimlane in a board (válido na API oficial)',
+        description: 'Create a new lane/swimlane in a board',
         inputSchema: createLaneSchema.shape,
         annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
       },
@@ -323,7 +324,7 @@ export class BoardToolHandler implements BaseToolHandler {
           'Create a new column on a board. Supports both main columns (requires workflow_id and section) and sub-columns (requires parent_column_id). Section values: 1=Backlog, 2=Requested, 3=Progress, 4=Done.',
         inputSchema: createColumnInputSchema.shape,
       },
-      async (params: any) => {
+      async (params) => {
         try {
           const {
             board_id,

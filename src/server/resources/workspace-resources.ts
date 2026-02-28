@@ -9,16 +9,20 @@ export class WorkspaceResourceHandler implements BaseResourceHandler {
             'workspaces',
             new ResourceTemplate('businessmap://workspaces', { list: undefined }),
             {},
-            async (uri, variables) => {
-                const workspaces = await client.getWorkspaces();
-                return {
-                    contents: [
-                        {
-                            uri: uri.href,
-                            text: JSON.stringify(workspaces, null, 2),
-                        },
-                    ],
-                };
+            async (uri) => {
+                try {
+                    const workspaces = await client.getWorkspaces();
+                    return {
+                        contents: [
+                            {
+                                uri: uri.href,
+                                text: JSON.stringify(workspaces, null, 2),
+                            },
+                        ],
+                    };
+                } catch (error) {
+                    throw new Error(`Failed to fetch workspaces: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                }
             }
         );
     }

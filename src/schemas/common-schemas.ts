@@ -14,12 +14,15 @@ export const dateTimeFilterSchema = {
 export const paginationSchema = {
   page: z
     .number()
+    .min(1)
     .optional()
     .describe(
       'Results are always paginated and returned in pages. This parameter controls which page is returned'
     ),
   per_page: z
     .number()
+    .min(1)
+    .max(1000)
     .optional()
     .describe(
       'Controls how many results are returned per page. The default value is 200 and the maximum is 1000'
@@ -29,23 +32,23 @@ export const paginationSchema = {
 // ID array filters
 export const idArrayFilters = {
   board_ids: z
-    .array(z.number())
+    .array(z.number().min(1))
     .optional()
     .describe('A list of the board ids for which you want to get the results'),
   column_ids: z
-    .array(z.number())
+    .array(z.number().min(1))
     .optional()
     .describe(
       'A list of the column ids for which you want to get the results. Applied only if state parameter is active'
     ),
   lane_ids: z
-    .array(z.number())
+    .array(z.number().min(1))
     .optional()
     .describe(
       'A list of the lane ids for which you want to get the results. Applied only if state parameter is active'
     ),
   workflow_ids: z
-    .array(z.number())
+    .array(z.number().min(1))
     .optional()
     .describe('A list of the workflows ids for which you want to get the results'),
 };

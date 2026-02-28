@@ -74,7 +74,7 @@ process.on('SIGINT', () => {
 });
 
 process.on('SIGTERM', () => {
-  console.error('\n🛑 Shutting down BusinessMap MCP Server...');
+  logger.info('\n🛑 Shutting down BusinessMap MCP Server...');
   process.exit(0);
 });
 

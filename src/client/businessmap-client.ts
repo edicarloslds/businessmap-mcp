@@ -128,8 +128,18 @@ export class BusinessMapClient {
 
   private transformError(error: AxiosError): Error {
     if (error.response) {
-      const apiError = error.response.data as ApiError;
-      return new Error(`BusinessMap API Error: ${apiError.error?.message || error.message}`);
+      const data = error.response.data;
+      const apiMessage =
+        data !== null &&
+        typeof data === 'object' &&
+        'error' in data &&
+        data.error !== null &&
+        typeof data.error === 'object' &&
+        'message' in data.error &&
+        typeof data.error.message === 'string'
+          ? data.error.message
+          : null;
+      return new Error(`BusinessMap API Error: ${apiMessage ?? error.message}`);
     }
     return new Error(`Network Error: ${error.message}`);
   }

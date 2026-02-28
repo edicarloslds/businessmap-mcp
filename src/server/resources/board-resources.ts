@@ -11,15 +11,19 @@ export class BoardResourceHandler implements BaseResourceHandler {
             new ResourceTemplate('businessmap://boards', { list: undefined }),
             {},
             async (uri) => {
-                const boards = await client.getBoards();
-                return {
-                    contents: [
-                        {
-                            uri: uri.href,
-                            text: JSON.stringify(boards, null, 2),
-                        },
-                    ],
-                };
+                try {
+                    const boards = await client.getBoards();
+                    return {
+                        contents: [
+                            {
+                                uri: uri.href,
+                                text: JSON.stringify(boards, null, 2),
+                            },
+                        ],
+                    };
+                } catch (error) {
+                    throw new Error(`Failed to fetch boards: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                }
             }
         );
 
@@ -29,16 +33,23 @@ export class BoardResourceHandler implements BaseResourceHandler {
             new ResourceTemplate('businessmap://boards/{board_id}', { list: undefined }),
             {},
             async (uri, variables) => {
-                const boardId = parseInt(variables.board_id as string);
-                const board = await client.getBoard(boardId);
-                return {
-                    contents: [
-                        {
-                            uri: uri.href,
-                            text: JSON.stringify(board, null, 2),
-                        },
-                    ],
-                };
+                try {
+                    const boardId = parseInt(variables.board_id as string);
+                    if (isNaN(boardId)) {
+                        throw new Error(`Invalid board_id: "${variables.board_id}" is not a valid number`);
+                    }
+                    const board = await client.getBoard(boardId);
+                    return {
+                        contents: [
+                            {
+                                uri: uri.href,
+                                text: JSON.stringify(board, null, 2),
+                            },
+                        ],
+                    };
+                } catch (error) {
+                    throw new Error(`Failed to fetch board: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                }
             }
         );
     }

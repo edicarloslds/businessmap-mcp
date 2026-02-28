@@ -24,7 +24,7 @@ export class UtilityToolHandler implements BaseToolHandler {
           return {
             content: [
               {
-                type: 'text',
+                type: 'text' as const,
                 text: `BusinessMap API Health: ${isHealthy ? 'Healthy' : 'Unhealthy'}`,
               },
             ],
@@ -42,7 +42,7 @@ export class UtilityToolHandler implements BaseToolHandler {
       {
         title: 'Get API Info',
         description:
-          'Get information about the BusinessMap API (nota: endpoint /info não existe na API oficial)',
+          'Get information about the BusinessMap API',
         inputSchema: getApiInfoSchema.shape,
         annotations: { readOnlyHint: true, idempotentHint: true },
       },

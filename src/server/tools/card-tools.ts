@@ -142,7 +142,7 @@ export class CardToolHandler implements BaseToolHandler {
           return {
             content: [
               {
-                type: 'text',
+                type: 'text' as const,
                 text: `Card "${card.title}" (ID: ${card_id}) has size: ${size} points`,
               },
             ],
@@ -229,7 +229,7 @@ export class CardToolHandler implements BaseToolHandler {
           return {
             content: [
               {
-                type: 'text',
+                type: 'text' as const,
                 text: `Card "${card.title}" (ID: ${card_id}) size updated to: ${size} points`,
               },
             ],
