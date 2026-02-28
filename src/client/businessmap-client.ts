@@ -1,5 +1,4 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
-import { ApiError, BusinessMapConfig } from '../types/index.js';
 import { BoardFilters } from './modules/board-client.js';
 import {
   BoardClient,
@@ -11,21 +10,21 @@ import {
   WorkflowClient,
   WorkspaceClient,
 } from './modules/index.js';
-import { CreateCommentParams, CreateTagParams, UpdateCommentParams } from '../types/index.js';
+import { BusinessMapConfig, CreateCommentParams, CreateTagParams, UpdateCommentParams } from '../types/index.js';
 
 export class BusinessMapClient {
-  private http: AxiosInstance;
+  private readonly http: AxiosInstance;
   private readonly config: BusinessMapConfig;
   private isInitialized: boolean = false;
 
   // Client modules
-  private workspaceClient: WorkspaceClient;
-  private boardClient: BoardClient;
-  private cardClient: CardClient;
-  private userClient: UserClient;
-  private customFieldClient: CustomFieldClient;
-  private utilityClient: UtilityClient;
-  private workflowClient: WorkflowClient;
+  private readonly workspaceClient: WorkspaceClient;
+  private readonly boardClient: BoardClient;
+  private readonly cardClient: CardClient;
+  private readonly userClient: UserClient;
+  private readonly customFieldClient: CustomFieldClient;
+  private readonly utilityClient: UtilityClient;
+  private readonly workflowClient: WorkflowClient;
 
   constructor(config: BusinessMapConfig) {
     this.config = config;

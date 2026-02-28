@@ -23,27 +23,21 @@ export class UtilityClient extends BaseClientModuleImpl {
    * Get API information (with fallback for official API)
    */
   async getApiInfo() {
+    // /info does not exist in the official BusinessMap API — use /me as connectivity check
     try {
-      // /info does not exist in the official BusinessMap API, try /me as fallback
-      const response = await this.http.get('/info');
-      return response.data;
+      await this.http.get('/me');
+      return {
+        message: 'API is responding',
+        endpoint: '/me',
+        status: 'healthy',
+        note: 'Endpoint /info is not available in the official BusinessMap API',
+        api_version: 'v2',
+        documentation: 'https://rdsaude.kanbanize.com/openapi/#/',
+      };
     } catch (error) {
-      logger.warn('Endpoint /info not available in the official API, falling back to connectivity check...');
-      try {
-        await this.http.get('/me');
-        return {
-          message: 'API is responding (fallback test)',
-          endpoint: '/me',
-          status: 'healthy',
-          note: 'Endpoint /info is not available in the official BusinessMap API',
-          api_version: 'v2',
-          documentation: 'https://rdsaude.kanbanize.com/openapi/#/',
-        };
-      } catch (fallbackError) {
-        throw new Error(
-          `API connection failed: ${fallbackError instanceof Error ? fallbackError.message : 'Unknown error'}`
-        );
-      }
+      throw new Error(
+        `API connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 }
