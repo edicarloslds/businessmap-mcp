@@ -1,3 +1,4 @@
+import { Server } from 'node:http';
 import { randomUUID } from 'node:crypto';
 import express from 'express';
 import cors from 'cors';
@@ -23,8 +24,15 @@ async function closeSession(id: string, session: SessionContext): Promise<void> 
   logger.info(`MCP session closed: ${id}`);
 }
 
-export async function startHttpServer() {
+export interface HttpServerOptions {
+  middlewares?: express.RequestHandler[];
+}
+
+export async function startHttpServer(options: HttpServerOptions = {}): Promise<Server> {
   const app = express();
+
+  // Disable X-Powered-By header to prevent disclosing version/framework info
+  app.disable('x-powered-by');
 
   // Parse JSON bodies (required for StreamableHTTP transport)
   app.use(express.json());
@@ -39,12 +47,18 @@ export async function startHttpServer() {
     })
   );
 
+  // Apply custom middlewares (e.g. for authentication/authorization)
+  if (options.middlewares && options.middlewares.length > 0) {
+    options.middlewares.forEach((middleware) => {
+      app.use(middleware);
+    });
+  }
+
   // Request logging middleware
   app.use((req, _res, next) => {
     const sessionId = req.headers['mcp-session-id'] as string | undefined;
-    logger.debug(
-      `${req.method} ${req.path}${sessionId ? ` [session: ${sessionId}]` : ''}`
-    );
+    const sessionSuffix = sessionId ? ` [session: ${sessionId}]` : '';
+    logger.debug(`${req.method} ${req.path}${sessionSuffix}`);
     next();
   });
 
@@ -65,6 +79,74 @@ export async function startHttpServer() {
   // Prevent the interval from blocking process exit
   cleanupInterval.unref();
 
+  const handleNewSession = async (
+    req: express.Request,
+    res: express.Response,
+    logResponse: (statusCode: number) => void,
+    sendError: (statusCode: number, message: string) => void
+  ) => {
+    const sessionServer = new BusinessMapMcpServer();
+
+    // New session: create a fresh transport
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: () => randomUUID(),
+      onsessioninitialized: (id) => {
+        sessions.set(id, { transport, server: sessionServer, lastActivityAt: Date.now() });
+        logger.info(`New MCP session initialized: ${id}`);
+      },
+      onsessionclosed: async (id) => {
+        const session = sessions.get(id);
+        sessions.delete(id);
+        if (session) {
+          await closeSession(id, session);
+        }
+      },
+      allowedHosts: config.server.allowedHosts,
+      allowedOrigins: config.server.allowedOrigins,
+      enableDnsRebindingProtection: true,
+    });
+
+    try {
+      await sessionServer.server.connect(transport);
+      await transport.handleRequest(req, res, req.body);
+      logResponse(res.statusCode);
+    } catch (error) {
+      logger.error('Failed to handle new MCP session:', error);
+      try {
+        await sessionServer.server.close();
+      } catch (closeError) {
+        logger.warn('Error while cleaning up failed session:', closeError);
+      }
+      if (!res.headersSent) {
+        sendError(500, 'Failed to initialize MCP session');
+      }
+    }
+  };
+
+  const handleExistingSession = async (
+    req: express.Request,
+    res: express.Response,
+    sessionId: string,
+    logResponse: (statusCode: number) => void,
+    sendError: (statusCode: number, message: string) => void
+  ) => {
+    const session = sessions.get(sessionId);
+    if (!session) {
+      sendError(404, `Session not found: ${sessionId}`);
+      return;
+    }
+    session.lastActivityAt = Date.now();
+    try {
+      await session.transport.handleRequest(req, res, req.body);
+      logResponse(res.statusCode);
+    } catch (error) {
+      logger.error(`Error handling request for session ${sessionId}:`, error);
+      if (!res.headersSent) {
+        sendError(500, 'Internal server error');
+      }
+    }
+  };
+
   // Single /mcp endpoint handles GET, POST and DELETE (Streamable HTTP spec 2025-03-26)
   const handleMcpRequest = async (
     req: express.Request,
@@ -74,8 +156,10 @@ export async function startHttpServer() {
     const sessionId = req.headers['mcp-session-id'] as string | undefined;
 
     const logResponse = (statusCode: number) => {
+      const duration = Date.now() - start;
+      const sessionSuffix = sessionId ? ` [session: ${sessionId}]` : '';
       logger.debug(
-        `${req.method} ${req.path} -> ${statusCode} (${Date.now() - start}ms)${sessionId ? ` [session: ${sessionId}]` : ''}`
+        `${req.method} ${req.path} -> ${statusCode} (${duration}ms)${sessionSuffix}`
       );
     };
 
@@ -85,62 +169,13 @@ export async function startHttpServer() {
     };
 
     if (req.method === 'POST' && !sessionId) {
-      const sessionServer = new BusinessMapMcpServer();
-
-      // New session: create a fresh transport
-      const transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => randomUUID(),
-        onsessioninitialized: (id) => {
-          sessions.set(id, { transport, server: sessionServer, lastActivityAt: Date.now() });
-          logger.info(`New MCP session initialized: ${id}`);
-        },
-        onsessionclosed: async (id) => {
-          const session = sessions.get(id);
-          sessions.delete(id);
-          if (session) {
-            await closeSession(id, session);
-          }
-        },
-        allowedHosts: config.server.allowedHosts,
-        allowedOrigins: config.server.allowedOrigins,
-        enableDnsRebindingProtection: true,
-      });
-
-      try {
-        await sessionServer.server.connect(transport);
-        await transport.handleRequest(req, res, req.body);
-        logResponse(res.statusCode);
-      } catch (error) {
-        logger.error('Failed to handle new MCP session:', error);
-        try {
-          await sessionServer.server.close();
-        } catch (closeError) {
-          logger.warn('Error while cleaning up failed session:', closeError);
-        }
-        if (!res.headersSent) {
-          sendError(500, 'Failed to initialize MCP session');
-        }
-      }
+      await handleNewSession(req, res, logResponse, sendError);
       return;
     }
 
     // Existing session
     if (sessionId) {
-      const session = sessions.get(sessionId);
-      if (!session) {
-        sendError(404, `Session not found: ${sessionId}`);
-        return;
-      }
-      session.lastActivityAt = Date.now();
-      try {
-        await session.transport.handleRequest(req, res, req.body);
-        logResponse(res.statusCode);
-      } catch (error) {
-        logger.error(`Error handling request for session ${sessionId}:`, error);
-        if (!res.headersSent) {
-          sendError(500, 'Internal server error');
-        }
-      }
+      await handleExistingSession(req, res, sessionId, logResponse, sendError);
       return;
     }
 
@@ -158,7 +193,7 @@ export async function startHttpServer() {
 
   const port = config.server.port;
 
-  app.listen(port, () => {
+  return app.listen(port, () => {
     logger.success(`HTTP Server running on port ${port}`);
     logger.info(`MCP Endpoint: http://localhost:${port}/mcp`);
     logger.info(`Health Check: http://localhost:${port}/health`);

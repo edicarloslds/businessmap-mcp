@@ -249,10 +249,27 @@ You can run the server as a remote MCP endpoint over Streamable HTTP. This is us
     npm start
     ```
 
-2.  **Connect your client:**
-
     Configure your MCP client to connect to the Streamable HTTP endpoint:
     - **URL**: `http://your-server:3000/mcp`
+
+### Programmatic & Middleware Usage
+
+If you import this package programmatically or want to add authentication/security (like rate-limiting) to your HTTP endpoint, you can inject custom Express middlewares:
+
+```typescript
+import { startHttpServer } from '@edicarlos.lds/businessmap-mcp';
+
+await startHttpServer({
+  middlewares: [
+    (req, res, next) => {
+      // Your custom authentication/authorization logic here
+      next();
+    }
+  ]
+});
+```
+
+For detailed examples (including static API Keys, JWT verification, and rate limiting), see the [Programmatic Middleware Guide](docs/MIDDLEWARE.md).
 
 ### Manual Setup
 

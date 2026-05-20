@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 
+import { fileURLToPath } from 'node:url';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { config, validateConfig } from './config/environment.js';
 import { BusinessMapMcpServer } from './server/mcp-server.js';
 import { logger } from './utils/logger.js';
+
+export { startHttpServer, HttpServerOptions } from './server/http.js';
+export { BusinessMapMcpServer } from './server/mcp-server.js';
 
 async function initializeWithRetry(server: BusinessMapMcpServer): Promise<void> {
   logger.info('🔄 Initializing connection to BusinessMap API...');
@@ -67,21 +71,29 @@ async function main() {
   }
 }
 
-// Handle graceful shutdown
-process.on('SIGINT', () => {
-  logger.info('\n🛑 Shutting down BusinessMap MCP Server...');
-  process.exit(0);
-});
+// Check if run directly
+const isMain = process.argv[1] && (
+  fileURLToPath(import.meta.url) === process.argv[1] ||
+  process.argv[1].replace(/\.[jt]s$/, '') === fileURLToPath(import.meta.url).replace(/\.[jt]s$/, '')
+);
 
-process.on('SIGTERM', () => {
-  logger.info('\n🛑 Shutting down BusinessMap MCP Server...');
-  process.exit(0);
-});
+if (isMain) {
+  // Handle graceful shutdown
+  process.on('SIGINT', () => {
+    logger.info('\n🛑 Shutting down BusinessMap MCP Server...');
+    process.exit(0);
+  });
 
-// Start the server
-try {
-  await main();
-} catch (error) {
-  console.error('💥 Unhandled error:', error);
-  process.exit(1);
+  process.on('SIGTERM', () => {
+    logger.info('\n🛑 Shutting down BusinessMap MCP Server...');
+    process.exit(0);
+  });
+
+  // Start the server
+  try {
+    await main();
+  } catch (error) {
+    console.error('💥 Unhandled error:', error);
+    process.exit(1);
+  }
 }
