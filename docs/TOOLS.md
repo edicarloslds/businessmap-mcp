@@ -6,7 +6,7 @@ Complete reference for all tools, resources, and prompts provided by the Busines
 
 | Category  | Count |
 | --------- | :---: |
-| Tools     |  56   |
+| Tools     |  59   |
 | Resources |   5   |
 | Prompts   |   4   |
 
