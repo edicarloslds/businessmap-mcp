@@ -9,670 +9,206 @@
 [![MCP](https://img.shields.io/badge/Model%20Context%20Protocol-000000?logo=anthropic&logoColor=white)](https://modelcontextprotocol.io/)
 [![GitHub Sponsors](https://img.shields.io/github/sponsors/edicarloslds)](https://github.com/sponsors/edicarloslds)
 
-Model Context Protocol server for BusinessMap (Kanbanize) integration. Provides comprehensive access to BusinessMap's project management features through **56 tools**, **5 resources**, and **4 guided prompts** — covering workspaces, boards, cards, subtasks, parent-child relationships, outcomes, comments, tags, stickers, predecessors, custom fields, and more.
+Model Context Protocol (MCP) server for BusinessMap/Kanbanize. It gives AI clients access to BusinessMap workspaces, boards, cards, users, custom fields, workflow cycle-time data, resources, and guided prompts.
 
-## Installation
+## What You Get
 
-### Via NPX (Recommended)
+- 56 MCP tools for workspaces, boards, cards, users, custom fields, workflow analysis, and health checks
+- 5 MCP resources for direct workspace, board, and card reads
+- 4 guided prompts for board analysis, reporting, card creation, and workspace summaries
+- Optional read-only mode for safer exploration
+- `stdio` transport for local MCP clients and HTTP transport for remote usage
+- Docker, structured logging, and programmatic middleware support
 
-You can run the BusinessMap MCP server directly using npx without installing it globally:
+See the full catalog in [docs/TOOLS.md](docs/TOOLS.md).
+
+## Quick Start
+
+Run directly with `npx`:
 
 ```bash
-npx @edicarlos.lds/businessmap-mcp
+npx -y @edicarlos.lds/businessmap-mcp
 ```
 
-### Global Installation
+Or install globally:
 
 ```bash
 npm install -g @edicarlos.lds/businessmap-mcp
+businessmap-mcp
 ```
 
-## Configuration
+The server requires Node.js 18 or newer.
 
-### Environment Variables
+## Required Configuration
 
-The server requires the following environment variables:
+Set these environment variables in your MCP client, shell, deployment platform, or local `.env` file:
 
-- `BUSINESSMAP_API_TOKEN`: Your BusinessMap API token
-- `BUSINESSMAP_API_URL`: Your BusinessMap API URL (e.g., `https://your-account.kanbanize.com/api/v2`)
-- `BUSINESSMAP_READ_ONLY_MODE`: Set to `"true"` for read-only mode, `"false"` to allow modifications (optional, defaults to `"false"`)
-- `BUSINESSMAP_DEFAULT_WORKSPACE_ID`: Set the BusinessMap workspace ID (optional)
-- `LOG_LEVEL`: Set logging verbosity - `0` (DEBUG), `1` (INFO), `2` (WARN), `3` (ERROR), `4` (NONE) (optional, defaults to `1`)
-- `PORT`: Server port for HTTP mode (optional, defaults to `3000`)
-- `TRANSPORT`: Set to `stdio` (default) or `http`
-- `ALLOWED_ORIGINS`: Comma-separated CORS origin allowlist for HTTP mode (optional, defaults to `http://localhost`)
-- `ALLOWED_HOSTS`: Comma-separated Host header allowlist for HTTP mode DNS rebinding protection (optional)
+```env
+BUSINESSMAP_API_TOKEN=your_token_here
+BUSINESSMAP_API_URL=https://your-account.kanbanize.com/api/v2
+```
 
-### Local Usage with .env
+Optional settings:
 
-When running locally (e.g., via `npx` or `npm start`), the server will automatically look for a `.env` file in your current working directory.
+| Variable | Default | Description |
+| --- | --- | --- |
+| `BUSINESSMAP_READ_ONLY_MODE` | `false` | Use `true` to register only read-only tools. |
+| `BUSINESSMAP_DEFAULT_WORKSPACE_ID` | unset | Default workspace ID for tools that can use one. |
+| `LOG_LEVEL` | `1` | `0` debug, `1` info, `2` warn, `3` error, `4` none. |
+| `TRANSPORT` | `stdio` | Use `stdio` or `http`. |
+| `PORT` | `3000` | HTTP server port. |
+| `ALLOWED_ORIGINS` | `http://localhost` | CORS allowlist for HTTP mode. |
+| `ALLOWED_HOSTS` | unset | Host header allowlist for HTTP mode. |
+
+## MCP Client Setup
+
+Most MCP clients need the same command and environment variables:
+
+```json
+{
+  "mcpServers": {
+    "businessmap": {
+      "command": "npx",
+      "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
+      "env": {
+        "BUSINESSMAP_API_TOKEN": "your_token_here",
+        "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2"
+      }
+    }
+  }
+}
+```
+
+Client-specific examples for Claude Desktop, Claude Code, Cursor, VS Code, Windsurf, Zed, and other MCP clients are in [docs/MCP_CLIENTS.md](docs/MCP_CLIENTS.md).
+
+## HTTP Mode
+
+Use HTTP mode when deploying the server remotely or when your client supports Streamable HTTP:
 
 ```bash
-# Create a .env file
-echo "BUSINESSMAP_API_TOKEN=your_token" > .env
-echo "BUSINESSMAP_API_URL=https://..." >> .env
-
-# Run the server
-npx @edicarlos.lds/businessmap-mcp
+TRANSPORT=http \
+PORT=3000 \
+ALLOWED_ORIGINS=https://your-client.example.com \
+ALLOWED_HOSTS=your-server.example.com \
+npm start
 ```
 
-#### Claude Desktop
+Configure your MCP client with:
 
-Config file location:
-- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
-
-Open it via **Settings → Developer → Edit Config**, then add:
-
-```json
-{
-  "mcpServers": {
-    "businessmap": {
-      "command": "npx",
-      "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
-      "env": {
-        "BUSINESSMAP_API_TOKEN": "your_token_here",
-        "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
-        "BUSINESSMAP_READ_ONLY_MODE": "false",
-        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1"
-      }
-    }
-  }
-}
+```text
+http://your-server:3000/mcp
 ```
 
-> **Note**: Fully quit and restart Claude Desktop after editing (on macOS, quit from the Dock; on Windows, exit from the system tray). JSON does not support comments — remove any before saving.
+For custom authentication, authorization, logging, or rate limiting, see [docs/MIDDLEWARE.md](docs/MIDDLEWARE.md).
 
-#### Claude Code
-
-Run the following command to add the server globally or per-project:
+## Local Development
 
 ```bash
-# Add globally (available across all projects)
-claude mcp add --transport stdio --scope user businessmap -- npx -y @edicarlos.lds/businessmap-mcp
-
-# Add to current project only (stored in ~/.claude.json)
-claude mcp add --transport stdio businessmap -- npx -y @edicarlos.lds/businessmap-mcp
-```
-
-To pass environment variables:
-
-```bash
-claude mcp add --transport stdio \
-  --env BUSINESSMAP_API_TOKEN=your_token_here \
-  --env BUSINESSMAP_API_URL=https://your-account.kanbanize.com/api/v2 \
-  businessmap -- npx -y @edicarlos.lds/businessmap-mcp
-```
-
-Alternatively, commit a `.mcp.json` file to your project root to share it with your team:
-
-```json
-{
-  "mcpServers": {
-    "businessmap": {
-      "command": "npx",
-      "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
-      "env": {
-        "BUSINESSMAP_API_TOKEN": "${BUSINESSMAP_API_TOKEN}",
-        "BUSINESSMAP_API_URL": "${BUSINESSMAP_API_URL}"
-      }
-    }
-  }
-}
-```
-
-> **Tip**: Use environment variable expansion (`${VAR}`) in `.mcp.json` to avoid hardcoding secrets in source control.
-
-#### Cursor
-
-Create or edit `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` at the project root (project-specific):
-
-```json
-{
-  "mcpServers": {
-    "businessmap": {
-      "command": "npx",
-      "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
-      "env": {
-        "BUSINESSMAP_API_TOKEN": "your_token_here",
-        "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
-        "BUSINESSMAP_READ_ONLY_MODE": "false",
-        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1"
-      }
-    }
-  }
-}
-```
-
-You can also manage servers via **Settings → Features → MCP** in the Cursor UI.
-
-#### VS Code
-
-VS Code uses `"servers"` as the top-level key (not `"mcpServers"`). Create or edit `.vscode/mcp.json` in your project root (workspace-scoped, safe to commit), or the user-level config at:
-- **macOS**: `~/Library/Application Support/Code/User/mcp.json`
-- **Windows**: `%APPDATA%\Code\User\mcp.json`
-
-```json
-{
-  "inputs": [
-    {
-      "type": "promptString",
-      "id": "businessmap-token",
-      "description": "BusinessMap API Token",
-      "password": true
-    }
-  ],
-  "servers": {
-    "businessmap": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
-      "env": {
-        "BUSINESSMAP_API_TOKEN": "${input:businessmap-token}",
-        "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
-        "BUSINESSMAP_READ_ONLY_MODE": "false",
-        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1"
-      }
-    }
-  }
-}
-```
-
-> **Note**: The `inputs` block lets VS Code prompt you for secrets at runtime instead of hardcoding them. Requires the GitHub Copilot Chat extension. Add via Command Palette: `MCP: Add Server`.
-
-#### Windsurf
-
-Edit `~/.codeium/windsurf/mcp_config.json` (open from the Cascade panel's MCPs icon → **Configure**):
-
-```json
-{
-  "mcpServers": {
-    "businessmap": {
-      "command": "npx",
-      "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
-      "env": {
-        "BUSINESSMAP_API_TOKEN": "your_token_here",
-        "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
-        "BUSINESSMAP_READ_ONLY_MODE": "false",
-        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1"
-      }
-    }
-  }
-}
-```
-
-> **Tip**: Windsurf supports `${env:VARIABLE_NAME}` syntax inside `env` values to reference host environment variables.
-
-#### Zed
-
-MCP servers are configured inside Zed's main settings file (`~/.config/zed/settings.json`) under the `context_servers` key. Open it via **Zed → Settings** or `Cmd+,`:
-
-```json
-{
-  "context_servers": {
-    "businessmap": {
-      "source": "custom",
-      "command": "npx",
-      "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
-      "env": {
-        "BUSINESSMAP_API_TOKEN": "your_token_here",
-        "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
-        "BUSINESSMAP_READ_ONLY_MODE": "false",
-        "BUSINESSMAP_DEFAULT_WORKSPACE_ID": "1"
-      }
-    }
-  }
-}
-```
-
-You can also add servers via the Agent Panel's Settings view (**Add Custom Server**). A green indicator dot in the Agent Panel confirms the server is running.
-
-#### Other MCP Clients
-
-For any other MCP-compatible client, configure a `stdio` server with:
-
-- **Command**: `npx -y @edicarlos.lds/businessmap-mcp`
-- **Required env vars**: `BUSINESSMAP_API_TOKEN`, `BUSINESSMAP_API_URL`
-- **Optional env vars**: `BUSINESSMAP_READ_ONLY_MODE`, `BUSINESSMAP_DEFAULT_WORKSPACE_ID`, `LOG_LEVEL`
-
-### Remote Usage (Streamable HTTP)
-
-You can run the server as a remote MCP endpoint over Streamable HTTP. This is useful for deploying to cloud providers or using clients that support remote MCP connections.
-
-1.  **Start the server in HTTP mode:**
-
-    ```bash
-    export TRANSPORT=http
-    export PORT=3000
-    export ALLOWED_ORIGINS=https://your-client.example.com
-    export ALLOWED_HOSTS=your-server.example.com
-    npm start
-    ```
-
-    Configure your MCP client to connect to the Streamable HTTP endpoint:
-    - **URL**: `http://your-server:3000/mcp`
-
-### Programmatic & Middleware Usage
-
-If you import this package programmatically or want to add authentication/security (like rate-limiting) to your HTTP endpoint, you can inject custom Express middlewares:
-
-```typescript
-import { startHttpServer } from '@edicarlos.lds/businessmap-mcp';
-
-await startHttpServer({
-  middlewares: [
-    (req, res, next) => {
-      // Your custom authentication/authorization logic here
-      next();
-    }
-  ]
-});
-```
-
-For detailed examples (including static API Keys, JWT verification, and rate limiting), see the [Programmatic Middleware Guide](docs/MIDDLEWARE.md).
-
-### Manual Setup
-
-1. Clone this repository:
-
-   ```bash
-   git clone https://github.com/edicarloslds/businessmap-mcp.git
-   cd businessmap-mcp
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   npm install
-   ```
-
-3. Create a `.env` file with your BusinessMap credentials (for development/testing):
-
-   ```env
-   BUSINESSMAP_API_TOKEN=your_token_here
-   BUSINESSMAP_API_URL=https://your-account.kanbanize.com/api/v2
-   BUSINESSMAP_READ_ONLY_MODE=false
-   BUSINESSMAP_DEFAULT_WORKSPACE_ID=1
-   ```
-
-   > **Note**: When using as an MCP server with Claude Desktop, you don't need a `.env` file. Configure the environment variables directly in your MCP client configuration instead.
-
-4. Build the project:
-
-   ```bash
-   npm run build
-   ```
-
-5. Start the server:
-
-   ```bash
-   npm start
-   ```
-
-## Usage
-
-The BusinessMap MCP server provides tools, resources, and prompts for comprehensive project management integration.
-
-### Tools
-
-#### Workspace Management
-
-- `list_workspaces` - Get all workspaces
-- `get_workspace` - Get workspace details
-- `create_workspace` - Create new workspace
-
-#### Board Management
-
-- `list_boards` - List boards in workspace(s)
-- `search_board` - Search for boards by ID or name
-- `get_current_board_structure` - Get the complete current structure of a board including workflows, columns, lanes, and configurations
-- `create_board` - Create new board (if not in read-only mode)
-- `get_columns` - Get all columns for a board
-- `get_lanes` - Get all lanes for a board
-- `get_lane` - Get details of a specific lane/swimlane
-- `create_lane` - Create new lane/swimlane (if not in read-only mode)
-- `create_column` - Create a new column on a board (supports main columns and sub-columns)
-- `update_column` - Update the details of a specific column on a board
-- `delete_column` - Delete a column from a board
-
-#### Card Management
-
-##### Basic Card Operations
-
-- `list_cards` - Get cards from a board with optional filters
-- `get_card` - Get detailed card information
-- `get_card_size` - Get the size/points of a specific card
-- `get_card_types` - Get all available card types
-- `create_card` - Create new card
-- `move_card` - Move card to different column/swimlane
-- `update_card` - Update card properties
-- `set_card_size` - Set the size/points of a specific card
-- `delete_card` - Permanently delete a card (irreversible)
-
-##### Card Comments
-
-- `get_card_comments` - Get all comments for a specific card
-- `get_card_comment` - Get details of a specific comment from a card
-- `create_comment` - Add a new comment to a card
-- `update_comment` - Update the text of an existing comment on a card
-- `delete_comment` - Delete a comment from a card
-
-##### Card Custom Fields
-
-- `get_card_custom_fields` - Get all custom fields for a specific card
-
-##### Card Outcomes & History
-
-- `get_card_outcomes` - Get all outcomes for a specific card
-- `get_card_history` - Get the history of a specific card outcome
-
-##### Card Relationships
-
-- `get_card_linked_cards` - Get all linked cards for a specific card
-
-##### Card Subtasks
-
-- `get_card_subtasks` - Get all subtasks for a specific card
-- `get_card_subtask` - Get details of a specific subtask from a card
-- `create_card_subtask` - Create a new subtask for a card
-
-##### Card Parent Relationships
-
-- `get_card_parents` - Get a list of parent cards for a specific card
-- `get_card_parent` - Check if a card is a parent of a given card
-- `add_card_parent` - Make a card a parent of a given card
-- `remove_card_parent` - Remove the link between a child card and a parent card
-- `get_card_parent_graph` - Get a list of parent cards including their parent cards too
-- `get_card_children` - Get a list of child cards of a specified parent card
-
-##### Card Blocking
-
-- `block_card` - Block a card and set a reason/comment explaining why it is blocked
-- `unblock_card` - Unblock a card by removing its block reason
-
-##### Card Tags
-
-- `create_tag` - Create a new tag in the workspace
-- `add_tag_to_card` - Add an existing tag to a card
-- `remove_tag_from_card` - Remove a tag from a card
-
-##### Card Stickers
-
-- `add_sticker_to_card` - Add a sticker to a card
-- `remove_sticker_from_card` - Remove a sticker from a card using the sticker-card association ID
-
-##### Card Predecessors
-
-- `add_predecessor` - Establish or update a predecessor-successor relationship between two cards
-- `remove_predecessor` - Remove the predecessor-successor relationship between two cards
-
-#### Custom Field Management
-
-- `get_custom_field` - Get details of a specific custom field by ID
-
-#### Workflow & Cycle Time Analysis
-
-- `get_workflow_cycle_time_columns` - Get workflow's cycle time columns
-- `get_workflow_effective_cycle_time_columns` - Get workflow's effective cycle time columns
-
-#### User Management
-
-- `list_users` - Get all users
-- `get_user` - Get user details
-- `get_current_user` - Get current logged user details
-- `invite_user` - Add and invite a new user by email
-
-#### System
-
-- `health_check` - Check API connection
-- `get_api_info` - Get API information
-
-### Resources
-
-The server exposes structured data resources accessible via URI:
-
-| URI | Description |
-|-----|-------------|
-| `businessmap://workspaces` | List all workspaces |
-| `businessmap://boards` | List all boards |
-| `businessmap://boards/{board_id}` | Get details of a specific board |
-| `businessmap://boards/{board_id}/cards` | List all cards for a specific board |
-| `businessmap://cards/{card_id}` | Get details of a specific card |
-
-### Prompts
-
-The server provides guided prompts for common AI-assisted workflows:
-
-| Prompt | Description |
-|--------|-------------|
-| `analyze-board-performance` | Analyze a board's performance: flow efficiency, bottlenecks, cycle time, and workload distribution |
-| `generate-board-report` | Generate a comprehensive status report for a board, including cards summary and highlights |
-| `create-card-from-description` | Guide the creation of a well-structured card from a natural language description |
-| `workspace-status-overview` | Generate a high-level status overview of a workspace, including all boards and their key metrics |
-
-## Tool Summary
-
-The BusinessMap MCP server provides **56 tools**, **5 resources**, and **4 prompts**:
-
-### Tools by Category
-
-- **Workspace Management**: 3 tools
-- **Board Management**: 11 tools
-- **Card Management**: 36 tools (organized in 9 subcategories)
-- **Custom Field Management**: 1 tool
-- **Workflow & Cycle Time Analysis**: 2 tools
-- **User Management**: 4 tools
-- **System**: 2 tools (1 utility tool)
-
-## Key Features
-
-### Advanced Card Management
-
-- **Complete CRUD operations** for cards, subtasks, and relationships
-- **Parent-child card hierarchies** with full graph traversal
-- **Outcome tracking and history** for detailed progress monitoring
-- **Linked cards management** for cross-project dependencies
-- **Custom fields and types** support for flexible workflows
-- **Card blocking/unblocking** with reason tracking
-- **Tags and stickers** for visual card organization
-- **Predecessor-successor relationships** for dependency management
-- **Comment management** (create, update, delete) for collaboration
-
-### Comprehensive Board Operations
-
-- **Multi-workspace board management** with search capabilities
-- **Full column management** (create, update, delete) with section and sub-column support
-- **Lane (swimlane) operations** for workflow customization
-- **Board structure analysis** with detailed metadata
-
-### Resources & Prompts
-
-- **5 structured data resources** for direct URI-based data access
-- **4 guided prompts** for common AI-assisted workflows (board analysis, reporting, card creation, workspace overview)
-
-### Workflow Intelligence
-
-- **Cycle time analysis** with configurable column sets
-- **Effective cycle time tracking** for performance optimization
-- **Custom field integration** for enhanced reporting
-
-### Enterprise Features
-
-- **Read-only mode** for safe data exploration
-- **Robust error handling** with detailed error messages
-- **Automatic connection verification** with retry logic
-- **Docker support** for containerized deployments
-- **Structured logging** with multiple log levels (DEBUG, INFO, WARN, ERROR)
-
-## Logging
-
-The server uses a structured logging system that outputs to STDERR (required for MCP protocol compatibility). You can control the verbosity using the `LOG_LEVEL` environment variable:
-
-- `0` (DEBUG): All messages including detailed debugging information
-- `1` (INFO): Informational messages, warnings, and errors (default)
-- `2` (WARN): Only warnings and errors
-- `3` (ERROR): Only error messages
-- `4` (NONE): Disable all logging
-
-Example configuration with custom log level:
-
-```json
-{
-  "mcpServers": {
-    "Businessmap": {
-      "command": "npx",
-      "args": ["-y", "@edicarlos.lds/businessmap-mcp"],
-      "env": {
-        "BUSINESSMAP_API_TOKEN": "your_token_here",
-        "BUSINESSMAP_API_URL": "https://your-account.kanbanize.com/api/v2",
-        "LOG_LEVEL": "0"
-      }
-    }
-  }
-}
-```
-
-**Note**: All logging uses STDERR to maintain compatibility with the MCP JSON-RPC protocol, which requires STDOUT to be reserved exclusively for protocol communication.
-
-## Development
-
-### Setup Development Environment
-
-```bash
-# Install dependencies
+git clone https://github.com/edicarloslds/businessmap-mcp.git
+cd businessmap-mcp
 npm install
-
-# Run in development mode
-npm run dev
-
-# Watch for changes
-npm run watch
-
-# Build for production
-npm run build
-
-# Run tests
-npm test
-
-# Lint code
-npm run lint
 ```
 
-### Docker Support
+Create a local `.env` file:
+
+```env
+BUSINESSMAP_API_TOKEN=your_token_here
+BUSINESSMAP_API_URL=https://your-account.kanbanize.com/api/v2
+BUSINESSMAP_READ_ONLY_MODE=false
+BUSINESSMAP_DEFAULT_WORKSPACE_ID=1
+```
+
+Useful commands:
 
 ```bash
-# Build Docker image
+npm run dev          # Run from TypeScript source
+npm run watch        # Run and reload on changes
+npm run build        # Build dist/
+npm test             # Run tests
+npm run lint         # Run ESLint
+npm run test:npx     # Test package execution through npx
+```
+
+## Docker
+
+```bash
 npm run docker:build
-
-# Run with Docker Compose
 npm run docker:up
-
-# View logs
 npm run docker:logs
-
-# Stop containers
 npm run docker:down
 ```
 
 ## Troubleshooting
 
-### Connection Issues
-
-The server now includes automatic connection verification during startup. If you encounter connection issues:
-
-1. **Check your environment variables**:
-
-   ```bash
-   echo $BUSINESSMAP_API_URL
-   echo $BUSINESSMAP_API_TOKEN
-   ```
-
-2. **Test the connection manually**:
-
-   ```bash
-   chmod +x scripts/test-connection.sh
-   ./scripts/test-connection.sh
-   ```
-
-3. **Common issues**:
-   - **Invalid API URL**: Ensure your URL follows the format `https://your-account.kanbanize.com/api/v2`
-   - **Invalid API Token**: Verify your token has the necessary permissions
-
-### Startup Process
-
-The server now performs the following steps during initialization:
-
-1. **Configuration validation** - Checks all required environment variables
-2. **API connection verification** - Tests connectivity with up to 3 retry attempts
-3. **Authentication check** - Verifies API token permissions
-4. **Server startup** - Starts the MCP server only after successful connection
-
-If the connection fails, the server will display detailed error messages and retry automatically.
-
-### Release Process
-
-This project uses an automated release process. See [RELEASE_PROCESS.md](docs/RELEASE_PROCESS.md) for detailed documentation.
-
-### Full Tools Reference
-
-For the complete list of all tools, resources, and prompts with detailed parameter descriptions, see [TOOLS.md](docs/TOOLS.md).
-
-**Quick Start:**
+If startup fails, check the two required environment variables first:
 
 ```bash
-# Preview release notes
-npm run preview:release
-
-# Publish new version (interactive)
-# Publish to NPM and create GitHub release (interactive flows)
-npm run publish:npm && npm run publish:github
+echo $BUSINESSMAP_API_URL
+echo $BUSINESSMAP_API_TOKEN
 ```
 
-The release process automatically:
+Then test the BusinessMap connection:
 
-- Bumps version (patch/minor/major)
-- Generates release notes from commits
-- Creates GitHub tags and releases
-- Publishes to NPM
+```bash
+chmod +x scripts/test-connection.sh
+./scripts/test-connection.sh
+```
 
-### Contributing
+Common causes:
 
-1. Follow conventional commit format for better release notes:
+- `BUSINESSMAP_API_URL` is not in the expected format: `https://your-account.kanbanize.com/api/v2`
+- `BUSINESSMAP_API_TOKEN` is missing, expired, or lacks the needed permissions
+- The selected MCP client has not been fully restarted after editing its config
 
-   ```bash
-   feat: add new feature
-   fix: resolve bug
-   docs: update documentation
-   refactor: improve code structure
-   ```
+Logging details are documented in [docs/LOGGING.md](docs/LOGGING.md).
 
-2. Ensure all tests pass before submitting PR:
+## Project Docs
 
-   ```bash
-   npm test
-   npm run test:npx
-   ```
+- [Tools, resources, and prompts](docs/TOOLS.md)
+- [MCP client configuration](docs/MCP_CLIENTS.md)
+- [Logging](docs/LOGGING.md)
+- [Programmatic middleware](docs/MIDDLEWARE.md)
+- [Release process](docs/RELEASE_PROCESS.md)
+- [Scripts](scripts/README.md)
 
-## Sponsors
+## Contributing
 
-If you find this project helpful and would like to support its development, please consider becoming a sponsor through [GitHub Sponsors](https://github.com/sponsors/edicarloslds).
+Use conventional commits when possible:
 
-## License
+```bash
+feat: add new feature
+fix: resolve bug
+docs: update documentation
+refactor: improve code structure
+```
 
-MIT
+Before opening a pull request:
+
+```bash
+npm test
+npm run test:npx
+```
 
 ## Support
 
 For issues and questions:
 
-1. Check the [Issues](../../issues) page
-2. Review BusinessMap API documentation
+1. Check existing [GitHub issues](../../issues)
+2. Review the [BusinessMap API documentation](https://businessmap.io/api)
 3. Verify your environment configuration
-4. Submit a new issue with detailed information
+4. Open a new issue with the error message, runtime command, and relevant MCP client configuration
 
 ## Related Projects
 
-- [Model Context Protocol](https://modelcontextprotocol.io/) - Official MCP documentation
-- [BusinessMap API Documentation](https://businessmap.io/api) - Official API reference
-- [BusinessMap Demo API](https://demo.kanbanize.com/openapi#/) - Interactive API documentation and testing environment
-- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk) - Official MCP SDK
+- [Model Context Protocol](https://modelcontextprotocol.io/)
+- [BusinessMap API Documentation](https://businessmap.io/api)
+- [BusinessMap Demo API](https://demo.kanbanize.com/openapi#/)
+- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
+
+## Sponsors
+
+If this project helps you, consider supporting it through [GitHub Sponsors](https://github.com/sponsors/edicarloslds).
+
+## License
+
+MIT
