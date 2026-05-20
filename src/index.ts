@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { fileURLToPath } from 'node:url';
+import fs from 'node:fs';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { config, validateConfig } from './config/environment.js';
 import { BusinessMapMcpServer } from './server/mcp-server.js';
@@ -72,9 +73,17 @@ async function main() {
 }
 
 // Check if run directly
+const getRealpath = (p: string) => {
+  try {
+    return fs.realpathSync(p);
+  } catch {
+    return p;
+  }
+};
+
 const isMain = process.argv[1] && (
-  fileURLToPath(import.meta.url) === process.argv[1] ||
-  process.argv[1].replace(/\.[jt]s$/, '') === fileURLToPath(import.meta.url).replace(/\.[jt]s$/, '')
+  getRealpath(process.argv[1]) === fileURLToPath(import.meta.url) ||
+  getRealpath(process.argv[1]).replace(/\.[jt]s$/, '') === fileURLToPath(import.meta.url).replace(/\.[jt]s$/, '')
 );
 
 if (isMain) {

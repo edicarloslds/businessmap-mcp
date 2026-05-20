@@ -20,7 +20,7 @@ The release process has been fully automated and includes:
 Before making a release, ensure that:
 
 - [ ] All changes are committed
-- [ ] You are authenticated to NPM: `npm whoami`
+- [ ] You are authenticated to NPM: `npm whoami` or make logging via `npm login`
 - [ ] You are authenticated to GitHub CLI: `gh auth status`
 - [ ] Working directory is clean
 
