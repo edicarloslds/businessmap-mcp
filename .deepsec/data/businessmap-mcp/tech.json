@@ -1,0 +1,14 @@
+{
+  "tags": [
+    "docker",
+    "express",
+    "mcp",
+    "node"
+  ],
+  "sentinels": [
+    "Dockerfile",
+    "package.json"
+  ],
+  "detectedAt": "2026-05-21T01:11:40.094Z",
+  "rootPath": "/Users/Edicarlos/Work/OpenSource/businessmap-mcp"
+}
