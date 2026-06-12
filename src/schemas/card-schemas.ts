@@ -239,6 +239,14 @@ export const listCardsSchema = z.object({
     .optional()
     .describe('A list of the custom ids for which you want to get the results'),
 
+  // Card lifecycle state
+  state: z
+    .enum(['active', 'archived', 'discarded', 'all'])
+    .optional()
+    .describe(
+      'Card lifecycle state. Defaults to active. Use archived/discarded to query non-active cards, or all to include every state.'
+    ),
+
   // Configuration options
   include_logged_time_for_child_cards: z
     .number()

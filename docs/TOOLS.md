@@ -58,6 +58,17 @@ Complete reference for all tools, resources, and prompts provided by the Busines
 | `set_card_size`  | Set the size/points of a specific card       |       ❌       |
 | `delete_card`    | Permanently delete a card (irreversible)     |     ❌ ⚠️      |
 
+`list_cards` supports a `state` parameter (`active` | `archived` | `discarded` | `all`) to control which card lifecycle states are returned. The API defaults to `active`, so archived or discarded cards are only included when explicitly requested:
+
+```json
+{
+  "board_id": 285,
+  "type_ids": [8],
+  "state": "archived",
+  "created_from_date": "2026-01-01"
+}
+```
+
 #### Comments
 
 | Tool                | Description                            | Read-Only Safe |

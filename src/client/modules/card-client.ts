@@ -101,6 +101,9 @@ export interface CardFilters {
   colors?: string[];
   custom_ids?: string[];
 
+  // Card lifecycle state (defaults to 'active' on the API side)
+  state?: 'active' | 'archived' | 'discarded' | 'all';
+
   // Configuration options
   include_logged_time_for_child_cards?: number;
   include_logged_time_for_subtasks?: number;

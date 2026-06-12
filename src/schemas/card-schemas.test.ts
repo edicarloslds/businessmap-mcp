@@ -38,6 +38,36 @@ describe('listCardsSchema', () => {
     const result = listCardsSchema.parse({ board_id: 1, owner_user_ids: [101, 102] });
     expect(result.owner_user_ids).toEqual([101, 102]);
   });
+
+  it.each(['active', 'archived', 'discarded', 'all'] as const)(
+    'accepts state "%s"',
+    (state) => {
+      const result = listCardsSchema.parse({ board_id: 1, state });
+      expect(result.state).toBe(state);
+    }
+  );
+
+  it('keeps state undefined when omitted (backward compatible)', () => {
+    const result = listCardsSchema.parse({ board_id: 1 });
+    expect(result.state).toBeUndefined();
+  });
+
+  it('rejects invalid state values', () => {
+    expect(() => listCardsSchema.parse({ board_id: 1, state: 'deleted' })).toThrow();
+  });
+
+  it('accepts state combined with date filters', () => {
+    const result = listCardsSchema.parse({
+      board_id: 285,
+      type_ids: [8],
+      state: 'archived',
+      created_from_date: '2026-01-01',
+      archived_from_date: '2026-01-01',
+    });
+    expect(result.state).toBe('archived');
+    expect(result.created_from_date).toBe('2026-01-01');
+    expect(result.archived_from_date).toBe('2026-01-01');
+  });
 });
 
 describe('getCardSchema', () => {
