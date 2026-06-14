@@ -1,5 +1,4 @@
-import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { ResourceTemplate, McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
 import { BaseResourceHandler } from './base-resource.js';
 
@@ -12,9 +11,9 @@ export class CardResourceHandler implements BaseResourceHandler {
             {}, // Added empty metadata object
             async (uri, variables) => {
                 try {
-                    const boardId = parseInt(variables.board_id as string);
-                    if (isNaN(boardId)) {
-                        throw new Error(`Invalid board_id: "${variables.board_id}" is not a valid number`);
+                    const boardId = Number.parseInt(variables.board_id as string);
+                    if (Number.isNaN(boardId)) {
+                        throw new TypeError(`Invalid board_id: "${variables.board_id}" is not a valid number`);
                     }
                     const cards = await client.getCards(boardId);
                     return {
@@ -38,9 +37,9 @@ export class CardResourceHandler implements BaseResourceHandler {
             {}, // Added empty metadata object
             async (uri, variables) => {
                 try {
-                    const cardId = parseInt(variables.card_id as string);
-                    if (isNaN(cardId)) {
-                        throw new Error(`Invalid card_id: "${variables.card_id}" is not a valid number`);
+                    const cardId = Number.parseInt(variables.card_id as string);
+                    if (Number.isNaN(cardId)) {
+                        throw new TypeError(`Invalid card_id: "${variables.card_id}" is not a valid number`);
                     }
                     const card = await client.getCard(cardId);
                     return {

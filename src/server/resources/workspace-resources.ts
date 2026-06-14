@@ -1,5 +1,4 @@
-import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { ResourceTemplate, McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
 import { BaseResourceHandler } from './base-resource.js';
 

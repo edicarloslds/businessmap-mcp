@@ -1,5 +1,4 @@
-import { ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { ResourceTemplate, McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
 import { BaseResourceHandler } from './base-resource.js';
 
@@ -34,9 +33,9 @@ export class BoardResourceHandler implements BaseResourceHandler {
             {},
             async (uri, variables) => {
                 try {
-                    const boardId = parseInt(variables.board_id as string);
-                    if (isNaN(boardId)) {
-                        throw new Error(`Invalid board_id: "${variables.board_id}" is not a valid number`);
+                    const boardId = Number.parseInt(variables.board_id as string);
+                    if (Number.isNaN(boardId)) {
+                        throw new TypeError(`Invalid board_id: "${variables.board_id}" is not a valid number`);
                     }
                     const board = await client.getBoard(boardId);
                     return {

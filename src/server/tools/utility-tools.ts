@@ -4,7 +4,7 @@ import { getApiInfoSchema, healthCheckSchema } from '../../schemas/utility-schem
 import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
 
 export class UtilityToolHandler implements BaseToolHandler {
-  registerTools(server: McpServer, client: BusinessMapClient, readOnlyMode: boolean): void {
+  registerTools(server: McpServer, client: BusinessMapClient): void {
     this.registerHealthCheck(server, client);
     this.registerGetApiInfo(server, client);
   }
