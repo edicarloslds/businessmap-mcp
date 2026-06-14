@@ -5,7 +5,7 @@ import { z } from 'zod/v3';
 // Date and time filters
 export const dateTimeFilterSchema = {
   from: z.string().optional(),
-  from_date: z.string().optional(), 
+  from_date: z.string().optional(),
   to: z.string().optional(),
   to_date: z.string().optional(),
 };

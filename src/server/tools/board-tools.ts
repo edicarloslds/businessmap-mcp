@@ -7,8 +7,9 @@ import {
   createColumnInputSchema,
   createLaneSchema,
   deleteColumnSchema,
-  getBoardSchema,
+  getColumnsSchema,
   getCurrentBoardStructureSchema,
+  getLanesSchema,
   getLaneSchema,
   listBoardsSchema,
   searchBoardSchema,
@@ -190,7 +191,7 @@ export class BoardToolHandler implements BaseToolHandler {
       {
         title: 'Get Board Columns',
         description: 'Get all columns for a board',
-        inputSchema: getBoardSchema.shape,
+        inputSchema: getColumnsSchema.shape,
         annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ board_id }) => {
@@ -210,7 +211,7 @@ export class BoardToolHandler implements BaseToolHandler {
       {
         title: 'Get Board Lanes',
         description: 'Get all lanes/swimlanes for a board',
-        inputSchema: getBoardSchema.shape,
+        inputSchema: getLanesSchema.shape,
         annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ board_id }) => {

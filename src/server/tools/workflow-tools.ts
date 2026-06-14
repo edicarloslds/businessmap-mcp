@@ -1,6 +1,9 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
-import { getWorkflowCycleTimeColumnsSchema } from '../../schemas/workflow-schemas.js';
+import {
+  getWorkflowCycleTimeColumnsSchema,
+  getWorkflowEffectiveCycleTimeColumnsSchema,
+} from '../../schemas/workflow-schemas.js';
 import { logger } from '../../utils/logger.js';
 import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
 
@@ -40,7 +43,7 @@ export class WorkflowToolHandler implements BaseToolHandler {
         title: 'Get Workflow Effective Cycle Time Columns',
         description:
           "Get workflow's effective cycle time columns (the columns actually used for cycle time calculation with applied filters/logic)",
-        inputSchema: getWorkflowCycleTimeColumnsSchema.shape,
+        inputSchema: getWorkflowEffectiveCycleTimeColumnsSchema.shape,
         annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ board_id, workflow_id }) => {

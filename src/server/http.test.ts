@@ -1,26 +1,52 @@
-import { Server } from 'node:http';
-import { startHttpServer } from './http.js';
-import { config } from '../config/environment.js';
+import type { Server } from 'node:http';
+import type { RequestHandler } from 'express';
+
+type StartHttpServer = typeof import('./http.js').startHttpServer;
+type EnvironmentConfig = typeof import('../config/environment.js').config;
+
+let startHttpServer: StartHttpServer;
+let config: EnvironmentConfig;
 
 describe('HTTP Server Middleware Order', () => {
-  let server: Server;
+  let server: Server | undefined;
   const testPort = 3099;
 
-  beforeAll(() => {
-    // Set required config parameters dynamically
+  beforeAll(async () => {
+    process.env.BUSINESSMAP_API_URL ??= 'https://example.businessmap.io';
+    process.env.BUSINESSMAP_API_TOKEN ??= 'test-token';
+
+    ({ startHttpServer } = await import('./http.js'));
+    ({ config } = await import('../config/environment.js'));
+
     config.server.port = testPort;
     config.server.allowedOrigins = ['http://localhost:8080'];
   });
 
   afterEach(async () => {
-    if (server) {
-      await new Promise<void>((resolve) => server.close(() => resolve()));
+    if (!server) {
+      return;
     }
+
+    if ('closeAllConnections' in server && typeof server.closeAllConnections === 'function') {
+      server.closeAllConnections();
+    }
+
+    const activeServer = server;
+    await new Promise<void>((resolve, reject) => {
+      activeServer.close((error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+        resolve();
+      });
+    });
+
+    server = undefined;
   });
 
   it('runs CORS before custom middlewares so that preflight OPTIONS requests bypass auth', async () => {
-    // Custom auth middleware that rejects everything with 401
-    const authMiddleware = (req: any, res: any, next: any) => {
+    const authMiddleware: RequestHandler = (_req, res) => {
       res.status(401).json({ error: 'Unauthorized' });
     };
 
@@ -28,20 +54,18 @@ describe('HTTP Server Middleware Order', () => {
       middlewares: [authMiddleware],
     });
 
-    // 1. Perform preflight OPTIONS request
     const preflightRes = await fetch(`http://localhost:${testPort}/mcp`, {
       method: 'OPTIONS',
       headers: {
-        'Origin': 'http://localhost:8080',
+        Origin: 'http://localhost:8080',
         'Access-Control-Request-Method': 'POST',
         'Access-Control-Request-Headers': 'content-type,mcp-session-id',
       },
     });
 
-    expect(preflightRes.status).toBe(204); // CORS preflight default success is 204
+    expect(preflightRes.status).toBe(204);
     expect(preflightRes.headers.get('access-control-allow-origin')).toBe('http://localhost:8080');
 
-    // 2. Perform actual POST request which should be intercepted and rejected with 401 by auth middleware
     const postRes = await fetch(`http://localhost:${testPort}/mcp`, {
       method: 'POST',
       headers: {

@@ -20,4 +20,5 @@ export default {
     ],
   },
   testMatch: ['**/src/**/*.test.ts'],
+  workerIdleMemoryLimit: '512MB',
 };

@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import express from 'express';
 import cors from 'cors';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
-import { BusinessMapMcpServer } from './mcp-server.js';
+import type { BusinessMapMcpServer } from './mcp-server.js';
 import { config } from '../config/environment.js';
 import { logger } from '../utils/logger.js';
 
@@ -85,6 +85,7 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
     logResponse: (statusCode: number) => void,
     sendError: (statusCode: number, message: string) => void
   ) => {
+    const { BusinessMapMcpServer } = await import('./mcp-server.js');
     const sessionServer = new BusinessMapMcpServer();
 
     // New session: create a fresh transport
@@ -193,11 +194,17 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
 
   const port = config.server.port;
 
-  return app.listen(port, () => {
+  const server = app.listen(port, () => {
     logger.success(`HTTP Server running on port ${port}`);
     logger.info(`MCP Endpoint: http://localhost:${port}/mcp`);
     logger.info(`Health Check: http://localhost:${port}/health`);
     logger.info(`Allowed origins: ${config.server.allowedOrigins.join(', ')}`);
     logger.info(`Allowed hosts: ${config.server.allowedHosts.join(', ')}`);
   });
+
+  server.on('close', () => {
+    clearInterval(cleanupInterval);
+  });
+
+  return server;
 }

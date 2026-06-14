@@ -6,6 +6,7 @@ import {
   addStickerToCardSchema,
   addTagToCardSchema,
   blockCardSchema,
+  cardCommentsSchema,
   cardSizeSchema,
   createCardSchema,
   createCardSubtaskSchema,
@@ -247,7 +248,7 @@ export class CardToolHandler implements BaseToolHandler {
       {
         title: 'Get Card Comments',
         description: 'Get all comments for a specific card',
-        inputSchema: getCardSchema.shape,
+        inputSchema: cardCommentsSchema.shape,
         annotations: { readOnlyHint: true, idempotentHint: true },
       },
       async ({ card_id }) => {

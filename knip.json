@@ -1,0 +1,20 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "scripts/**/*.ts",
+    "src/**/*.test.ts"
+  ],
+  "project": ["src/**/*.ts", "scripts/**/*.ts"],
+  "ignoreBinaries": ["docker-compose"],
+  "ignoreExportsUsedInFile": true,
+  "ignoreIssues": {
+    "src/client/modules/base-client.ts": ["types"],
+    "src/schemas/board-schemas.ts": ["exports"],
+    "src/schemas/common-schemas.ts": ["exports"],
+    "src/server/resources/base-resource.ts": ["exports"],
+    "src/types/index.ts": ["exports", "types"],
+    "src/types/base.ts": ["types"],
+    "src/types/card.ts": ["types"],
+    "src/schemas/index.ts": ["exports", "types"]
+  }
+}
