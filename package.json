@@ -30,6 +30,7 @@
     "clean": "rm -rf dist",
     "setup": "bash scripts/setup.sh",
     "test:connection": "bash scripts/test-connection.sh",
+    "deepsec:scan": "bash scripts/deepsec.sh scan",
     "docker:build": "docker build -t businessmap-mcp .",
     "docker:run": "docker run --env-file .env businessmap-mcp",
     "docker:up": "docker-compose up -d",
