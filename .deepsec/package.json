@@ -8,5 +8,11 @@
   "packageManager": "pnpm@9.15.4",
   "dependencies": {
     "deepsec": "^2.0.9"
+  },
+  "pnpm": {
+    "overrides": {
+      "hono": ">=4.12.25",
+      "undici": ">=7.28.0"
+    }
   }
 }
