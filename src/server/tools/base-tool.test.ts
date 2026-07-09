@@ -1,4 +1,12 @@
-import { createErrorResponse, createSuccessResponse } from './base-tool.js';
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import { z } from 'zod/v3';
+import { logger } from '../../utils/logger.js';
+import {
+  WRITE_IDEMPOTENT,
+  createErrorResponse,
+  createSuccessResponse,
+  registerTool,
+} from './base-tool.js';
 
 describe('createErrorResponse', () => {
   it('formats an Error instance correctly', () => {
@@ -53,5 +61,38 @@ describe('createSuccessResponse', () => {
   it('does not include isError field', () => {
     const result = createSuccessResponse({});
     expect((result as Record<string, unknown>)['isError']).toBeUndefined();
+  });
+});
+
+describe('registerTool mutation audit', () => {
+  it('logs numeric identifiers without free-form values', async () => {
+    const register = jest.fn();
+    const info = jest.spyOn(logger, 'info').mockImplementation(() => undefined);
+    registerTool({ registerTool: register } as unknown as McpServer, {
+      name: 'test_mutation',
+      title: 'Test Mutation',
+      description: 'Test',
+      schema: z.object({ card_id: z.number(), text: z.string() }),
+      annotations: WRITE_IDEMPOTENT,
+      errorContext: 'testing mutation',
+      handler: async () => ({ ok: true }),
+    });
+    const callback = register.mock.calls[0]?.[2] as (args: {
+      card_id: number;
+      text: string;
+    }) => Promise<unknown>;
+
+    await callback({ card_id: 123, text: 'sensitive comment text' });
+
+    expect(info).toHaveBeenCalledWith(
+      'MCP mutation tool completed',
+      expect.objectContaining({
+        tool: 'test_mutation',
+        outcome: 'success',
+        identifiers: { card_id: 123 },
+      })
+    );
+    expect(JSON.stringify(info.mock.calls)).not.toContain('sensitive comment text');
+    info.mockRestore();
   });
 });

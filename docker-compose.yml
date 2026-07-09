@@ -13,6 +13,8 @@ services:
       - HTTP_BODY_LIMIT=${HTTP_BODY_LIMIT:-1mb}
       - HTTP_MAX_SESSIONS=${HTTP_MAX_SESSIONS:-100}
       - HTTP_SESSION_TIMEOUT_MS=${HTTP_SESSION_TIMEOUT_MS:-1800000}
+      - LOG_LEVEL=${LOG_LEVEL:-1}
+      - LOG_FORMAT=${LOG_FORMAT:-text}
     ports:
       - "${PORT:-3000}:${PORT:-3000}"
     restart: unless-stopped

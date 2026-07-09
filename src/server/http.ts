@@ -6,6 +6,7 @@ import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/
 import type { BusinessMapMcpServer } from './mcp-server.js';
 import { config } from '../config/environment.js';
 import { logger } from '../utils/logger.js';
+import { runWithRequestContext } from '../utils/request-context.js';
 
 interface SessionContext {
   transport: StreamableHTTPServerTransport;
@@ -59,6 +60,11 @@ function closeHttpListener(server: Server): Promise<void> {
   });
 }
 
+function getCorrelationId(value: string | string[] | undefined): string {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  return candidate && /^[A-Za-z0-9._:-]{1,128}$/.test(candidate) ? candidate : randomUUID();
+}
+
 export interface HttpServerOptions {
   middlewares?: express.RequestHandler[];
   bodyLimit?: string;
@@ -93,10 +99,24 @@ export async function startHttpServer(options: HttpServerOptions = {}): Promise<
     cors({
       origin: config.server.allowedOrigins,
       methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'mcp-session-id', 'last-event-id'],
-      exposedHeaders: ['mcp-session-id'],
+      allowedHeaders: ['Content-Type', 'mcp-session-id', 'last-event-id', 'x-request-id'],
+      exposedHeaders: ['mcp-session-id', 'x-request-id'],
     })
   );
+
+  // Attach a bounded correlation ID before custom middleware and MCP handling.
+  app.use((req, res, next) => {
+    const correlationId = getCorrelationId(req.headers['x-request-id']);
+    const sessionId = req.headers['mcp-session-id'];
+    res.setHeader('x-request-id', correlationId);
+    runWithRequestContext(
+      {
+        correlationId,
+        ...(typeof sessionId === 'string' && { sessionId }),
+      },
+      next
+    );
+  });
 
   // Apply custom middlewares (e.g. for authentication/authorization)
   if (options.middlewares && options.middlewares.length > 0) {

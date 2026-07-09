@@ -20,5 +20,19 @@ export default {
     ],
   },
   testMatch: ['**/src/**/*.test.ts'],
+  coverageProvider: 'v8',
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.test.ts',
+    '!src/types/**',
+  ],
+  coverageThreshold: {
+    global: {
+      statements: 70,
+      branches: 70,
+      functions: 35,
+      lines: 70,
+    },
+  },
   workerIdleMemoryLimit: '512MB',
 };

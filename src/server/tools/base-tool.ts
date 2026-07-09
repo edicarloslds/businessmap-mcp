@@ -1,7 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v3';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
 import { config } from '../../config/environment.js';
+import { logger } from '../../utils/logger.js';
+import { getRequestContext, runWithRequestContext } from '../../utils/request-context.js';
 
 export const ESSENTIAL_TOOLS = new Set([
   'list_workspaces',
@@ -133,6 +136,20 @@ function isToolResponse(value: unknown): value is ToolResponse {
   );
 }
 
+function getAuditIdentifiers(args: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(args).filter(([key, value]) => {
+      if (!/(?:^|_)ids?$/.test(key)) {
+        return false;
+      }
+      return (
+        typeof value === 'number' ||
+        (Array.isArray(value) && value.every((item) => typeof item === 'number'))
+      );
+    })
+  );
+}
+
 /**
  * Register a tool with standard try/catch error handling and JSON success formatting.
  * The handler either returns plain data (serialized via createSuccessResponse) or a
@@ -146,9 +163,20 @@ export function registerTool<Shape extends z.ZodRawShape>(
     return;
   }
 
-  const callback = async (args: z.objectOutputType<Shape, z.ZodTypeAny>) => {
+  const execute = async (args: z.objectOutputType<Shape, z.ZodTypeAny>) => {
+    const startedAt = Date.now();
+    const isMutation = def.annotations?.readOnlyHint === false;
     try {
       const result = await def.handler(args);
+      if (isMutation) {
+        logger.info('MCP mutation tool completed', {
+          event: 'mcp_tool_mutation',
+          tool: def.name,
+          outcome: 'success',
+          durationMs: Date.now() - startedAt,
+          identifiers: getAuditIdentifiers(args),
+        });
+      }
       if (isToolResponse(result)) {
         return result;
       }
@@ -156,8 +184,23 @@ export function registerTool<Shape extends z.ZodRawShape>(
         typeof def.successMessage === 'function' ? def.successMessage(result) : def.successMessage;
       return createSuccessResponse(result, message);
     } catch (error) {
+      if (isMutation) {
+        logger.warn('MCP mutation tool failed', {
+          event: 'mcp_tool_mutation',
+          tool: def.name,
+          outcome: 'error',
+          durationMs: Date.now() - startedAt,
+          identifiers: getAuditIdentifiers(args),
+        });
+      }
       return createErrorResponse(error, def.errorContext);
     }
+  };
+  const callback = async (args: z.objectOutputType<Shape, z.ZodTypeAny>) => {
+    if (getRequestContext()) {
+      return execute(args);
+    }
+    return runWithRequestContext({ correlationId: randomUUID() }, () => execute(args));
   };
   server.registerTool(
     def.name,

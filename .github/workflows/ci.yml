@@ -40,7 +40,12 @@ jobs:
         run: npm run lint
 
       - name: Test
+        if: matrix.node-version == 18
         run: npm test -- --runInBand
+
+      - name: Test with coverage
+        if: matrix.node-version == 22
+        run: npm run test:coverage
 
       - name: Build
         run: npm run build

@@ -10,6 +10,8 @@ import {
   WorkspaceClient,
 } from './modules/index.js';
 import { BusinessMapConfig } from '../types/index.js';
+import { logger } from '../utils/logger.js';
+import { getRequestContext } from '../utils/request-context.js';
 import { BusinessMapApiError, transformAxiosError } from './businessmap-error.js';
 
 /**
@@ -46,10 +48,40 @@ export class BusinessMapClient {
       timeout: 30000,
     });
 
-    // Add response interceptor for error handling
+    const requestStartedAt = new WeakMap<object, number>();
+    this.http.interceptors.request.use((request) => {
+      requestStartedAt.set(request, Date.now());
+      const correlationId = getRequestContext()?.correlationId;
+      if (correlationId) {
+        request.headers.set('x-request-id', correlationId);
+      }
+      return request;
+    });
+
+    // Add response interceptor for timing and structured error handling.
     this.http.interceptors.response.use(
-      (response) => response,
+      (response) => {
+        logger.debug('BusinessMap API request completed', {
+          event: 'businessmap_api_request',
+          method: response.config.method?.toUpperCase(),
+          path: response.config.url,
+          status: response.status,
+          durationMs: Date.now() - (requestStartedAt.get(response.config) ?? Date.now()),
+          outcome: 'success',
+        });
+        return response;
+      },
       (error: AxiosError) => {
+        logger.debug('BusinessMap API request failed', {
+          event: 'businessmap_api_request',
+          method: error.config?.method?.toUpperCase(),
+          path: error.config?.url,
+          status: error.response?.status,
+          durationMs: error.config
+            ? Date.now() - (requestStartedAt.get(error.config) ?? Date.now())
+            : undefined,
+          outcome: 'error',
+        });
         throw transformAxiosError(error);
       }
     );

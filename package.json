@@ -22,6 +22,7 @@
     "dev": "tsx src/index.ts",
     "watch": "tsx --watch src/index.ts",
     "test": "jest",
+    "test:coverage": "jest --coverage --runInBand",
     "test:npx": "bash scripts/test-npx.sh",
     "publish:npm": "bash scripts/publish-npm.sh",
     "publish:github": "bash scripts/publish-github.sh",

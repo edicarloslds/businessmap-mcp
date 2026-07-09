@@ -1,57 +1,10 @@
-import { LogLevel } from './logger.js';
-
-// We need a fresh Logger instance (not the singleton) for isolated tests
-class Logger {
-  private currentLevel: LogLevel;
-
-  constructor(level: LogLevel = LogLevel.INFO) {
-    this.currentLevel = level;
-  }
-
-  setLevel(level: LogLevel): void {
-    this.currentLevel = level;
-  }
-
-  debug(message: string, ...args: unknown[]): void {
-    if (this.currentLevel <= LogLevel.DEBUG) {
-      this.log('🔍 DEBUG', message, ...args);
-    }
-  }
-
-  info(message: string, ...args: unknown[]): void {
-    if (this.currentLevel <= LogLevel.INFO) {
-      this.log('ℹ️  INFO', message, ...args);
-    }
-  }
-
-  warn(message: string, ...args: unknown[]): void {
-    if (this.currentLevel <= LogLevel.WARN) {
-      this.log('⚠️  WARN', message, ...args);
-    }
-  }
-
-  error(message: string, ...args: unknown[]): void {
-    if (this.currentLevel <= LogLevel.ERROR) {
-      this.log('❌ ERROR', message, ...args);
-    }
-  }
-
-  success(message: string, ...args: unknown[]): void {
-    if (this.currentLevel <= LogLevel.INFO) {
-      this.log('✅ SUCCESS', message, ...args);
-    }
-  }
-
-  private log(prefix: string, message: string, ...args: unknown[]): void {
-    const timestamp = new Date().toISOString();
-    const formattedMessage = `[${timestamp}] ${prefix}: ${message}`;
-    if (args.length > 0) {
-      console.error(formattedMessage, ...args);
-    } else {
-      console.error(formattedMessage);
-    }
-  }
-}
+import {
+  Logger,
+  LogLevel,
+  parseLogFormat,
+  parseLogLevel,
+} from './logger.js';
+import { runWithRequestContext } from './request-context.js';
 
 describe('Logger', () => {
   let consoleSpy: jest.SpyInstance;
@@ -64,104 +17,81 @@ describe('Logger', () => {
     consoleSpy.mockRestore();
   });
 
-  describe('log level filtering', () => {
-    it('does not emit DEBUG messages at INFO level', () => {
-      const logger = new Logger(LogLevel.INFO);
-      logger.debug('debug message');
-      expect(consoleSpy).not.toHaveBeenCalled();
-    });
+  it('filters messages using the configured level', () => {
+    const logger = new Logger(LogLevel.WARN);
 
-    it('emits INFO messages at INFO level', () => {
-      const logger = new Logger(LogLevel.INFO);
-      logger.info('info message');
-      expect(consoleSpy).toHaveBeenCalledTimes(1);
-      expect(consoleSpy.mock.calls[0]?.[0]).toContain('INFO');
-      expect(consoleSpy.mock.calls[0]?.[0]).toContain('info message');
-    });
+    logger.debug('debug');
+    logger.info('info');
+    logger.warn('warn');
+    logger.error('error');
 
-    it('emits DEBUG messages when level is DEBUG', () => {
-      const logger = new Logger(LogLevel.DEBUG);
-      logger.debug('debug message');
-      expect(consoleSpy).toHaveBeenCalledTimes(1);
-      expect(consoleSpy.mock.calls[0]?.[0]).toContain('DEBUG');
-    });
+    expect(consoleSpy).toHaveBeenCalledTimes(2);
+    expect(consoleSpy.mock.calls[0]?.[0]).toContain('WARN');
+    expect(consoleSpy.mock.calls[1]?.[0]).toContain('ERROR');
+  });
 
-    it('does not emit INFO messages at WARN level', () => {
-      const logger = new Logger(LogLevel.WARN);
-      logger.info('should be filtered');
-      expect(consoleSpy).not.toHaveBeenCalled();
-    });
+  it('supports changing level and format at runtime', () => {
+    const logger = new Logger(LogLevel.NONE);
 
-    it('emits WARN at WARN level', () => {
-      const logger = new Logger(LogLevel.WARN);
-      logger.warn('warning message');
-      expect(consoleSpy).toHaveBeenCalledTimes(1);
-      expect(consoleSpy.mock.calls[0]?.[0]).toContain('WARN');
-    });
+    logger.info('hidden');
+    logger.setLevel(LogLevel.INFO);
+    logger.setFormat('json');
+    logger.info('visible');
 
-    it('emits ERROR at ERROR level', () => {
-      const logger = new Logger(LogLevel.ERROR);
-      logger.error('error message');
-      expect(consoleSpy).toHaveBeenCalledTimes(1);
-      expect(consoleSpy.mock.calls[0]?.[0]).toContain('ERROR');
-    });
-
-    it('suppresses all messages at NONE level', () => {
-      const logger = new Logger(LogLevel.NONE);
-      logger.debug('d');
-      logger.info('i');
-      logger.warn('w');
-      logger.error('e');
-      logger.success('s');
-      expect(consoleSpy).not.toHaveBeenCalled();
+    expect(consoleSpy).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(consoleSpy.mock.calls[0]?.[0] as string)).toMatchObject({
+      level: 'info',
+      message: 'visible',
     });
   });
 
-  describe('setLevel', () => {
-    it('dynamically changes the log level', () => {
-      const logger = new Logger(LogLevel.NONE);
-      logger.info('should be filtered');
-      expect(consoleSpy).not.toHaveBeenCalled();
+  it('emits structured JSON with request context and errors', () => {
+    const logger = new Logger(LogLevel.INFO, 'json');
 
-      logger.setLevel(LogLevel.DEBUG);
-      logger.info('should appear now');
-      expect(consoleSpy).toHaveBeenCalledTimes(1);
+    runWithRequestContext(
+      { correlationId: 'request-123', sessionId: 'session-456' },
+      () => logger.error('API failed', new Error('timeout'))
+    );
+
+    const output = JSON.parse(consoleSpy.mock.calls[0]?.[0] as string);
+    expect(output).toMatchObject({
+      level: 'error',
+      message: 'API failed',
+      correlationId: 'request-123',
+      sessionId: 'session-456',
+      details: [{ name: 'Error', message: 'timeout' }],
     });
+    expect(output.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
   });
 
-  describe('output always goes to stderr', () => {
-    it('uses console.error for all log methods', () => {
-      const stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
-      const logger = new Logger(LogLevel.DEBUG);
+  it('always writes logs to stderr', () => {
+    const stdoutSpy = jest.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const logger = new Logger(LogLevel.DEBUG);
 
-      logger.debug('d');
-      logger.info('i');
-      logger.warn('w');
-      logger.error('e');
-      logger.success('s');
+    logger.debug('debug');
+    logger.info('info');
+    logger.warn('warn');
+    logger.error('error');
+    logger.success('success');
 
-      expect(stdoutSpy).not.toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledTimes(5);
+    expect(stdoutSpy).not.toHaveBeenCalled();
+    expect(consoleSpy).toHaveBeenCalledTimes(5);
+    stdoutSpy.mockRestore();
+  });
+});
 
-      stdoutSpy.mockRestore();
-    });
+describe('logger configuration', () => {
+  it('validates log levels', () => {
+    expect(parseLogLevel(undefined)).toBe(LogLevel.INFO);
+    expect(parseLogLevel('0')).toBe(LogLevel.DEBUG);
+    expect(parseLogLevel('4')).toBe(LogLevel.NONE);
+    expect(() => parseLogLevel('invalid')).toThrow('LOG_LEVEL must be an integer between 0 and 4');
+    expect(() => parseLogLevel('5')).toThrow('LOG_LEVEL must be an integer between 0 and 4');
   });
 
-  describe('success method', () => {
-    it('emits SUCCESS messages at INFO level', () => {
-      const logger = new Logger(LogLevel.INFO);
-      logger.success('operation completed');
-      expect(consoleSpy).toHaveBeenCalledTimes(1);
-      expect(consoleSpy.mock.calls[0]?.[0]).toContain('SUCCESS');
-    });
-  });
-
-  describe('message format', () => {
-    it('includes ISO timestamp in messages', () => {
-      const logger = new Logger(LogLevel.INFO);
-      logger.info('test');
-      const output = consoleSpy.mock.calls[0]?.[0] as string;
-      expect(output).toMatch(/\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/);
-    });
+  it('validates log formats', () => {
+    expect(parseLogFormat(undefined)).toBe('text');
+    expect(parseLogFormat('JSON')).toBe('json');
+    expect(() => parseLogFormat('xml')).toThrow('LOG_FORMAT must be either "text" or "json"');
   });
 });

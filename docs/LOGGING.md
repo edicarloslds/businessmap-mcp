@@ -64,6 +64,18 @@ All log messages include timestamps and clear prefixes:
 [2025-11-15T10:30:47.345Z] ❌ ERROR: Failed to connect to API
 ```
 
+Set `LOG_FORMAT=json` for machine-readable logs:
+
+```json
+{"timestamp":"2026-07-09T18:00:00.000Z","level":"info","message":"MCP mutation tool completed","correlationId":"request-123","details":[{"event":"mcp_tool_mutation","tool":"update_card","outcome":"success","durationMs":42,"identifiers":{"card_id":123}}]}
+```
+
+HTTP requests accept an optional `x-request-id` header and echo it in the
+response. Invalid or missing IDs are replaced with a UUID. The same correlation
+ID is propagated to BusinessMap API calls and included in logs. Mutation audit
+events contain tool names and numeric identifiers only; free-form card content,
+comments, descriptions, email addresses, and credentials are not logged.
+
 ## Configuration
 
 Set the `LOG_LEVEL` environment variable to control verbosity:
@@ -84,6 +96,9 @@ LOG_LEVEL=3 npx @edicarlos.lds/businessmap-mcp
 # Disable all logging
 LOG_LEVEL=4 npx @edicarlos.lds/businessmap-mcp
 ```
+
+Use `LOG_FORMAT=text` (default) for human-readable output or
+`LOG_FORMAT=json` for log aggregation systems.
 
 ### In Claude Desktop Config
 

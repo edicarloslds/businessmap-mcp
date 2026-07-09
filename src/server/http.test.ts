@@ -84,11 +84,14 @@ describe('HTTP server', () => {
     server = await startHttpServer();
 
     const [health, readiness] = await Promise.all([
-      fetch(`http://localhost:${testPort}/health`, { headers: { Connection: 'close' } }),
+      fetch(`http://localhost:${testPort}/health`, {
+        headers: { Connection: 'close', 'x-request-id': 'health-test-request' },
+      }),
       fetch(`http://localhost:${testPort}/ready`, { headers: { Connection: 'close' } }),
     ]);
 
     expect(health.status).toBe(200);
+    expect(health.headers.get('x-request-id')).toBe('health-test-request');
     expect(await health.json()).toMatchObject({ status: 'ok' });
     expect(readiness.status).toBe(200);
     expect(await readiness.json()).toMatchObject({ status: 'ready' });

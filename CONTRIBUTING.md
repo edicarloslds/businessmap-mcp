@@ -24,6 +24,10 @@ npm run build
 npm run knip
 ```
 
+Run `npm run test:coverage` when changing core client, transport, or tool
+registration behavior. The coverage thresholds are intentionally incremental
+and must not regress.
+
 The API-backed smoke tests are optional for contributors and require
 `BUSINESSMAP_API_URL` and `BUSINESSMAP_API_TOKEN`:
 
