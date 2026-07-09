@@ -1,7 +1,7 @@
 import { z } from 'zod/v3';
 
-// Schema para health check (sem parâmetros)
+// Health check schema (no parameters)
 export const healthCheckSchema = z.object({});
 
-// Schema para obter informações da API (sem parâmetros)
+// Schema for getting API information (no parameters)
 export const getApiInfoSchema = z.object({});

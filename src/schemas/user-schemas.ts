@@ -1,17 +1,17 @@
 import { z } from 'zod/v3';
 
-// Schema básico para listar usuários (sem parâmetros)
+// Basic schema for listing users (no parameters)
 export const listUsersSchema = z.object({});
 
-// Schema para obter detalhes de um usuário específico
+// Schema for getting details of a specific user
 export const getUserSchema = z.object({
   user_id: z.number().describe('The ID of the user'),
 });
 
-// Schema para obter usuário atual (sem parâmetros)
+// Schema for getting the current user (no parameters)
 export const getCurrentUserSchema = z.object({});
 
-// Schema para convidar um novo usuário
+// Schema for inviting a new user
 export const inviteUserSchema = z.object({
   email: z.string().email().describe('The email address of the user to invite'),
   do_not_send_confirmation_email: z

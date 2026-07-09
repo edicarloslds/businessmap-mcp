@@ -1,6 +1,6 @@
 import { z } from 'zod/v3';
 
-// Coluna extra a ser criada durante o setup de estrutura
+// Extra column to create during structure setup
 export const setupColumnSchema = z.object({
   name: z.string().describe('The name of the column to create'),
   section: z
@@ -20,14 +20,14 @@ export const setupColumnSchema = z.object({
     ),
 });
 
-// Lane extra a ser criada durante o setup de estrutura
+// Extra lane to create during structure setup
 export const setupLaneSchema = z.object({
   name: z.string().describe('The name of the lane to create'),
   color: z.string().optional().describe('The color for the lane (hex without #)'),
   position: z.number().optional().describe('The position of the lane (default 0)'),
 });
 
-// Configuração de um workflow durante o setup de estrutura
+// Workflow configuration applied during structure setup
 export const setupWorkflowSchema = z.object({
   workflow_id: z
     .number()
@@ -69,7 +69,7 @@ export const setupWorkflowSchema = z.object({
     .describe('Additional lanes to create in the workflow (max 10)'),
 });
 
-// Schema para configurar a estrutura de um board existente
+// Schema for configuring the structure of an existing board
 export const configureBoardStructureSchema = z.object({
   board_id: z.number().describe('The ID of the board to configure'),
   workflows: z
@@ -79,7 +79,7 @@ export const configureBoardStructureSchema = z.object({
     .describe('Workflow configurations to apply (max 5)'),
 });
 
-// Schema para criação de boards com estrutura em um workspace existente
+// Schema for creating boards with structure in an existing workspace
 export const createBoardsInWorkspaceSchema = z.object({
   workspace_id: z.number().describe('The ID of the workspace where the boards will be created'),
   boards: z

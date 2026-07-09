@@ -54,10 +54,13 @@ export class SetupToolHandler implements BaseToolHandler {
                 workspace_id,
                 ...(boardConfig.description && { description: boardConfig.description }),
               });
+              if (board.board_id === undefined) {
+                throw new Error('Board was created but the API did not return a board_id');
+              }
               report.board_id = board.board_id;
               for (const workflowConfig of boardConfig.workflows ?? []) {
                 report.workflows.push(
-                  await this.applyWorkflowConfig(client, board.board_id!, workflowConfig)
+                  await this.applyWorkflowConfig(client, board.board_id, workflowConfig)
                 );
               }
             } catch (error) {

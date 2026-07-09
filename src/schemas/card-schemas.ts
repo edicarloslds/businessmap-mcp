@@ -6,11 +6,11 @@ import {
   paginationSchema,
 } from './common-schemas.js';
 
-// List cards schema - extraído do card-tools.ts
+// List cards schema - extracted from card-tools.ts
 export const listCardsSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
 
-  // Date and time filters usando o schema comum e estendendo para casos específicos
+  // Date and time filters using the common schema, extended for specific cases
   archived_from: z
     .string()
     .optional()
@@ -185,7 +185,7 @@ export const listCardsSchema = z.object({
     .optional()
     .describe('The last date of last start cards for which you want results'),
 
-  // ID filters (arrays) - usando schemas comuns e estendendo
+  // ID filters (arrays) - using common schemas, extended
   ...idArrayFilters,
   card_ids: z.array(z.number()).optional().describe('A list of the card ids that you want to get'),
   last_column_ids: z
@@ -257,7 +257,7 @@ export const listCardsSchema = z.object({
     .optional()
     .describe('Controls whether this include logged times for subtasks (0 or 1)'),
 
-  // Pagination usando schema comum
+  // Pagination using the common schema
   ...paginationSchema,
 
   // Legacy compatibility
@@ -271,48 +271,48 @@ export const listCardsSchema = z.object({
     .describe('Optional array of tag IDs to filter cards (legacy parameter)'),
 });
 
-// Schema básico para get card
+// Basic schema for get card
 export const getCardSchema = z.object({
   card_id: z.number().describe('The ID of the card'),
 });
 
-// Schema para tamanho do card
+// Card size schema
 export const cardSizeSchema = z.object({
   card_id: z.number().describe('The ID of the card'),
   size: z.number().optional().describe('The new size/points for the card'),
 });
 
-// Schema para comentários do card
+// Card comments schema
 export const cardCommentsSchema = z.object({
   card_id: z.number().describe('The ID of the card'),
 });
 
-// Schema para obter um comentário específico
+// Schema for getting a specific comment
 export const getCardCommentSchema = z.object({
   card_id: z.number().describe('The ID of the card'),
   comment_id: z.number().describe('The ID of the comment'),
 });
 
-// Schema para get card types (sem parâmetros)
+// Schema for get card types (no parameters)
 export const getCardTypesSchema = z.object({});
 
-// Schema para buscar histórico do card
+// Schema for fetching card history
 export const getCardHistorySchema = z.object({
   card_id: z.number().describe('The ID of the card'),
   outcome_id: z.number().describe('The ID of the outcome'),
 });
 
-// Schema para buscar outcomes do card
+// Schema for fetching card outcomes
 export const getCardOutcomesSchema = z.object({
   card_id: z.number().describe('The ID of the card'),
 });
 
-// Schema para buscar linked cards do card
+// Schema for fetching a card's linked cards
 export const getCardLinkedCardsSchema = z.object({
   card_id: z.number().describe('The ID of the card'),
 });
 
-// Schemas para subtasks
+// Subtask schemas
 export const getCardSubtasksSchema = z.object({
   card_id: z.number().describe('The ID of the card'),
 });
@@ -356,7 +356,7 @@ export const deleteCardSubtaskSchema = z.object({
   subtask_id: z.number().describe('The ID of the subtask to delete'),
 });
 
-// Schema para logged time do card
+// Card logged time schema
 export const getCardLoggedTimeSchema = z.object({
   card_id: z.number().describe('The ID of the card'),
   include_subtasks: z
@@ -365,17 +365,17 @@ export const getCardLoggedTimeSchema = z.object({
     .describe('Whether to include time logged on the card subtasks (default true)'),
 });
 
-// Schema para histórico de bloqueios do card
+// Card blocking history schema
 export const getCardBlockedTimesSchema = z.object({
   card_id: z.number().describe('The ID of the card'),
 });
 
-// Schema para histórico de movimentação do card
+// Card movement history schema
 export const getCardFlowHistorySchema = z.object({
   card_id: z.number().describe('The ID of the card'),
 });
 
-// Schema para busca de cards cross-board
+// Cross-board card search schema
 export const searchCardsSchema = z.object({
   board_ids: z
     .array(z.number())
@@ -434,7 +434,7 @@ export const searchCardsSchema = z.object({
   per_page: z.number().optional().describe('Results per page (default 200, max 1000)'),
 });
 
-// Schemas complexos para criação de cards
+// Complex schemas for card creation
 export const blockReasonSchema = z.object({
   reason_id: z.number(),
   comment: z.string(),
@@ -519,12 +519,12 @@ export const columnChecklistItemSchema = z.object({
   comment: z.string(),
 });
 
-// Schema principal para criação de cards
+// Main schema for card creation
 export const createCardSchema = z.object({
   title: z.string().describe('The title of the card'),
   column_id: z.number().describe('The ID of the column'),
 
-  // Campos opcionais básicos
+  // Basic optional fields
   template_id: z.number().optional().describe('Optional template ID'),
   lane_id: z.number().optional().describe('Optional lane ID'),
   position: z.number().optional().describe('Optional position'),
@@ -559,7 +559,7 @@ export const createCardSchema = z.object({
   watch: z.number().optional().describe('Optional watch flag'),
   version_id: z.number().optional().describe('Optional version ID'),
 
-  // Razões e comentários
+  // Reasons and comments
   block_reason: blockReasonSchema.optional().describe('Optional block reason'),
   discard_reason_id: z.number().optional().describe('Optional discard reason ID'),
   discard_comment: z.string().optional().describe('Optional discard comment'),
@@ -569,7 +569,7 @@ export const createCardSchema = z.object({
   reporter_user_id: z.number().optional().describe('Optional reporter user ID'),
   reporter_email: z.string().optional().describe('Optional reporter email'),
 
-  // Arrays de relacionamentos
+  // Relationship arrays
   card_properties_to_copy: z
     .array(cardPropertyToCopySchema)
     .optional()
@@ -594,7 +594,7 @@ export const createCardSchema = z.object({
     .optional()
     .describe('Optional milestone IDs to remove'),
 
-  // Campos customizados e anexos
+  // Custom fields and attachments
   custom_fields_to_add_or_update: z
     .array(customFieldSchema)
     .optional()
@@ -616,7 +616,7 @@ export const createCardSchema = z.object({
     .optional()
     .describe('Optional column checklist items to check or update'),
 
-  // Anotações e links
+  // Annotations and links
   annotations_to_add: z.array(annotationSchema).optional().describe('Optional annotations to add'),
   links_to_existing_cards_to_add_or_update: z
     .array(cardLinkSchema)
@@ -628,7 +628,7 @@ export const createCardSchema = z.object({
     .describe('Optional links to new cards to add'),
 });
 
-// Schema para movimentação de cards
+// Card move schema
 export const moveCardSchema = z.object({
   card_id: z.number().describe('The ID of the card to move'),
   column_id: z.number().describe('The target column ID'),
@@ -636,7 +636,7 @@ export const moveCardSchema = z.object({
   position: z.number().optional().describe('Optional position in the column'),
 });
 
-// Schema para atualização de cards
+// Card update schema
 export const updateCardSchema = z.object({
   card_id: z.number().describe('The ID of the card to update'),
   id: z.number().optional().describe('Alternative ID field'),
@@ -652,7 +652,7 @@ export const updateCardSchema = z.object({
   deadline: z.string().optional().describe('New deadline (ISO date string)'),
 });
 
-// Schemas para parent cards
+// Parent card schemas
 export const getCardParentsSchema = z.object({
   card_id: z.number().describe('The ID of the card'),
 });

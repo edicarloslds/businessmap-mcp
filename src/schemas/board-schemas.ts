@@ -1,6 +1,6 @@
 import { z } from 'zod/v3';
 
-// Schema para listagem de boards
+// Board listing schema
 export const listBoardsSchema = z.object({
   // ID filters (arrays)
   board_ids: z
@@ -49,35 +49,35 @@ export const listBoardsSchema = z.object({
     .describe('Optional workspace ID to filter boards (legacy parameter)'),
 });
 
-// Schema para busca de boards
+// Board search schema
 export const searchBoardSchema = z.object({
   board_id: z.number().optional().describe('The ID of the board to search for'),
   board_name: z.string().optional().describe('The name of the board to search for'),
   workspace_id: z.number().optional().describe('Optional workspace ID to limit search scope'),
 });
 
-// Schema para obter detalhes de um board específico
+// Schema for getting details of a specific board
 export const getBoardSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
 });
 
-// Schema para obter colunas de um board
+// Schema for getting a board's columns
 export const getColumnsSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
 });
 
-// Schema para obter lanes de um board
+// Schema for getting a board's lanes
 export const getLanesSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
 });
 
-// Schema para obter detalhes de uma lane específica
+// Schema for getting details of a specific lane
 export const getLaneSchema = z.object({
   board_id: z.number().describe('The ID of the board the lane belongs to'),
   lane_id: z.number().describe('The ID of the lane'),
 });
 
-// Schema para criação de boards
+// Board creation schema
 export const createBoardSchema = z.object({
   name: z.string().describe('The name of the board'),
   description: z.string().optional().describe('Optional description for the board'),
@@ -85,7 +85,7 @@ export const createBoardSchema = z.object({
   workspace_id: z.number().optional().describe('The ID of the workspace'),
 });
 
-// Schema para criação de lanes
+// Lane creation schema
 export const createLaneSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
   name: z.string().describe('The name of the lane'),
@@ -99,7 +99,7 @@ export const createLaneSchema = z.object({
     .describe('The ID of the parent lane (to create a sub-lane)'),
 });
 
-// Schema para atualização de lanes
+// Lane update schema
 export const updateLaneSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
   lane_id: z.number().describe('The ID of the lane to update'),
@@ -110,19 +110,19 @@ export const updateLaneSchema = z.object({
   parent_lane_id: z.number().optional().describe('The new parent lane ID (to nest the lane)'),
 });
 
-// Schema para atualização de boards
+// Board update schema
 export const updateBoardSchema = z.object({
   board_id: z.number().describe('The ID of the board to update'),
   name: z.string().optional().describe('The new name of the board'),
   description: z.string().optional().describe('The new description for the board'),
 });
 
-// Schema para obter estrutura atual do board
+// Schema for getting the current board structure
 export const getCurrentBoardStructureSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
 });
 
-// Schema para criação de coluna
+// Column creation schema
 export const createColumnInputSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
   // Main column fields
@@ -176,7 +176,7 @@ export const createColumnSchema = createColumnInputSchema.superRefine((data, ctx
   }
 });
 
-// Schema para atualização de coluna
+// Column update schema
 export const updateColumnSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
   column_id: z.number().describe('The ID of the column to update'),
@@ -192,7 +192,7 @@ export const updateColumnSchema = z.object({
   description: z.string().optional().describe('The new description for the column'),
 });
 
-// Schema para exclusão de coluna
+// Column deletion schema
 export const deleteColumnSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
   column_id: z.number().describe('The ID of the column to delete'),

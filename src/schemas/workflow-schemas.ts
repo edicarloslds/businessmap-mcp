@@ -1,29 +1,29 @@
 import { z } from 'zod/v3';
 
-// Schema para obter colunas de cycle time do workflow
+// Schema for getting a workflow's cycle time columns
 export const getWorkflowCycleTimeColumnsSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
   workflow_id: z.number().describe('The ID of the workflow'),
 });
 
-// Schema para obter colunas efetivas de cycle time do workflow
+// Schema for getting a workflow's effective cycle time columns
 export const getWorkflowEffectiveCycleTimeColumnsSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
   workflow_id: z.number().describe('The ID of the workflow'),
 });
 
-// Schema para listar workflows de um board
+// Schema for listing a board's workflows
 export const listWorkflowsSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
 });
 
-// Schema para obter detalhes de um workflow
+// Schema for getting workflow details
 export const getWorkflowSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
   workflow_id: z.number().describe('The ID of the workflow'),
 });
 
-// Schema para criação de workflow
+// Workflow creation schema
 export const createWorkflowSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
   type: z
@@ -37,7 +37,7 @@ export const createWorkflowSchema = z.object({
   is_collapsible: z.number().optional().describe('Whether the workflow is collapsible (0 or 1)'),
 });
 
-// Schema para atualização de workflow
+// Workflow update schema
 export const updateWorkflowSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
   workflow_id: z.number().describe('The ID of the workflow to update'),
@@ -47,14 +47,14 @@ export const updateWorkflowSchema = z.object({
   is_collapsible: z.number().optional().describe('Whether the workflow is collapsible (0 or 1)'),
 });
 
-// Schema para vincular workflow relacionado
+// Schema for linking a related workflow
 export const linkRelatedWorkflowSchema = z.object({
   board_id: z.number().describe('The ID of the target board'),
   workflow_id: z.number().describe('The ID of the workflow (from another board) to link'),
   position: z.number().optional().describe('The position of the related workflow on the board'),
 });
 
-// Schema para desvincular workflow relacionado
+// Schema for unlinking a related workflow
 export const unlinkRelatedWorkflowSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
   workflow_id: z.number().describe('The ID of the related workflow to unlink'),
