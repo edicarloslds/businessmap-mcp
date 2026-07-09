@@ -59,6 +59,9 @@ Optional settings:
 | `PORT` | `3000` | HTTP server port. |
 | `ALLOWED_ORIGINS` | `http://localhost` | CORS allowlist for HTTP mode. |
 | `ALLOWED_HOSTS` | unset | Host header allowlist for HTTP mode. |
+| `HTTP_BODY_LIMIT` | `1mb` | Maximum JSON request body size (`b`, `kb`, or `mb`). |
+| `HTTP_MAX_SESSIONS` | `100` | Maximum concurrent initialized HTTP sessions. |
+| `HTTP_SESSION_TIMEOUT_MS` | `1800000` | Idle session timeout in milliseconds. |
 
 ## MCP Client Setup
 
@@ -103,6 +106,10 @@ Configure your MCP client with:
 ```text
 http://your-server:3000/mcp
 ```
+
+Use `/health` for liveness and `/ready` for readiness. The server stops
+accepting new sessions when capacity is exhausted and closes active sessions
+gracefully on `SIGINT` or `SIGTERM`.
 
 For custom authentication, authorization, logging, or rate limiting, see [docs/MIDDLEWARE.md](docs/MIDDLEWARE.md).
 

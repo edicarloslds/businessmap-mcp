@@ -10,6 +10,9 @@ services:
       - MCP_SERVER_VERSION=${MCP_SERVER_VERSION:-}
       - TRANSPORT=http
       - PORT=${PORT:-3000}
+      - HTTP_BODY_LIMIT=${HTTP_BODY_LIMIT:-1mb}
+      - HTTP_MAX_SESSIONS=${HTTP_MAX_SESSIONS:-100}
+      - HTTP_SESSION_TIMEOUT_MS=${HTTP_SESSION_TIMEOUT_MS:-1800000}
     ports:
       - "${PORT:-3000}:${PORT:-3000}"
     restart: unless-stopped

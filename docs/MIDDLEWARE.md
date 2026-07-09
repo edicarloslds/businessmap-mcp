@@ -18,7 +18,10 @@ You can import `startHttpServer` and launch the MCP server in HTTP mode programm
 import { startHttpServer } from '@edicarlos.lds/businessmap-mcp';
 
 // Start HTTP server with default options
-await startHttpServer();
+const server = await startHttpServer();
+
+// Close the listener and all MCP sessions during application shutdown
+await server.shutdown();
 ```
 
 ---
@@ -38,8 +41,8 @@ const API_KEY = process.env.MCP_SERVER_KEY || 'your-secret-api-key';
 await startHttpServer({
   middlewares: [
     (req, res, next) => {
-      // Allow health check to remain public
-      if (req.path === '/health') {
+      // Allow orchestrator probes to remain public
+      if (req.path === '/health' || req.path === '/ready') {
         return next();
       }
 
@@ -67,7 +70,7 @@ const JWT_SECRET = process.env.JWT_SECRET!;
 await startHttpServer({
   middlewares: [
     (req, res, next) => {
-      if (req.path === '/health') return next();
+      if (req.path === '/health' || req.path === '/ready') return next();
 
       const authHeader = req.headers['authorization'];
       if (!authHeader?.startsWith('Bearer ')) {
@@ -125,6 +128,25 @@ Middlewares are executed sequentially in the order they are passed in the `middl
 1. **JSON Parser & CORS** (Default built-in middlewares run first).
 2. **Custom Middlewares** (Your injected middlewares run next, allowing you to intercept and reject requests early).
 3. **Session Logging & Session Resolution** (Built-in MCP routing middleware matches the `/mcp` endpoints last).
+
+---
+
+## HTTP Resource Limits
+
+The standalone server supports `HTTP_BODY_LIMIT` (default `1mb`),
+`HTTP_MAX_SESSIONS` (default `100`), and `HTTP_SESSION_TIMEOUT_MS` (default 30
+minutes). Embedded applications can override them directly:
+
+```typescript
+const server = await startHttpServer({
+  bodyLimit: '512kb',
+  maxSessions: 50,
+  sessionTimeoutMs: 15 * 60 * 1000,
+});
+```
+
+`GET /health` is a liveness probe. `GET /ready` returns `503` while the server
+is shutting down or cannot accept another session.
 
 ---
 

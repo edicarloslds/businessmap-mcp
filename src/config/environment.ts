@@ -58,6 +58,9 @@ export interface EnvironmentConfig {
     port: number;
     allowedOrigins: string[];
     allowedHosts: string[];
+    bodyLimit: string;
+    maxSessions: number;
+    sessionTimeoutMs: number;
   };
   transport: {
     type: 'stdio' | 'http';
@@ -95,6 +98,29 @@ function getCsvEnvVar(name: string, defaultValue: string[]): string[] {
     .split(',')
     .map((item) => item.trim())
     .filter((item) => item.length > 0);
+}
+
+function getPositiveIntegerEnvVar(name: string, defaultValue: number): number {
+  const rawValue = process.env[name];
+  if (rawValue === undefined || rawValue === '') {
+    return defaultValue;
+  }
+  if (!/^\d+$/.test(rawValue)) {
+    throw new TypeError(`Environment variable ${name} must be a positive integer`);
+  }
+  const value = Number(rawValue);
+  if (!Number.isSafeInteger(value) || value <= 0) {
+    throw new TypeError(`Environment variable ${name} must be a positive integer`);
+  }
+  return value;
+}
+
+function getBodyLimit(): string {
+  const value = process.env['HTTP_BODY_LIMIT'] || '1mb';
+  if (!/^\d+(?:b|kb|mb)$/i.test(value)) {
+    throw new TypeError('Environment variable HTTP_BODY_LIMIT must use b, kb, or mb units');
+  }
+  return value;
 }
 
 function getTransportType(): 'stdio' | 'http' {
@@ -135,6 +161,9 @@ export const config: EnvironmentConfig = {
     port,
     allowedOrigins: getCsvEnvVar('ALLOWED_ORIGINS', ['http://localhost']),
     allowedHosts: getCsvEnvVar('ALLOWED_HOSTS', defaultAllowedHosts),
+    bodyLimit: getBodyLimit(),
+    maxSessions: getPositiveIntegerEnvVar('HTTP_MAX_SESSIONS', 100),
+    sessionTimeoutMs: getPositiveIntegerEnvVar('HTTP_SESSION_TIMEOUT_MS', 30 * 60 * 1000),
   },
   transport: {
     type: getTransportType(),

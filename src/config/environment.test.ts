@@ -92,4 +92,29 @@ describe('validateConfig', () => {
     const { config } = await import('./environment.js');
     expect(config.businessMap.defaultWorkspaceId).toBe(42);
   });
+
+  it('parses HTTP resource limits', async () => {
+    process.env['BUSINESSMAP_API_URL'] = 'https://example.businessmap.io';
+    process.env['BUSINESSMAP_API_TOKEN'] = 'token';
+    process.env['HTTP_BODY_LIMIT'] = '512kb';
+    process.env['HTTP_MAX_SESSIONS'] = '25';
+    process.env['HTTP_SESSION_TIMEOUT_MS'] = '60000';
+
+    const { config } = await import('./environment.js');
+    expect(config.server).toMatchObject({
+      bodyLimit: '512kb',
+      maxSessions: 25,
+      sessionTimeoutMs: 60000,
+    });
+  });
+
+  it('rejects invalid HTTP resource limits', async () => {
+    process.env['BUSINESSMAP_API_URL'] = 'https://example.businessmap.io';
+    process.env['BUSINESSMAP_API_TOKEN'] = 'token';
+    process.env['HTTP_MAX_SESSIONS'] = '0';
+
+    await expect(import('./environment.js')).rejects.toThrow(
+      'Environment variable HTTP_MAX_SESSIONS must be a positive integer'
+    );
+  });
 });

@@ -7,8 +7,10 @@ import { config, validateConfig } from './config/environment.js';
 import { BusinessMapMcpServer } from './server/mcp-server.js';
 import { logger } from './utils/logger.js';
 
-export { startHttpServer, HttpServerOptions } from './server/http.js';
+export { startHttpServer, HttpServerOptions, ManagedHttpServer } from './server/http.js';
 export { BusinessMapMcpServer } from './server/mcp-server.js';
+
+let closeActiveServer: (() => Promise<void>) | undefined;
 
 async function initializeWithRetry(server: BusinessMapMcpServer): Promise<void> {
   logger.info('🔄 Initializing connection to BusinessMap API...');
@@ -54,7 +56,8 @@ async function main() {
       await initializeWithRetry(verificationServer);
 
       const { startHttpServer } = await import('./server/http.js');
-      await startHttpServer();
+      const httpServer = await startHttpServer();
+      closeActiveServer = () => httpServer.shutdown();
     } else {
       // Create and initialize the stdio MCP server
       const businessMapServer = new BusinessMapMcpServer();
@@ -63,6 +66,7 @@ async function main() {
       // Default to Stdio
       const transport = new StdioServerTransport();
       await businessMapServer.server.connect(transport);
+      closeActiveServer = () => businessMapServer.server.close();
       logger.success('BusinessMap MCP Server is running on Stdio');
       logger.info('💡 Use Ctrl+C to stop the server');
     }
@@ -88,15 +92,26 @@ const isMain = process.argv[1] && (
 
 if (isMain) {
   // Handle graceful shutdown
-  process.on('SIGINT', () => {
-    logger.info('\n🛑 Shutting down BusinessMap MCP Server...');
-    process.exit(0);
-  });
+  let shutdownPromise: Promise<void> | undefined;
+  const handleShutdown = (signal: NodeJS.Signals): void => {
+    shutdownPromise ??= (async () => {
+      logger.info(`\n🛑 Received ${signal}; shutting down BusinessMap MCP Server...`);
+      if (closeActiveServer) {
+        await closeActiveServer();
+      }
+    })();
 
-  process.on('SIGTERM', () => {
-    logger.info('\n🛑 Shutting down BusinessMap MCP Server...');
-    process.exit(0);
-  });
+    void shutdownPromise.then(
+      () => process.exit(0),
+      (error) => {
+        logger.error('Error during graceful shutdown:', error);
+        process.exit(1);
+      }
+    );
+  };
+
+  process.on('SIGINT', () => handleShutdown('SIGINT'));
+  process.on('SIGTERM', () => handleShutdown('SIGTERM'));
 
   // Start the server
   try {
