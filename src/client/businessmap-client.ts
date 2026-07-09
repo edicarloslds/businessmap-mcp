@@ -200,12 +200,16 @@ export class BusinessMapClient {
     return this.boardClient.getLanes(boardId);
   }
 
-  async getLane(laneId: number) {
-    return this.boardClient.getLane(laneId);
+  async getLane(boardId: number, laneId: number) {
+    return this.boardClient.getLane(boardId, laneId);
   }
 
-  async createLane(params: Parameters<BoardClient['createLane']>[0]) {
-    return this.boardClient.createLane(params);
+  async createLane(boardId: number, params: Parameters<BoardClient['createLane']>[1]) {
+    return this.boardClient.createLane(boardId, params);
+  }
+
+  async updateLane(boardId: number, laneId: number, params: Parameters<BoardClient['updateLane']>[2]) {
+    return this.boardClient.updateLane(boardId, laneId, params);
   }
 
   async getCurrentBoardStructure(boardId: number) {
@@ -227,6 +231,22 @@ export class BusinessMapClient {
   // Card Management - Delegated to CardClient
   async getCards(boardId: number, filters?: CardFilters) {
     return this.cardClient.getCards(boardId, filters);
+  }
+
+  async searchCards(filters?: Parameters<CardClient['searchCards']>[0]) {
+    return this.cardClient.searchCards(filters);
+  }
+
+  async getCardTransitions(cardId: number) {
+    return this.cardClient.getCardTransitions(cardId);
+  }
+
+  async getCardBlockTimes(cardId: number) {
+    return this.cardClient.getCardBlockTimes(cardId);
+  }
+
+  async getCardLoggedTimes(cardId: number, includeSubtasks?: boolean) {
+    return this.cardClient.getCardLoggedTimes(cardId, includeSubtasks);
   }
 
   async getCard(cardId: number) {
@@ -287,6 +307,18 @@ export class BusinessMapClient {
 
   async createCardSubtask(cardId: number, params: Parameters<CardClient['createCardSubtask']>[1]) {
     return this.cardClient.createCardSubtask(cardId, params);
+  }
+
+  async updateCardSubtask(
+    cardId: number,
+    subtaskId: number,
+    params: Parameters<CardClient['updateCardSubtask']>[2]
+  ) {
+    return this.cardClient.updateCardSubtask(cardId, subtaskId, params);
+  }
+
+  async deleteCardSubtask(cardId: number, subtaskId: number) {
+    return this.cardClient.deleteCardSubtask(cardId, subtaskId);
   }
 
   async getCardParents(cardId: number) {
@@ -394,6 +426,34 @@ export class BusinessMapClient {
 
   async getWorkflowEffectiveCycleTimeColumns(boardId: number, workflowId: number) {
     return this.workflowClient.getWorkflowEffectiveCycleTimeColumns(boardId, workflowId);
+  }
+
+  async getWorkflows(boardId: number) {
+    return this.workflowClient.getWorkflows(boardId);
+  }
+
+  async getWorkflow(boardId: number, workflowId: number) {
+    return this.workflowClient.getWorkflow(boardId, workflowId);
+  }
+
+  async createWorkflow(boardId: number, params: Parameters<WorkflowClient['createWorkflow']>[1]) {
+    return this.workflowClient.createWorkflow(boardId, params);
+  }
+
+  async updateWorkflow(
+    boardId: number,
+    workflowId: number,
+    params: Parameters<WorkflowClient['updateWorkflow']>[2]
+  ) {
+    return this.workflowClient.updateWorkflow(boardId, workflowId, params);
+  }
+
+  async linkRelatedWorkflow(boardId: number, workflowId: number, position?: number) {
+    return this.workflowClient.linkRelatedWorkflow(boardId, workflowId, position);
+  }
+
+  async unlinkRelatedWorkflow(boardId: number, workflowId: number) {
+    return this.workflowClient.unlinkRelatedWorkflow(boardId, workflowId);
   }
 
   // Utility Methods - Delegated to UtilityClient

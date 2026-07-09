@@ -13,7 +13,9 @@ import {
   getLaneSchema,
   listBoardsSchema,
   searchBoardSchema,
+  updateBoardSchema,
   updateColumnSchema,
+  updateLaneSchema,
 } from '../../schemas/index.js';
 import { logger } from '../../utils/logger.js';
 import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
@@ -29,7 +31,9 @@ export class BoardToolHandler implements BaseToolHandler {
 
     if (!readOnlyMode) {
       this.registerCreateBoard(server, client);
+      this.registerUpdateBoard(server, client);
       this.registerCreateLane(server, client);
+      this.registerUpdateLane(server, client);
       this.registerCreateColumn(server, client);
       this.registerUpdateColumn(server, client);
       this.registerDeleteColumn(server, client);
@@ -234,9 +238,9 @@ export class BoardToolHandler implements BaseToolHandler {
         inputSchema: getLaneSchema.shape,
         annotations: { readOnlyHint: true, idempotentHint: true },
       },
-      async ({ lane_id }) => {
+      async ({ board_id, lane_id }) => {
         try {
-          const lane = await client.getLane(lane_id);
+          const lane = await client.getLane(board_id, lane_id);
           return createSuccessResponse(lane);
         } catch (error) {
           return createErrorResponse(error, 'fetching lane details');
@@ -278,18 +282,69 @@ export class BoardToolHandler implements BaseToolHandler {
         inputSchema: createLaneSchema.shape,
         annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
       },
-      async ({ workflow_id, name, description, color, position }) => {
+      async ({ board_id, workflow_id, name, description, color, position, parent_lane_id }) => {
         try {
-          const lane = await client.createLane({
+          const lane = await client.createLane(board_id, {
             workflow_id,
             name,
             description: description || null,
-            color,
+            ...(color !== undefined && { color }),
             position,
+            ...(parent_lane_id !== undefined && { parent_lane_id }),
           });
           return createSuccessResponse(lane, 'Lane created successfully:');
         } catch (error) {
           return createErrorResponse(error, 'creating lane');
+        }
+      }
+    );
+  }
+
+  private registerUpdateLane(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'update_lane',
+      {
+        title: 'Update Lane',
+        description:
+          'Update an existing lane/swimlane (name, description, color, position or parent lane)',
+        inputSchema: updateLaneSchema.shape,
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+      },
+      async ({ board_id, lane_id, name, description, color, position, parent_lane_id }) => {
+        try {
+          const lane = await client.updateLane(board_id, lane_id, {
+            ...(name !== undefined && { name }),
+            ...(description !== undefined && { description }),
+            ...(color !== undefined && { color }),
+            ...(position !== undefined && { position }),
+            ...(parent_lane_id !== undefined && { parent_lane_id }),
+          });
+          return createSuccessResponse(lane, 'Lane updated successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'updating lane');
+        }
+      }
+    );
+  }
+
+  private registerUpdateBoard(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'update_board',
+      {
+        title: 'Update Board',
+        description: 'Update the name and/or description of an existing board',
+        inputSchema: updateBoardSchema.shape,
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+      },
+      async ({ board_id, name, description }) => {
+        try {
+          const board = await client.updateBoard(board_id, {
+            ...(name !== undefined && { name }),
+            ...(description !== undefined && { description }),
+          });
+          return createSuccessResponse(board, 'Board updated successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'updating board');
         }
       }
     );

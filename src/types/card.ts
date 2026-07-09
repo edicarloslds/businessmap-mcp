@@ -404,6 +404,31 @@ export interface CreateSubtaskParams {
   }>;
 }
 
+// Update Subtask params
+export interface UpdateSubtaskParams {
+  description?: string;
+  owner_user_id?: number;
+  is_finished?: number;
+  deadline?: string;
+  position?: number;
+}
+
+// Logged time entry for a card
+export interface LoggedTime {
+  logged_time_id: number;
+  card_id: number;
+  subtask_id: number | null;
+  user_id: number;
+  category_id: number | null;
+  date: string;
+  time: number;
+  comment: string;
+}
+
+export interface LoggedTimeListResponse {
+  data: LoggedTime[];
+}
+
 // Parent Cards Response types
 export interface ParentCardItem {
   card_id: number;

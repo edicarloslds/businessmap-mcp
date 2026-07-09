@@ -1,8 +1,12 @@
 import {
   createCardSchema,
+  deleteCardSubtaskSchema,
+  getCardLoggedTimeSchema,
   getCardSchema,
   listCardsSchema,
   moveCardSchema,
+  searchCardsSchema,
+  updateCardSubtaskSchema,
 } from './card-schemas.js';
 
 describe('listCardsSchema', () => {
@@ -116,6 +120,68 @@ describe('createCardSchema', () => {
 
   it('rejects non-string title', () => {
     expect(() => createCardSchema.parse({ title: 123, column_id: 1 })).toThrow();
+  });
+});
+
+describe('searchCardsSchema', () => {
+  it('accepts empty input (searches across all boards)', () => {
+    const result = searchCardsSchema.parse({});
+    expect(result.board_ids).toBeUndefined();
+  });
+
+  it('accepts advanced filters', () => {
+    const result = searchCardsSchema.parse({
+      board_ids: [1, 2],
+      owner_user_ids: [42],
+      priorities: [4],
+      is_blocked: 1,
+      state: 'archived',
+      deadline_to_date: '2026-12-31',
+      expand: ['transitions', 'block_times'],
+    });
+    expect(result.board_ids).toEqual([1, 2]);
+    expect(result.is_blocked).toBe(1);
+    expect(result.expand).toEqual(['transitions', 'block_times']);
+  });
+
+  it('rejects invalid state values', () => {
+    expect(() => searchCardsSchema.parse({ state: 'deleted' })).toThrow();
+  });
+});
+
+describe('getCardLoggedTimeSchema', () => {
+  it('requires card_id', () => {
+    expect(() => getCardLoggedTimeSchema.parse({})).toThrow();
+  });
+
+  it('accepts include_subtasks flag', () => {
+    const result = getCardLoggedTimeSchema.parse({ card_id: 7, include_subtasks: false });
+    expect(result.include_subtasks).toBe(false);
+  });
+});
+
+describe('updateCardSubtaskSchema', () => {
+  it('requires card_id and subtask_id', () => {
+    expect(() => updateCardSubtaskSchema.parse({})).toThrow();
+    expect(() => updateCardSubtaskSchema.parse({ card_id: 1 })).toThrow();
+  });
+
+  it('accepts partial updates', () => {
+    const result = updateCardSubtaskSchema.parse({
+      card_id: 1,
+      subtask_id: 2,
+      is_finished: 1,
+    });
+    expect(result.is_finished).toBe(1);
+    expect(result.description).toBeUndefined();
+  });
+});
+
+describe('deleteCardSubtaskSchema', () => {
+  it('requires card_id and subtask_id', () => {
+    expect(() => deleteCardSubtaskSchema.parse({ card_id: 1 })).toThrow();
+    const result = deleteCardSubtaskSchema.parse({ card_id: 1, subtask_id: 2 });
+    expect(result.subtask_id).toBe(2);
   });
 });
 

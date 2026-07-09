@@ -13,3 +13,9 @@ export const createWorkspaceSchema = z.object({
   name: z.string().describe('The name of the workspace'),
   description: z.string().optional().describe('Optional description for the workspace'),
 });
+
+// Schema para atualização de workspaces
+export const updateWorkspaceSchema = z.object({
+  workspace_id: z.number().describe('The ID of the workspace to update'),
+  name: z.string().describe('The new name of the workspace'),
+});

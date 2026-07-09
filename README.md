@@ -13,7 +13,7 @@ Model Context Protocol (MCP) server for BusinessMap/Kanbanize. It gives AI clien
 
 ## What You Get
 
-- 59 MCP tools for workspaces, boards, cards, users, custom fields, workflow analysis, and health checks
+- 76 MCP tools for workspaces, boards, cards, users, custom fields, workflow management, batch board setup, and health checks
 - 5 MCP resources for direct workspace, board, and card reads
 - 4 guided prompts for board analysis, reporting, card creation, and workspace summaries
 - Optional read-only mode for safer exploration

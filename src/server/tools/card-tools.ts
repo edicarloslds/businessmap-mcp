@@ -13,10 +13,14 @@ import {
   createCommentSchema,
   createTagSchema,
   deleteCardSchema,
+  deleteCardSubtaskSchema,
   deleteCommentSchema,
+  getCardBlockedTimesSchema,
   getCardChildrenSchema,
   getCardCommentSchema,
+  getCardFlowHistorySchema,
   getCardHistorySchema,
+  getCardLoggedTimeSchema,
   getCardLinkedCardsSchema,
   getCardOutcomesSchema,
   getCardParentGraphSchema,
@@ -32,8 +36,10 @@ import {
   removePredecessorSchema,
   removeStickerFromCardSchema,
   removeTagFromCardSchema,
+  searchCardsSchema,
   unblockCardSchema,
   updateCardSchema,
+  updateCardSubtaskSchema,
   updateCommentSchema,
 } from '../../schemas/index.js';
 import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
@@ -41,7 +47,11 @@ import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './b
 export class CardToolHandler implements BaseToolHandler {
   registerTools(server: McpServer, client: BusinessMapClient, readOnlyMode: boolean): void {
     this.registerListCards(server, client);
+    this.registerSearchCards(server, client);
     this.registerGetCard(server, client);
+    this.registerGetCardLoggedTime(server, client);
+    this.registerGetCardBlockedTimes(server, client);
+    this.registerGetCardFlowHistory(server, client);
     this.registerGetCardSize(server, client);
     this.registerGetCardComments(server, client);
     this.registerGetCardComment(server, client);
@@ -64,6 +74,8 @@ export class CardToolHandler implements BaseToolHandler {
       this.registerSetCardSize(server, client);
       this.registerDeleteCard(server, client);
       this.registerCreateCardSubtask(server, client);
+      this.registerUpdateCardSubtask(server, client);
+      this.registerDeleteCardSubtask(server, client);
       this.registerAddCardParent(server, client);
       this.registerRemoveCardParent(server, client);
       // Block / Unblock
@@ -102,6 +114,103 @@ export class CardToolHandler implements BaseToolHandler {
           return createSuccessResponse(cards);
         } catch (error) {
           return createErrorResponse(error, 'fetching cards');
+        }
+      }
+    );
+  }
+
+  private registerSearchCards(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'search_cards',
+      {
+        title: 'Search Cards',
+        description:
+          'Search for cards across all boards (or a subset of boards) using advanced filters: owners, priorities, sizes, blocked state, types, dates, lifecycle state and more',
+        inputSchema: searchCardsSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
+      },
+      async (params) => {
+        try {
+          const result = await client.searchCards(params);
+          return createSuccessResponse(result);
+        } catch (error) {
+          return createErrorResponse(error, 'searching cards');
+        }
+      }
+    );
+  }
+
+  private registerGetCardLoggedTime(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_logged_time',
+      {
+        title: 'Get Card Logged Time',
+        description:
+          'Get the time logged on a card (and optionally its subtasks), with the individual logged time entries',
+        inputSchema: getCardLoggedTimeSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
+      },
+      async ({ card_id, include_subtasks }) => {
+        try {
+          const entries = await client.getCardLoggedTimes(card_id, include_subtasks ?? true);
+          const totalTime = entries.reduce((sum, entry) => sum + (entry.time || 0), 0);
+          return createSuccessResponse({ total_time: totalTime, entries, count: entries.length });
+        } catch (error) {
+          return createErrorResponse(error, 'getting card logged time');
+        }
+      }
+    );
+  }
+
+  private registerGetCardBlockedTimes(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_blocked_times',
+      {
+        title: 'Get Card Blocked Times',
+        description:
+          'Get the full blocking history of a card, including when and where blocks occurred',
+        inputSchema: getCardBlockedTimesSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
+      },
+      async ({ card_id }) => {
+        try {
+          const card = await client.getCardBlockTimes(card_id);
+          if (!card) {
+            return createErrorResponse(
+              new Error(`Card ${card_id} not found`),
+              'getting card blocked times'
+            );
+          }
+          return createSuccessResponse(card);
+        } catch (error) {
+          return createErrorResponse(error, 'getting card blocked times');
+        }
+      }
+    );
+  }
+
+  private registerGetCardFlowHistory(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_flow_history',
+      {
+        title: 'Get Card Flow History',
+        description:
+          "Get the card's movement history (transitions) across boards, workflows and columns with timing details",
+        inputSchema: getCardFlowHistorySchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
+      },
+      async ({ card_id }) => {
+        try {
+          const card = await client.getCardTransitions(card_id);
+          if (!card) {
+            return createErrorResponse(
+              new Error(`Card ${card_id} not found`),
+              'getting card flow history'
+            );
+          }
+          return createSuccessResponse(card);
+        } catch (error) {
+          return createErrorResponse(error, 'getting card flow history');
         }
       }
     );
@@ -459,6 +568,48 @@ export class CardToolHandler implements BaseToolHandler {
           return createSuccessResponse(subtask, 'Subtask created successfully:');
         } catch (error) {
           return createErrorResponse(error, 'creating card subtask');
+        }
+      }
+    );
+  }
+
+  private registerUpdateCardSubtask(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'update_card_subtask',
+      {
+        title: 'Update Card Subtask',
+        description:
+          'Update an existing subtask of a card (description, owner, finished state, deadline, position)',
+        inputSchema: updateCardSubtaskSchema.shape,
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+      },
+      async (params) => {
+        try {
+          const { card_id, subtask_id, ...subtaskData } = params;
+          const subtask = await client.updateCardSubtask(card_id, subtask_id, subtaskData);
+          return createSuccessResponse(subtask, 'Subtask updated successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'updating card subtask');
+        }
+      }
+    );
+  }
+
+  private registerDeleteCardSubtask(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'delete_card_subtask',
+      {
+        title: 'Delete Card Subtask',
+        description: 'Delete a subtask from a card',
+        inputSchema: deleteCardSubtaskSchema.shape,
+        annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+      },
+      async ({ card_id, subtask_id }) => {
+        try {
+          await client.deleteCardSubtask(card_id, subtask_id);
+          return createSuccessResponse({ card_id, subtask_id }, 'Subtask deleted successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'deleting card subtask');
         }
       }
     );

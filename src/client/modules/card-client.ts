@@ -28,6 +28,8 @@ import {
   ParentCardsResponse,
   ParentGraphItem,
   ParentGraphResponse,
+  LoggedTime,
+  LoggedTimeListResponse,
   Subtask,
   SubtaskResponse,
   SubtasksResponse,
@@ -35,6 +37,7 @@ import {
   TagResponse,
   UpdateCardParams,
   UpdateCommentParams,
+  UpdateSubtaskParams,
 } from '../../types/index.js';
 import { BaseClientModuleImpl } from './base-client.js';
 
@@ -117,6 +120,12 @@ export interface CardFilters {
   tag_ids?: number[];
 }
 
+export interface SearchCardFilters extends Omit<CardFilters, 'assignee_user_id' | 'tag_ids'> {
+  fields?: string[];
+  expand?: string[];
+  is_blocked?: number;
+}
+
 export class CardClient extends BaseClientModuleImpl {
   /**
    * Get cards from a board with optional filters
@@ -124,6 +133,75 @@ export class CardClient extends BaseClientModuleImpl {
   async getCards(boardId: number, filters?: CardFilters): Promise<Card[]> {
     const params = { board_id: boardId, ...filters };
     const response = await this.http.get<ApiResponse<Card[]>>('/cards', { params });
+    return response.data.data;
+  }
+
+  /**
+   * Search cards across boards with advanced filters (board_ids is optional).
+   * Returns the API payload as-is, which includes pagination info alongside the cards.
+   */
+  async searchCards(
+    filters?: SearchCardFilters
+  ): Promise<{ pagination?: unknown; data: Card[] } | Card[]> {
+    // The API rejects expand[]=/fields[]= for these params; they must be comma-separated
+    const { expand, fields, ...rest } = filters || {};
+    const params = {
+      ...rest,
+      ...(expand?.length && { expand: expand.join(',') }),
+      ...(fields?.length && { fields: fields.join(',') }),
+    };
+    const response = await this.http.get<
+      ApiResponse<{ pagination?: unknown; data: Card[] } | Card[]>
+    >('/cards', { params });
+    return response.data.data;
+  }
+
+  /**
+   * Fetch a card with expanded properties, trying each lifecycle state
+   * (the API only returns cards of one state per request and defaults to active)
+   */
+  private async getCardWithExpand(cardId: number, expand: string[]): Promise<Card | undefined> {
+    for (const state of ['active', 'archived', 'discarded'] as const) {
+      const response = await this.http.get<ApiResponse<{ data: Card[] } | Card[]>>('/cards', {
+        // expand must be comma-separated; the API rejects expand[]= array syntax
+        params: { card_ids: [cardId], state, expand: expand.join(',') },
+      });
+      const data = response.data.data;
+      const cards = Array.isArray(data) ? data : data.data;
+      if (cards.length > 0) {
+        return cards[0];
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Get a card's column/workflow transitions (flow history)
+   */
+  async getCardTransitions(cardId: number): Promise<Card | undefined> {
+    return this.getCardWithExpand(cardId, ['transitions']);
+  }
+
+  /**
+   * Get a card's block times history
+   */
+  async getCardBlockTimes(cardId: number): Promise<Card | undefined> {
+    return this.getCardWithExpand(cardId, ['block_times']);
+  }
+
+  /**
+   * Get logged time entries for a card (optionally including subtasks)
+   */
+  async getCardLoggedTimes(
+    cardId: number,
+    includeSubtasks: boolean = true
+  ): Promise<LoggedTime[]> {
+    const response = await this.http.get<LoggedTimeListResponse>('/loggedTime', {
+      params: {
+        card_ids: [cardId],
+        include_logged_time_for_subtasks: includeSubtasks ? 1 : 0,
+      },
+    });
     return response.data.data;
   }
 
@@ -261,6 +339,30 @@ export class CardClient extends BaseClientModuleImpl {
     this.checkReadOnlyMode('create subtask');
     const response = await this.http.post<SubtaskResponse>(`/cards/${cardId}/subtasks`, params);
     return response.data.data;
+  }
+
+  /**
+   * Update an existing subtask of a card
+   */
+  async updateCardSubtask(
+    cardId: number,
+    subtaskId: number,
+    params: UpdateSubtaskParams
+  ): Promise<Subtask> {
+    this.checkReadOnlyMode('update subtask');
+    const response = await this.http.patch<SubtaskResponse>(
+      `/cards/${cardId}/subtasks/${subtaskId}`,
+      params
+    );
+    return response.data.data;
+  }
+
+  /**
+   * Delete a subtask from a card
+   */
+  async deleteCardSubtask(cardId: number, subtaskId: number): Promise<void> {
+    this.checkReadOnlyMode('delete subtask');
+    await this.http.delete(`/cards/${cardId}/subtasks/${subtaskId}`);
   }
 
   /**

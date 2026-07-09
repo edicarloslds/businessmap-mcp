@@ -14,5 +14,14 @@ export interface CreateLaneParams {
   position: number;
   name: string;
   description?: string | null;
-  color: string;
+  color?: string;
+  parent_lane_id?: number;
+}
+
+export interface UpdateLaneParams {
+  name?: string;
+  description?: string | null;
+  color?: string;
+  position?: number;
+  parent_lane_id?: number;
 }

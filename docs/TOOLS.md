@@ -6,7 +6,7 @@ Complete reference for all tools, resources, and prompts provided by the Busines
 
 | Category  | Count |
 | --------- | :---: |
-| Tools     |  59   |
+| Tools     |  76   |
 | Resources |   5   |
 | Prompts   |   4   |
 
@@ -14,17 +14,18 @@ Complete reference for all tools, resources, and prompts provided by the Busines
 
 ## Tools
 
-### Workspace Management (3 tools)
+### Workspace Management (4 tools)
 
 | Tool               | Description                         | Read-Only Safe |
 | :----------------- | :---------------------------------- | :------------: |
 | `list_workspaces`  | Get a list of all workspaces        |       ✅       |
 | `get_workspace`    | Get details of a specific workspace |       ✅       |
 | `create_workspace` | Create a new workspace              |       ❌       |
+| `update_workspace` | Update the name of a workspace      |       ❌       |
 
 ---
 
-### Board Management (11 tools)
+### Board Management (13 tools)
 
 | Tool                          | Description                                                                                    | Read-Only Safe |
 | :---------------------------- | :--------------------------------------------------------------------------------------------- | :------------: |
@@ -35,20 +36,23 @@ Complete reference for all tools, resources, and prompts provided by the Busines
 | `get_lane`                    | Get details of a specific lane/swimlane                                                        |       ✅       |
 | `get_current_board_structure` | Get the complete structure of a board (workflows, columns, lanes, configs)                     |       ✅       |
 | `create_board`                | Create a new board in a workspace                                                              |       ❌       |
-| `create_lane`                 | Create a new lane/swimlane in a board                                                          |       ❌       |
+| `update_board`                | Update the name and/or description of a board                                                  |       ❌       |
+| `create_lane`                 | Create a new lane/swimlane in a board (supports sub-lanes via `parent_lane_id`)                |       ❌       |
+| `update_lane`                 | Update a lane (name, description, color, position, parent lane)                                |       ❌       |
 | `create_column`               | Create a new column (main or sub-column). Section: 1=Backlog, 2=Requested, 3=Progress, 4=Done |       ❌       |
 | `update_column`               | Update the details of a specific column                                                        |       ❌       |
 | `delete_column`               | Delete a column from a board                                                                   |     ❌ ⚠️      |
 
 ---
 
-### Card Management (36 tools)
+### Card Management (42 tools)
 
 #### Basic Operations
 
 | Tool             | Description                                  | Read-Only Safe |
 | :--------------- | :------------------------------------------- | :------------: |
 | `list_cards`     | Get cards from a board with optional filters |       ✅       |
+| `search_cards`   | Search cards across all boards with advanced filters (owners, priorities, sizes, blocked state, dates, lifecycle state) |       ✅       |
 | `get_card`       | Get detailed card information                |       ✅       |
 | `get_card_size`  | Get the size/points of a specific card       |       ✅       |
 | `get_card_types` | Get all available card types                 |       ✅       |
@@ -87,10 +91,13 @@ Complete reference for all tools, resources, and prompts provided by the Busines
 
 #### Outcomes & History
 
-| Tool                | Description                                | Read-Only Safe |
-| :------------------ | :----------------------------------------- | :------------: |
-| `get_card_outcomes` | Get all outcomes for a specific card       |       ✅       |
-| `get_card_history`  | Get the history of a specific card outcome |       ✅       |
+| Tool                     | Description                                                              | Read-Only Safe |
+| :----------------------- | :----------------------------------------------------------------------- | :------------: |
+| `get_card_outcomes`      | Get all outcomes for a specific card                                     |       ✅       |
+| `get_card_history`       | Get the history of a specific card outcome                               |       ✅       |
+| `get_card_flow_history`  | Get the card's movement (transitions) across workflows/columns with timing |       ✅       |
+| `get_card_blocked_times` | Get the full blocking history of a card                                  |       ✅       |
+| `get_card_logged_time`   | Get time logged on a card and its subtasks, with individual entries      |       ✅       |
 
 #### Relationships
 
@@ -105,6 +112,8 @@ Complete reference for all tools, resources, and prompts provided by the Busines
 | `get_card_subtasks`   | Get all subtasks for a specific card |       ✅       |
 | `get_card_subtask`    | Get details of a specific subtask    |       ✅       |
 | `create_card_subtask` | Create a new subtask for a card      |       ❌       |
+| `update_card_subtask` | Update a subtask (description, owner, finished state, deadline, position) |       ❌       |
+| `delete_card_subtask` | Delete a subtask from a card         |     ❌ ⚠️      |
 
 #### Parent-Child Relationships
 
@@ -156,12 +165,27 @@ Complete reference for all tools, resources, and prompts provided by the Busines
 
 ---
 
-### Workflow & Cycle Time Analysis (2 tools)
+### Workflow Management & Cycle Time Analysis (8 tools)
 
-| Tool                                        | Description                                 | Read-Only Safe |
-| :------------------------------------------ | :------------------------------------------ | :------------: |
-| `get_workflow_cycle_time_columns`           | Get workflow's cycle time columns           |       ✅       |
-| `get_workflow_effective_cycle_time_columns` | Get workflow's effective cycle time columns |       ✅       |
+| Tool                                        | Description                                                            | Read-Only Safe |
+| :------------------------------------------ | :---------------------------------------------------------------------- | :------------: |
+| `list_workflows`                            | Get a list of workflows for a board                                     |       ✅       |
+| `get_workflow`                              | Get the details of a workflow                                           |       ✅       |
+| `get_workflow_cycle_time_columns`           | Get workflow's cycle time columns                                       |       ✅       |
+| `get_workflow_effective_cycle_time_columns` | Get workflow's effective cycle time columns                             |       ✅       |
+| `create_workflow`                           | Create a new workflow on a board (0=cards, 1=initiatives, 2=timeline)   |       ❌       |
+| `update_workflow`                           | Update a workflow (name, position, enabled/collapsible)                 |       ❌       |
+| `link_related_workflow`                     | Link a workflow from another board as a related workflow                |       ❌       |
+| `unlink_related_workflow`                   | Remove a related workflow from a board                                  |     ❌ ⚠️      |
+
+---
+
+### Quick Setup — Batch (2 tools)
+
+| Tool                         | Description                                                                                             | Read-Only Safe |
+| :--------------------------- | :------------------------------------------------------------------------------------------------------ | :------------: |
+| `create_boards_in_workspace` | Create up to 3 boards with their full structure (workflows, renamed default columns, columns, lanes) in one call |       ❌       |
+| `configure_board_structure`  | Configure an existing board's structure in one call: create/rename workflows, rename built-in columns, add columns and lanes |       ❌       |
 
 ---
 

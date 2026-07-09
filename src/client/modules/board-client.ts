@@ -9,6 +9,7 @@ import {
   CurrentBoardStructureResponse,
   Lane,
   UpdateColumnParams,
+  UpdateLaneParams,
 } from '../../types/index.js';
 import { BaseClientModuleImpl } from './base-client.js';
 
@@ -104,17 +105,29 @@ export class BoardClient extends BaseClientModuleImpl {
   /**
    * Get a specific lane by ID
    */
-  async getLane(laneId: number): Promise<Lane> {
-    const response = await this.http.get<ApiResponse<Lane>>(`/lanes/${laneId}`);
+  async getLane(boardId: number, laneId: number): Promise<Lane> {
+    const response = await this.http.get<ApiResponse<Lane>>(`/boards/${boardId}/lanes/${laneId}`);
     return response.data.data;
   }
 
   /**
    * Create a new lane/swimlane
    */
-  async createLane(params: CreateLaneParams): Promise<Lane> {
+  async createLane(boardId: number, params: CreateLaneParams): Promise<Lane> {
     this.checkReadOnlyMode('create lane');
-    const response = await this.http.post<ApiResponse<Lane>>('/lanes', params);
+    const response = await this.http.post<ApiResponse<Lane>>(`/boards/${boardId}/lanes`, params);
+    return response.data.data;
+  }
+
+  /**
+   * Update an existing lane/swimlane
+   */
+  async updateLane(boardId: number, laneId: number, params: UpdateLaneParams): Promise<Lane> {
+    this.checkReadOnlyMode('update lane');
+    const response = await this.http.patch<ApiResponse<Lane>>(
+      `/boards/${boardId}/lanes/${laneId}`,
+      params
+    );
     return response.data.data;
   }
 

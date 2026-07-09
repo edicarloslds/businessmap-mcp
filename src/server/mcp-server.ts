@@ -5,6 +5,7 @@ import {
   BoardToolHandler,
   CardToolHandler,
   CustomFieldToolHandler,
+  SetupToolHandler,
   UserToolHandler,
   UtilityToolHandler,
   WorkflowToolHandler,
@@ -60,6 +61,7 @@ export class BusinessMapMcpServer {
       new UserToolHandler(),
       new UtilityToolHandler(),
       new WorkflowToolHandler(),
+      new SetupToolHandler(),
     ];
 
     // Register all tools from handlers

@@ -4,6 +4,7 @@ import {
   createWorkspaceSchema,
   getWorkspaceSchema,
   listWorkspacesSchema,
+  updateWorkspaceSchema,
 } from '../../schemas/workspace-schemas.js';
 import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
 
@@ -14,6 +15,7 @@ export class WorkspaceToolHandler implements BaseToolHandler {
 
     if (!readOnlyMode) {
       this.registerCreateWorkspace(server, client);
+      this.registerUpdateWorkspace(server, client);
     }
   }
 
@@ -72,6 +74,26 @@ export class WorkspaceToolHandler implements BaseToolHandler {
           return createSuccessResponse(workspace, 'Workspace created successfully:');
         } catch (error) {
           return createErrorResponse(error, 'creating workspace');
+        }
+      }
+    );
+  }
+
+  private registerUpdateWorkspace(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'update_workspace',
+      {
+        title: 'Update Workspace',
+        description: 'Update the name of an existing workspace',
+        inputSchema: updateWorkspaceSchema.shape,
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
+      },
+      async ({ workspace_id, name }) => {
+        try {
+          const workspace = await client.updateWorkspace(workspace_id, { name });
+          return createSuccessResponse(workspace, 'Workspace updated successfully:');
+        } catch (error) {
+          return createErrorResponse(error, 'updating workspace');
         }
       }
     );

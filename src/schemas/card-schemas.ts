@@ -341,6 +341,99 @@ export const createCardSubtaskSchema = z.object({
     .describe('Attachments to add to the subtask'),
 });
 
+export const updateCardSubtaskSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+  subtask_id: z.number().describe('The ID of the subtask to update'),
+  description: z.string().optional().describe('The new description of the subtask'),
+  owner_user_id: z.number().optional().describe('The new owner user ID for the subtask'),
+  is_finished: z.number().optional().describe('Whether the subtask is finished (0 or 1)'),
+  deadline: z.string().optional().describe('The new deadline for the subtask (ISO date string)'),
+  position: z.number().optional().describe('The new position of the subtask'),
+});
+
+export const deleteCardSubtaskSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+  subtask_id: z.number().describe('The ID of the subtask to delete'),
+});
+
+// Schema para logged time do card
+export const getCardLoggedTimeSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+  include_subtasks: z
+    .boolean()
+    .optional()
+    .describe('Whether to include time logged on the card subtasks (default true)'),
+});
+
+// Schema para histórico de bloqueios do card
+export const getCardBlockedTimesSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+});
+
+// Schema para histórico de movimentação do card
+export const getCardFlowHistorySchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+});
+
+// Schema para busca de cards cross-board
+export const searchCardsSchema = z.object({
+  board_ids: z
+    .array(z.number())
+    .optional()
+    .describe('Limit the search to these board ids (omit to search across all boards)'),
+  workflow_ids: z.array(z.number()).optional().describe('Filter by workflow ids'),
+  column_ids: z.array(z.number()).optional().describe('Filter by column ids'),
+  lane_ids: z.array(z.number()).optional().describe('Filter by lane ids'),
+  card_ids: z.array(z.number()).optional().describe('Filter by specific card ids'),
+  custom_ids: z.array(z.string()).optional().describe('Filter by custom card ids'),
+  owner_user_ids: z.array(z.number()).optional().describe('Filter by owner user ids'),
+  type_ids: z.array(z.number()).optional().describe('Filter by card type ids'),
+  priorities: z
+    .array(z.number())
+    .optional()
+    .describe('Filter by priority values (1=Low, 2=Average, 3=High, 4=Critical)'),
+  sizes: z.array(z.number()).optional().describe('Filter by card sizes'),
+  colors: z.array(z.string()).optional().describe('Filter by card colors'),
+  sections: z
+    .array(z.number())
+    .optional()
+    .describe('Filter by sections (1=Backlog, 2=Requested, 3=In Progress, 4=Done)'),
+  is_blocked: z
+    .number()
+    .optional()
+    .describe('Set to 1 to get only blocked cards, 0 for only unblocked cards'),
+  state: z
+    .enum(['active', 'archived', 'discarded'])
+    .optional()
+    .describe('Card lifecycle state (defaults to active)'),
+  created_from_date: z.string().optional().describe('Only cards created on/after this date'),
+  created_to_date: z.string().optional().describe('Only cards created on/before this date'),
+  deadline_from_date: z.string().optional().describe('Only cards with deadline on/after this date'),
+  deadline_to_date: z.string().optional().describe('Only cards with deadline on/before this date'),
+  last_modified_from_date: z
+    .string()
+    .optional()
+    .describe('Only cards modified on/after this date'),
+  last_modified_to_date: z
+    .string()
+    .optional()
+    .describe('Only cards modified on/before this date'),
+  fields: z
+    .array(z.string())
+    .optional()
+    .describe(
+      'Fields to include in the response (e.g. card_id, title, owner_user_id, is_blocked, deadline)'
+    ),
+  expand: z
+    .array(z.string())
+    .optional()
+    .describe(
+      'Properties to expand (e.g. custom_fields, tag_ids, subtasks, transitions, block_times, logged_times)'
+    ),
+  page: z.number().optional().describe('Page number for pagination'),
+  per_page: z.number().optional().describe('Results per page (default 200, max 1000)'),
+});
+
 // Schemas complexos para criação de cards
 export const blockReasonSchema = z.object({
   reason_id: z.number(),

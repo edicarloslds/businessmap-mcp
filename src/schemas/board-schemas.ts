@@ -73,6 +73,7 @@ export const getLanesSchema = z.object({
 
 // Schema para obter detalhes de uma lane específica
 export const getLaneSchema = z.object({
+  board_id: z.number().describe('The ID of the board the lane belongs to'),
   lane_id: z.number().describe('The ID of the lane'),
 });
 
@@ -86,11 +87,34 @@ export const createBoardSchema = z.object({
 
 // Schema para criação de lanes
 export const createLaneSchema = z.object({
+  board_id: z.number().describe('The ID of the board'),
   name: z.string().describe('The name of the lane'),
   description: z.string().optional().describe('Optional description for the lane'),
   workflow_id: z.number().describe('The workflow ID'),
   position: z.number().describe('The position of the lane'),
-  color: z.string().describe('The color for the lane'),
+  color: z.string().optional().describe('The color for the lane (hex without #, e.g. F0F0F0)'),
+  parent_lane_id: z
+    .number()
+    .optional()
+    .describe('The ID of the parent lane (to create a sub-lane)'),
+});
+
+// Schema para atualização de lanes
+export const updateLaneSchema = z.object({
+  board_id: z.number().describe('The ID of the board'),
+  lane_id: z.number().describe('The ID of the lane to update'),
+  name: z.string().optional().describe('The new name of the lane'),
+  description: z.string().optional().describe('The new description for the lane'),
+  color: z.string().optional().describe('The new color for the lane (hex without #)'),
+  position: z.number().optional().describe('The new position of the lane'),
+  parent_lane_id: z.number().optional().describe('The new parent lane ID (to nest the lane)'),
+});
+
+// Schema para atualização de boards
+export const updateBoardSchema = z.object({
+  board_id: z.number().describe('The ID of the board to update'),
+  name: z.string().optional().describe('The new name of the board'),
+  description: z.string().optional().describe('The new description for the board'),
 });
 
 // Schema para obter estrutura atual do board
