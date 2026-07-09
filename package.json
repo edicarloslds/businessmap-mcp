@@ -11,6 +11,8 @@
     "dist",
     "docs",
     "README.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
     "LICENSE"
   ],
   "scripts": {

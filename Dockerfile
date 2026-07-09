@@ -1,41 +1,33 @@
-# Use Node.js LTS version
-FROM node:18-alpine
+FROM node:18-alpine AS build
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apk add --no-cache \
-    curl \
-    git
-
-# Copy package files
 COPY package*.json ./
+RUN npm ci
+
 COPY tsconfig.json ./
-
-# Install dependencies
-RUN npm ci --only=production
-
-# Copy source code
 COPY src/ ./src/
-
-# Build the application
 RUN npm run build
 
-# Create non-root user
-RUN addgroup -g 1001 -S businessmap && \
-    adduser -S businessmap -u 1001
+FROM node:18-alpine AS runtime
 
-# Change ownership of the app directory
-RUN chown -R businessmap:businessmap /app
+ENV NODE_ENV=production
+WORKDIR /app
+
+RUN apk add --no-cache curl \
+    && addgroup -g 1001 -S businessmap \
+    && adduser -S businessmap -u 1001 -G businessmap
+
+COPY package*.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+COPY --from=build --chown=businessmap:businessmap /app/dist ./dist
+
 USER businessmap
 
-# Expose port (if using HTTP transport)
-EXPOSE 3002
+EXPOSE 3000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD node -e "console.log('Health check')" || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD-SHELL curl --fail --silent --show-error "http://localhost:${PORT:-3000}/health" || exit 1
 
-# Start the server
-CMD ["node", "dist/index.js"] 
+CMD ["node", "dist/index.js"]

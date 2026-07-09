@@ -38,12 +38,20 @@ fi
 
 echo "✅ Working directory is clean"
 
-# Build the project
+# Run the same local checks enforced by CI before the API-backed smoke test
+echo "🔍 Running lint..."
+npm run lint
+
+echo "🧪 Running unit tests..."
+npm test -- --runInBand
+
 echo "📦 Building project..."
 npm run build
 
-# Run tests
-echo "🧪 Running tests..."
+echo "🧹 Checking for unused code..."
+npm run knip
+
+echo "🌐 Running package smoke test..."
 npm run test:npx
 
 # Get current version from package.json

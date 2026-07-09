@@ -85,6 +85,11 @@ Client-specific examples for Claude Desktop, Claude Code, Cursor, VS Code, Winds
 
 Use HTTP mode when deploying the server remotely or when your client supports Streamable HTTP:
 
+> **Security:** The HTTP transport does not enable authentication by default.
+> Do not expose it publicly without TLS, authentication, authorization, and
+> rate limiting. See [Programmatic middleware](docs/MIDDLEWARE.md) and
+> [Security Policy](SECURITY.md).
+
 ```bash
 TRANSPORT=http \
 PORT=3000 \
@@ -173,6 +178,8 @@ Logging details are documented in [docs/LOGGING.md](docs/LOGGING.md).
 
 ## Contributing
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for local setup, project structure, and pull request guidance.
+
 Use conventional commits when possible:
 
 ```bash
@@ -185,9 +192,13 @@ refactor: improve code structure
 Before opening a pull request:
 
 ```bash
-npm test
-npm run test:npx
+npm run lint
+npm test -- --runInBand
+npm run build
+npm run knip
 ```
+
+`npm run test:npx` is an optional API-backed smoke test and requires BusinessMap credentials.
 
 ## Support
 
