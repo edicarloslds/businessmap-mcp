@@ -1,6 +1,35 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v3';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
+import { config } from '../../config/environment.js';
+
+export const ESSENTIAL_TOOLS = new Set([
+  'list_workspaces',
+  'get_workspace',
+  'list_boards',
+  'search_board',
+  'get_columns',
+  'get_lanes',
+  'get_current_board_structure',
+  'list_cards',
+  'search_cards',
+  'get_card',
+  'get_card_comments',
+  'get_card_subtasks',
+  'get_card_parents',
+  'get_card_children',
+  'create_card',
+  'move_card',
+  'update_card',
+  'create_comment',
+  'search_docs',
+  'list_docs',
+  'get_doc_content_batch',
+  'list_users',
+  'get_current_user',
+  'health_check',
+  'get_api_info',
+]);
 
 /**
  * Base interface for tool handlers
@@ -113,6 +142,10 @@ export function registerTool<Shape extends z.ZodRawShape>(
   server: McpServer,
   def: ToolDefinition<Shape>
 ): void {
+  if (config.businessMap.toolProfile === 'essential' && !ESSENTIAL_TOOLS.has(def.name)) {
+    return;
+  }
+
   const callback = async (args: z.objectOutputType<Shape, z.ZodTypeAny>) => {
     try {
       const result = await def.handler(args);

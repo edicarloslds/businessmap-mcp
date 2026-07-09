@@ -117,4 +117,13 @@ describe('validateConfig', () => {
       'Environment variable HTTP_MAX_SESSIONS must be a positive integer'
     );
   });
+
+  it('parses the essential tool profile', async () => {
+    process.env['BUSINESSMAP_API_URL'] = 'https://example.businessmap.io';
+    process.env['BUSINESSMAP_API_TOKEN'] = 'token';
+    process.env['BUSINESSMAP_TOOL_PROFILE'] = 'essential';
+
+    const { config } = await import('./environment.js');
+    expect(config.businessMap.toolProfile).toBe('essential');
+  });
 });

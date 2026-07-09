@@ -190,18 +190,30 @@ export class CardClient extends BaseClientModuleImpl {
    * (the API only returns cards of one state per request and defaults to active)
    */
   private async getCardWithExpand(cardId: number, expand: string[]): Promise<Card | undefined> {
-    for (const state of ['active', 'archived', 'discarded'] as const) {
-      const response = await this.http.get<ApiResponse<{ data: Card[] } | Card[]>>('/cards', {
-        // expand must be comma-separated; the API rejects expand[]= array syntax
-        params: { card_ids: [cardId], state, expand: expand.join(',') },
-      });
-      const data = response.data.data;
-      const cards = Array.isArray(data) ? data : data.data;
-      if (cards.length > 0) {
-        return cards[0];
-      }
+    const activeCard = await this.getCardWithExpandInState(cardId, expand, 'active');
+    if (activeCard) {
+      return activeCard;
     }
-    return undefined;
+
+    const [archivedCard, discardedCard] = await Promise.all([
+      this.getCardWithExpandInState(cardId, expand, 'archived'),
+      this.getCardWithExpandInState(cardId, expand, 'discarded'),
+    ]);
+    return archivedCard ?? discardedCard;
+  }
+
+  private async getCardWithExpandInState(
+    cardId: number,
+    expand: string[],
+    state: 'active' | 'archived' | 'discarded'
+  ): Promise<Card | undefined> {
+    const response = await this.http.get<ApiResponse<{ data: Card[] } | Card[]>>('/cards', {
+      // expand must be comma-separated; the API rejects expand[]= array syntax
+      params: { card_ids: [cardId], state, expand: expand.join(',') },
+    });
+    const data = response.data.data;
+    const cards = Array.isArray(data) ? data : data.data;
+    return cards[0];
   }
 
   /**

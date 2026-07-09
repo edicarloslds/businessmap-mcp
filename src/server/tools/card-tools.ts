@@ -1,5 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
+import { Card, CardPage } from '../../types/index.js';
 import {
   addCardParentSchema,
   addPredecessorSchema,
@@ -54,6 +55,30 @@ import {
   registerTool,
 } from './base-tool.js';
 
+function compactCard(card: Card) {
+  return {
+    card_id: card.card_id,
+    custom_id: card.custom_id,
+    board_id: card.board_id,
+    title: card.title,
+    owner_user_id: card.owner_user_id,
+    type_id: card.type_id,
+    column_id: card.column_id,
+    lane_id: card.lane_id,
+    size: card.size,
+    priority: card.priority,
+    deadline: card.deadline,
+    is_blocked: card.is_blocked,
+  };
+}
+
+function compactCardResult(result: Card[] | CardPage) {
+  if (Array.isArray(result)) {
+    return result.map(compactCard);
+  }
+  return { ...result, data: result.data.map(compactCard) };
+}
+
 export class CardToolHandler implements BaseToolHandler {
   registerTools(server: McpServer, client: BusinessMapClient, readOnlyMode: boolean): void {
     this.registerReadTools(server, client);
@@ -72,25 +97,30 @@ export class CardToolHandler implements BaseToolHandler {
       name: 'list_cards',
       title: 'List Cards',
       description:
-        'Get a list of cards from a board with optional filters. Set include_pagination to return pagination metadata.',
+        'Get cards from a board with optional filters. Supports pagination metadata and compact responses.',
       schema: listCardsSchema,
       annotations: READ_ONLY,
       errorContext: 'fetching cards',
-      handler: ({ board_id, include_pagination, ...filters }) =>
-        include_pagination
-          ? client.cards.getCardsPage(board_id, filters)
-          : client.cards.getCards(board_id, filters),
+      handler: async ({ board_id, include_pagination, compact, ...filters }) => {
+        const result = include_pagination
+          ? await client.cards.getCardsPage(board_id, filters)
+          : await client.cards.getCards(board_id, filters);
+        return compact ? compactCardResult(result) : result;
+      },
     });
 
     registerTool(server, {
       name: 'search_cards',
       title: 'Search Cards',
       description:
-        'Search for cards across all boards (or a subset of boards) using advanced filters: owners, priorities, sizes, blocked state, types, dates, lifecycle state and more',
+        'Search cards across boards using advanced filters, with an optional compact response.',
       schema: searchCardsSchema,
       annotations: READ_ONLY,
       errorContext: 'searching cards',
-      handler: (params) => client.cards.searchCards(params),
+      handler: async ({ compact, ...params }) => {
+        const result = await client.cards.searchCards(params);
+        return compact ? compactCardResult(result) : result;
+      },
     });
 
     registerTool(server, {

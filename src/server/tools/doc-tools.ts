@@ -14,7 +14,7 @@ import {
   updateDocSchema,
   updatePersonalDocSchema,
 } from '../../schemas/index.js';
-import { DocListItem } from '../../types/index.js';
+import { Doc, DocListItem } from '../../types/index.js';
 import {
   BaseToolHandler,
   READ_ONLY,
@@ -32,13 +32,31 @@ interface DocSearchMatch {
   snippet: string | null;
 }
 
+interface DocScanStats {
+  attempted: number;
+  succeeded: number;
+  failed: number;
+}
+
+function stripHtmlTags(html: string): string {
+  let text = '';
+  let insideTag = false;
+  for (const character of html) {
+    if (character === '<') {
+      insideTag = true;
+    } else if (character === '>') {
+      insideTag = false;
+      text += ' ';
+    } else if (!insideTag) {
+      text += character;
+    }
+  }
+  return text;
+}
+
 /** Strip HTML tags and collapse whitespace for content snippets */
 function toPlainText(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return stripHtmlTags(html).replaceAll('&nbsp;', ' ').replace(/\s+/g, ' ').trim();
 }
 
 /** Extract a snippet of plain text around the first match of query */
@@ -96,7 +114,7 @@ export class DocToolHandler implements BaseToolHandler {
             matches.set(doc.doc_id, { doc, snippet: null });
           }
         }
-        const scanned = await this.scanDocContents(
+        const scan = await this.scanDocContents(
           client,
           docs.filter((d) => !matches.has(d.doc_id)),
           query,
@@ -112,7 +130,9 @@ export class DocToolHandler implements BaseToolHandler {
           query,
           matches: results,
           count: results.length,
-          scanned_docs_for_content: scanned,
+          scanned_docs_for_content: scan.attempted,
+          successfully_scanned_docs: scan.succeeded,
+          failed_docs: scan.failed,
         };
       },
     });
@@ -291,7 +311,7 @@ export class DocToolHandler implements BaseToolHandler {
 
   /**
    * Fetch the content of up to `limit` docs (most recently updated first) and record
-   * snippet matches for `query` into `matches`. Returns the number of docs scanned.
+   * snippet matches for `query` into `matches`. Returns scan attempt statistics.
    */
   private async scanDocContents(
     client: BusinessMapClient,
@@ -299,28 +319,45 @@ export class DocToolHandler implements BaseToolHandler {
     query: string,
     limit: number,
     matches: Map<number, DocSearchMatch>
-  ): Promise<number> {
-    const toScan = candidates
+  ): Promise<DocScanStats> {
+    const toScan = [...candidates]
       .sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''))
       .slice(0, limit);
+    const docsById = new Map(toScan.map((doc) => [doc.doc_id, doc]));
     const chunkSize = 5;
+    let succeeded = 0;
     for (let i = 0; i < toScan.length; i += chunkSize) {
       const chunk = toScan.slice(i, i + chunkSize);
       const details = await Promise.all(
         chunk.map((d) => client.docs.getDoc(d.doc_id).catch(() => null))
       );
-      for (const detail of details) {
-        if (!detail?.content) continue;
-        const snippet = extractSnippet(detail.content, query);
-        if (snippet !== null) {
-          const doc = toScan.find((d) => d.doc_id === detail.doc_id);
-          if (doc) {
-            matches.set(detail.doc_id, { doc, snippet });
-          }
-        }
+      succeeded += this.recordDocMatches(details, docsById, query, matches);
+    }
+    return {
+      attempted: toScan.length,
+      succeeded,
+      failed: toScan.length - succeeded,
+    };
+  }
+
+  private recordDocMatches(
+    details: Array<Doc | null>,
+    docsById: Map<number, DocListItem>,
+    query: string,
+    matches: Map<number, DocSearchMatch>
+  ): number {
+    let succeeded = 0;
+    for (const detail of details) {
+      if (!detail) continue;
+      succeeded++;
+      if (!detail.content) continue;
+      const snippet = extractSnippet(detail.content, query);
+      const doc = docsById.get(detail.doc_id);
+      if (snippet !== null && doc) {
+        matches.set(detail.doc_id, { doc, snippet });
       }
     }
-    return toScan.length;
+    return succeeded;
   }
 
   /** Build the parent/child tree from a flat doc list, sorted by position */

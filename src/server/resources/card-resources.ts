@@ -30,6 +30,39 @@ export class CardResourceHandler implements BaseResourceHandler {
             }
         );
 
+        // Get a bounded page of cards for clients that need predictable payload sizes
+        server.registerResource(
+            'card-page',
+            new ResourceTemplate(
+                'businessmap://boards/{board_id}/cards/pages/{page}/size/{per_page}',
+                { list: undefined }
+            ),
+            {},
+            async (uri, variables) => {
+                const boardId = Number.parseInt(variables.board_id as string);
+                const page = Number.parseInt(variables.page as string);
+                const perPage = Number.parseInt(variables.per_page as string);
+                if (Number.isNaN(boardId) || Number.isNaN(page) || Number.isNaN(perPage)) {
+                    throw new TypeError('board_id, page, and per_page must be valid numbers');
+                }
+                if (page < 1 || perPage < 1 || perPage > 100) {
+                    throw new RangeError('page must be at least 1 and per_page must be between 1 and 100');
+                }
+                const cards = await client.cards.getCardsPage(boardId, {
+                    page,
+                    per_page: perPage,
+                });
+                return {
+                    contents: [
+                        {
+                            uri: uri.href,
+                            text: JSON.stringify(cards, null, 2),
+                        },
+                    ],
+                };
+            }
+        );
+
         // Get card details
         server.registerResource(
             'card',

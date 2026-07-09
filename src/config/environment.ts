@@ -81,6 +81,14 @@ function getBooleanEnvVar(name: string, defaultValue: boolean = false): boolean 
   return value.toLowerCase() === 'true';
 }
 
+function getToolProfile(): 'full' | 'essential' {
+  const value = (process.env['BUSINESSMAP_TOOL_PROFILE'] || 'full').toLowerCase();
+  if (value === 'full' || value === 'essential') {
+    return value;
+  }
+  throw new TypeError('BUSINESSMAP_TOOL_PROFILE must be either "full" or "essential"');
+}
+
 function getNumberEnvVar(name: string, defaultValue?: number): number | undefined {
   const value = process.env[name];
   if (value === undefined || value === '') return defaultValue;
@@ -154,6 +162,7 @@ export const config: EnvironmentConfig = {
     apiToken: getRequiredEnvVar('BUSINESSMAP_API_TOKEN'),
     defaultWorkspaceId: getNumberEnvVar('BUSINESSMAP_DEFAULT_WORKSPACE_ID'),
     readOnlyMode: getBooleanEnvVar('BUSINESSMAP_READ_ONLY_MODE', false),
+    toolProfile: getToolProfile(),
   },
   server: {
     name: process.env.MCP_SERVER_NAME || 'businessmap-mcp',
@@ -186,4 +195,5 @@ export function validateConfig(): void {
   logger.success(`Configuration validated for ${config.server.name} v${config.server.version}`);
   logger.info(`📡 BusinessMap API: ${config.businessMap.apiUrl}`);
   logger.info(`🔒 Read-only mode: ${config.businessMap.readOnlyMode ? 'enabled' : 'disabled'}`);
+  logger.info(`🧰 Tool profile: ${config.businessMap.toolProfile}`);
 }

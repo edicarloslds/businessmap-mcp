@@ -7,8 +7,13 @@ Complete reference for all tools, resources, and prompts provided by the Busines
 | Category  | Count |
 | --------- | :---: |
 | Tools     |  92   |
-| Resources |   5   |
+| Resources |   6   |
 | Prompts   |   4   |
+
+The counts above describe the default `full` profile. Set
+`BUSINESSMAP_TOOL_PROFILE=essential` to register a smaller catalog of common
+workspace, board, card, docs, user, and health operations. Read-only mode is
+applied independently and removes mutation tools from either profile.
 
 ---
 
@@ -75,7 +80,9 @@ Complete reference for all tools, resources, and prompts provided by the Busines
 
 By default, `list_cards` keeps its legacy array response. Set
 `include_pagination: true` to receive `{ data, pagination }`; use `page` and
-`per_page` to select the requested page.
+`per_page` to select the requested page. Set `compact: true` on `list_cards` or
+`search_cards` to return only identifiers, placement, ownership, status, and
+planning fields.
 
 #### Comments
 
@@ -246,6 +253,7 @@ MCP resources provide structured data access via URI. Clients can read resources
 | `businessmap://boards`                  | `boards`     | List all boards                     |    ✅    |
 | `businessmap://boards/{board_id}`       | `board`      | Get details of a specific board     |    ❌    |
 | `businessmap://boards/{board_id}/cards` | `cards`      | List all cards for a specific board |    ✅    |
+| `businessmap://boards/{board_id}/cards/pages/{page}/size/{per_page}` | `card-page` | Read a bounded card page (maximum 100) | ❌ |
 | `businessmap://cards/{card_id}`         | `card`       | Get details of a specific card      |    ❌    |
 
 ---
@@ -340,4 +348,4 @@ When `BUSINESSMAP_READ_ONLY_MODE=true`, only tools marked ✅ in the "Read-Only 
 - Granting read-only access to AI assistants
 - Auditing and reporting use cases
 
-> Note: All 5 resources and all 4 prompts are available regardless of read-only mode setting.
+> Note: All 6 resources and all 4 prompts are available regardless of read-only mode setting.

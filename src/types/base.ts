@@ -5,6 +5,7 @@ export interface BusinessMapConfig {
   apiToken: string;
   defaultWorkspaceId?: number;
   readOnlyMode?: boolean;
+  toolProfile?: 'full' | 'essential';
 }
 
 // API Response Types

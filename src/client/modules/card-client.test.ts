@@ -66,3 +66,33 @@ describe('CardClient pagination', () => {
     });
   });
 });
+
+describe('CardClient expanded card lookup', () => {
+  const card = { card_id: 42, title: 'Archived card' } as Card;
+
+  it('uses one request when the active card is found', async () => {
+    const get = jest.fn().mockResolvedValue({ data: { data: [card] } });
+    const client = createClient(get);
+
+    await expect(client.getCardTransitions(42)).resolves.toBe(card);
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(get.mock.calls[0]?.[1]?.params.state).toBe('active');
+  });
+
+  it('checks archived and discarded states after the active lookup misses', async () => {
+    const get = jest.fn().mockImplementation((_path, options) => {
+      const state = options.params.state;
+      return Promise.resolve({
+        data: { data: state === 'archived' ? [card] : [] },
+      });
+    });
+    const client = createClient(get);
+
+    await expect(client.getCardTransitions(42)).resolves.toBe(card);
+    expect(get.mock.calls.map((call) => call[1].params.state)).toEqual([
+      'active',
+      'archived',
+      'discarded',
+    ]);
+  });
+});

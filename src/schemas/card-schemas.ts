@@ -102,6 +102,11 @@ export const listCardsSchema = z.object({
     .optional()
     .default(false)
     .describe('Return cards with pagination metadata instead of the legacy cards array'),
+  compact: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Return only the most useful card fields to reduce response size'),
 
   // Legacy compatibility
   assignee_user_id: z
@@ -291,6 +296,11 @@ export const searchCardsSchema = z.object({
     ),
   page: z.number().optional().describe('Page number for pagination'),
   per_page: z.number().optional().describe('Results per page (default 200, max 1000)'),
+  compact: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Return only the most useful card fields to reduce response size'),
 });
 
 // Complex schemas for card creation
