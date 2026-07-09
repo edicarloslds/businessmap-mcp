@@ -5,6 +5,7 @@ import {
   CardClient,
   CardFilters,
   CustomFieldClient,
+  DocClient,
   UserClient,
   UtilityClient,
   WorkflowClient,
@@ -23,6 +24,7 @@ export class BusinessMapClient {
   private readonly cardClient: CardClient;
   private readonly userClient: UserClient;
   private readonly customFieldClient: CustomFieldClient;
+  private readonly docClient: DocClient;
   private readonly utilityClient: UtilityClient;
   private readonly workflowClient: WorkflowClient;
 
@@ -52,6 +54,7 @@ export class BusinessMapClient {
     this.cardClient = new CardClient();
     this.userClient = new UserClient();
     this.customFieldClient = new CustomFieldClient();
+    this.docClient = new DocClient();
     this.utilityClient = new UtilityClient();
     this.workflowClient = new WorkflowClient();
 
@@ -62,6 +65,7 @@ export class BusinessMapClient {
       this.cardClient,
       this.userClient,
       this.customFieldClient,
+      this.docClient,
       this.utilityClient,
       this.workflowClient,
     ].forEach((module) => {
@@ -345,6 +349,18 @@ export class BusinessMapClient {
     return this.cardClient.getCardChildren(cardId);
   }
 
+  async getCardChildGraph(cardId: number) {
+    return this.cardClient.getCardChildGraph(cardId);
+  }
+
+  async getCardRevisions(cardId: number) {
+    return this.cardClient.getCardRevisions(cardId);
+  }
+
+  async getCardRevision(cardId: number, revision: number) {
+    return this.cardClient.getCardRevision(cardId, revision);
+  }
+
   // Block / Unblock - Delegated to CardClient
   async blockCard(cardId: number, reason: string) {
     return this.cardClient.blockCard(cardId, reason);
@@ -454,6 +470,43 @@ export class BusinessMapClient {
 
   async unlinkRelatedWorkflow(boardId: number, workflowId: number) {
     return this.workflowClient.unlinkRelatedWorkflow(boardId, workflowId);
+  }
+
+  // Docs - Delegated to DocClient
+  async getDocs(filters?: Parameters<DocClient['getDocs']>[0]) {
+    return this.docClient.getDocs(filters);
+  }
+
+  async getDoc(docId: number) {
+    return this.docClient.getDoc(docId);
+  }
+
+  async createDoc(params: Parameters<DocClient['createDoc']>[0]) {
+    return this.docClient.createDoc(params);
+  }
+
+  async updateDoc(docId: number, params: Parameters<DocClient['updateDoc']>[1]) {
+    return this.docClient.updateDoc(docId, params);
+  }
+
+  async getBoardDocs(boardId: number) {
+    return this.docClient.getBoardDocs(boardId);
+  }
+
+  async getPersonalDocs(filters?: Parameters<DocClient['getPersonalDocs']>[0]) {
+    return this.docClient.getPersonalDocs(filters);
+  }
+
+  async getPersonalDoc(docId: number) {
+    return this.docClient.getPersonalDoc(docId);
+  }
+
+  async createPersonalDoc(params: Parameters<DocClient['createPersonalDoc']>[0]) {
+    return this.docClient.createPersonalDoc(params);
+  }
+
+  async updatePersonalDoc(docId: number, params: Parameters<DocClient['updatePersonalDoc']>[1]) {
+    return this.docClient.updatePersonalDoc(docId, params);
   }
 
   // Utility Methods - Delegated to UtilityClient

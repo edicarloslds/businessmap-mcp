@@ -456,6 +456,21 @@ export interface ParentGraphResponse {
   data: ParentGraphItem[];
 }
 
+export interface ChildGraphResponse {
+  data: ParentGraphItem[];
+}
+
+// Card revision (change history) types
+export interface CardRevisionItem {
+  revision: number;
+  user_id: number;
+  replaced_at: string;
+}
+
+export interface CardRevisionsResponse {
+  data: CardRevisionItem[];
+}
+
 export interface ChildCardItem {
   card_id: number;
   position: number;

@@ -12,6 +12,12 @@ export const getWorkspaceSchema = z.object({
 export const createWorkspaceSchema = z.object({
   name: z.string().describe('The name of the workspace'),
   description: z.string().optional().describe('Optional description for the workspace'),
+  type: z
+    .number()
+    .min(1)
+    .max(2)
+    .optional()
+    .describe('The workspace type: 1=team (default), 2=management'),
 });
 
 // Workspace update schema

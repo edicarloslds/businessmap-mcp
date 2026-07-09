@@ -4,12 +4,15 @@ import { BusinessMapClient } from '../../client/businessmap-client.js';
 import {
   configureBoardStructureSchema,
   createBoardsInWorkspaceSchema,
+  createWorkspacesAndBoardsSchema,
+  setupBoardSchema,
   setupWorkflowSchema,
 } from '../../schemas/index.js';
 import { logger } from '../../utils/logger.js';
 import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
 
 type SetupWorkflowConfig = z.infer<typeof setupWorkflowSchema>;
+type SetupBoardConfig = z.infer<typeof setupBoardSchema>;
 
 interface WorkflowSetupReport {
   workflow_id?: number;
@@ -20,12 +23,67 @@ interface WorkflowSetupReport {
   errors: string[];
 }
 
+interface BoardSetupReport {
+  name: string;
+  board_id?: number;
+  workflows: WorkflowSetupReport[];
+  error?: string;
+}
+
 export class SetupToolHandler implements BaseToolHandler {
   registerTools(server: McpServer, client: BusinessMapClient, readOnlyMode: boolean): void {
     if (!readOnlyMode) {
+      this.registerCreateWorkspacesAndBoards(server, client);
       this.registerCreateBoardsInWorkspace(server, client);
       this.registerConfigureBoardStructure(server, client);
     }
+  }
+
+  private registerCreateWorkspacesAndBoards(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'create_workspaces_and_boards',
+      {
+        title: 'Create Workspaces and Boards',
+        description:
+          'Create one or more workspaces (max 3) together with their boards and full board structure (workflows, renamed default columns, extra columns and lanes) in a single batch call',
+        inputSchema: createWorkspacesAndBoardsSchema.shape,
+        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+      },
+      async ({ workspaces }) => {
+        try {
+          const reports = [];
+          for (const workspaceConfig of workspaces) {
+            const report: {
+              name: string;
+              workspace_id?: number;
+              boards: BoardSetupReport[];
+              error?: string;
+            } = { name: workspaceConfig.name, boards: [] };
+            try {
+              const workspace = await client.createWorkspace({
+                name: workspaceConfig.name,
+                ...(workspaceConfig.type !== undefined && { type: workspaceConfig.type }),
+              });
+              if (workspace.workspace_id === undefined) {
+                throw new Error('Workspace was created but the API did not return a workspace_id');
+              }
+              report.workspace_id = workspace.workspace_id;
+              report.boards = await this.createBoardsWithStructure(
+                client,
+                workspace.workspace_id,
+                workspaceConfig.boards ?? []
+              );
+            } catch (error) {
+              report.error = error instanceof Error ? error.message : 'Unknown error';
+            }
+            reports.push(report);
+          }
+          return createSuccessResponse({ workspaces: reports });
+        } catch (error) {
+          return createErrorResponse(error, 'creating workspaces and boards');
+        }
+      }
+    );
   }
 
   private registerCreateBoardsInWorkspace(server: McpServer, client: BusinessMapClient): void {
@@ -40,40 +98,44 @@ export class SetupToolHandler implements BaseToolHandler {
       },
       async ({ workspace_id, boards }) => {
         try {
-          const reports = [];
-          for (const boardConfig of boards) {
-            const report: {
-              name: string;
-              board_id?: number;
-              workflows: WorkflowSetupReport[];
-              error?: string;
-            } = { name: boardConfig.name, workflows: [] };
-            try {
-              const board = await client.createBoard({
-                name: boardConfig.name,
-                workspace_id,
-                ...(boardConfig.description && { description: boardConfig.description }),
-              });
-              if (board.board_id === undefined) {
-                throw new Error('Board was created but the API did not return a board_id');
-              }
-              report.board_id = board.board_id;
-              for (const workflowConfig of boardConfig.workflows ?? []) {
-                report.workflows.push(
-                  await this.applyWorkflowConfig(client, board.board_id, workflowConfig)
-                );
-              }
-            } catch (error) {
-              report.error = error instanceof Error ? error.message : 'Unknown error';
-            }
-            reports.push(report);
-          }
+          const reports = await this.createBoardsWithStructure(client, workspace_id, boards);
           return createSuccessResponse({ workspace_id, boards: reports });
         } catch (error) {
           return createErrorResponse(error, 'creating boards in workspace');
         }
       }
     );
+  }
+
+  private async createBoardsWithStructure(
+    client: BusinessMapClient,
+    workspaceId: number,
+    boards: SetupBoardConfig[]
+  ): Promise<BoardSetupReport[]> {
+    const reports: BoardSetupReport[] = [];
+    for (const boardConfig of boards) {
+      const report: BoardSetupReport = { name: boardConfig.name, workflows: [] };
+      try {
+        const board = await client.createBoard({
+          name: boardConfig.name,
+          workspace_id: workspaceId,
+          ...(boardConfig.description && { description: boardConfig.description }),
+        });
+        if (board.board_id === undefined) {
+          throw new Error('Board was created but the API did not return a board_id');
+        }
+        report.board_id = board.board_id;
+        for (const workflowConfig of boardConfig.workflows ?? []) {
+          report.workflows.push(
+            await this.applyWorkflowConfig(client, board.board_id, workflowConfig)
+          );
+        }
+      } catch (error) {
+        report.error = error instanceof Error ? error.message : 'Unknown error';
+      }
+      reports.push(report);
+    }
+    return reports;
   }
 
   private registerConfigureBoardStructure(server: McpServer, client: BusinessMapClient): void {

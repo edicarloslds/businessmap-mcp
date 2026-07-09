@@ -10,4 +10,5 @@ export interface Workspace {
 export interface CreateWorkspaceParams {
   name: string;
   description?: string;
+  type?: number;
 }

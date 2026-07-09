@@ -375,6 +375,22 @@ export const getCardFlowHistorySchema = z.object({
   card_id: z.number().describe('The ID of the card'),
 });
 
+// Card child hierarchy graph schema
+export const getCardChildGraphSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+});
+
+// Card revisions (change history) schema
+export const getCardRevisionsSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+  revision: z
+    .number()
+    .optional()
+    .describe(
+      'Optional revision number: when provided, returns the full card state at that revision instead of the revision list'
+    ),
+});
+
 // Cross-board card search schema
 export const searchCardsSchema = z.object({
   board_ids: z

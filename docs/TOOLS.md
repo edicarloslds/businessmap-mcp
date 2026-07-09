@@ -6,7 +6,7 @@ Complete reference for all tools, resources, and prompts provided by the Busines
 
 | Category  | Count |
 | --------- | :---: |
-| Tools     |  76   |
+| Tools     |  92   |
 | Resources |   5   |
 | Prompts   |   4   |
 
@@ -45,7 +45,7 @@ Complete reference for all tools, resources, and prompts provided by the Busines
 
 ---
 
-### Card Management (42 tools)
+### Card Management (44 tools)
 
 #### Basic Operations
 
@@ -98,6 +98,7 @@ Complete reference for all tools, resources, and prompts provided by the Busines
 | `get_card_flow_history`  | Get the card's movement (transitions) across workflows/columns with timing |       ✅       |
 | `get_card_blocked_times` | Get the full blocking history of a card                                  |       ✅       |
 | `get_card_logged_time`   | Get time logged on a card and its subtasks, with individual entries      |       ✅       |
+| `get_card_revisions`     | Get the chronological change history (revisions) of a card; pass a revision number for the full card state at that point |       ✅       |
 
 #### Relationships
 
@@ -123,6 +124,7 @@ Complete reference for all tools, resources, and prompts provided by the Busines
 | `get_card_parent`       | Check if a card is a parent of a given card            |       ✅       |
 | `get_card_parent_graph` | Get parent cards including their parents (full graph)  |       ✅       |
 | `get_card_children`     | Get a list of child cards of a specified parent card   |       ✅       |
+| `get_card_child_graph`  | Get the hierarchical graph of a card's children (children of children too) |       ✅       |
 | `add_card_parent`       | Make a card a parent of a given card                   |       ❌       |
 | `remove_card_parent`    | Remove the link between a child card and a parent card |       ❌       |
 
@@ -180,12 +182,33 @@ Complete reference for all tools, resources, and prompts provided by the Busines
 
 ---
 
-### Quick Setup — Batch (2 tools)
+### Quick Setup — Batch (3 tools)
 
-| Tool                         | Description                                                                                             | Read-Only Safe |
-| :--------------------------- | :------------------------------------------------------------------------------------------------------ | :------------: |
-| `create_boards_in_workspace` | Create up to 3 boards with their full structure (workflows, renamed default columns, columns, lanes) in one call |       ❌       |
+| Tool                           | Description                                                                                             | Read-Only Safe |
+| :----------------------------- | :------------------------------------------------------------------------------------------------------ | :------------: |
+| `create_workspaces_and_boards` | Create up to 3 workspaces together with their boards and full board structure in one call               |       ❌       |
+| `create_boards_in_workspace`   | Create up to 3 boards with their full structure (workflows, renamed default columns, columns, lanes) in one call |       ❌       |
 | `configure_board_structure`  | Configure an existing board's structure in one call: create/rename workflows, rename built-in columns, add columns and lanes |       ❌       |
+
+---
+
+### Docs (13 tools)
+
+| Tool                        | Description                                                                                              | Read-Only Safe |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------- | :------------: |
+| `search_docs`               | Search docs by title (case-insensitive substring), optionally including archived and personal docs       |       ✅       |
+| `get_docs_text_title_search`| Search docs by title AND content, returning matches with content snippets                                |       ✅       |
+| `get_doc_hierarchy`         | Get the hierarchical parent/child tree of docs, optionally rooted at a specific doc                      |       ✅       |
+| `list_docs`                 | Get a list of docs (metadata only) with filters (ids, title, archived, important, parent)                |       ✅       |
+| `list_personal_docs`        | Get a list of your personal docs (metadata only)                                                         |       ✅       |
+| `get_doc_content_batch`     | Get the full details (including content) of up to 20 docs in one call (shared or personal)               |       ✅       |
+| `get_docs_for_boards_batch` | Get the docs pinned to each of up to 10 boards in one call                                               |       ✅       |
+| `create_doc`                | Create a new doc, optionally as a child of another doc                                                   |       ❌       |
+| `update_doc`                | Update the title, content, position, or parent of an existing doc                                        |       ❌       |
+| `archive_doc`               | Archive a doc                                                                                            |       ❌       |
+| `unarchive_doc`             | Restore an archived doc                                                                                  |       ❌       |
+| `create_personal_doc`       | Create a new personal doc (visible only to you)                                                          |       ❌       |
+| `update_personal_doc`       | Update the title, content, or position of an existing personal doc                                       |       ❌       |
 
 ---
 

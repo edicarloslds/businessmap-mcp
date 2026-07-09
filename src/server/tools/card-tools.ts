@@ -16,6 +16,7 @@ import {
   deleteCardSubtaskSchema,
   deleteCommentSchema,
   getCardBlockedTimesSchema,
+  getCardChildGraphSchema,
   getCardChildrenSchema,
   getCardCommentSchema,
   getCardFlowHistorySchema,
@@ -26,6 +27,7 @@ import {
   getCardParentGraphSchema,
   getCardParentSchema,
   getCardParentsSchema,
+  getCardRevisionsSchema,
   getCardSchema,
   getCardSubtaskSchema,
   getCardSubtasksSchema,
@@ -66,6 +68,8 @@ export class CardToolHandler implements BaseToolHandler {
     this.registerGetCardParent(server, client);
     this.registerGetCardParentGraph(server, client);
     this.registerGetCardChildren(server, client);
+    this.registerGetCardChildGraph(server, client);
+    this.registerGetCardRevisions(server, client);
 
     if (!readOnlyMode) {
       this.registerCreateCard(server, client);
@@ -568,6 +572,52 @@ export class CardToolHandler implements BaseToolHandler {
           return createSuccessResponse(subtask, 'Subtask created successfully:');
         } catch (error) {
           return createErrorResponse(error, 'creating card subtask');
+        }
+      }
+    );
+  }
+
+  private registerGetCardChildGraph(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_child_graph',
+      {
+        title: 'Get Card Child Graph',
+        description:
+          "Get the hierarchical graph of a card's children, including children of children",
+        inputSchema: getCardChildGraphSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
+      },
+      async ({ card_id }) => {
+        try {
+          const graph = await client.getCardChildGraph(card_id);
+          return createSuccessResponse({ children: graph, count: graph.length });
+        } catch (error) {
+          return createErrorResponse(error, 'getting card child graph');
+        }
+      }
+    );
+  }
+
+  private registerGetCardRevisions(server: McpServer, client: BusinessMapClient): void {
+    server.registerTool(
+      'get_card_revisions',
+      {
+        title: 'Get Card Revisions',
+        description:
+          'Get the chronological change history (revisions) of a card. Pass a revision number to get the full card state at that revision.',
+        inputSchema: getCardRevisionsSchema.shape,
+        annotations: { readOnlyHint: true, idempotentHint: true },
+      },
+      async ({ card_id, revision }) => {
+        try {
+          if (revision !== undefined) {
+            const details = await client.getCardRevision(card_id, revision);
+            return createSuccessResponse(details);
+          }
+          const revisions = await client.getCardRevisions(card_id);
+          return createSuccessResponse({ revisions, count: revisions.length });
+        } catch (error) {
+          return createErrorResponse(error, 'getting card revisions');
         }
       }
     );

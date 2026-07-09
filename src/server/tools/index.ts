@@ -3,6 +3,7 @@ export { createErrorResponse, createSuccessResponse } from './base-tool.js';
 export { BoardToolHandler } from './board-tools.js';
 export { CardToolHandler } from './card-tools.js';
 export { CustomFieldToolHandler } from './custom-field-tools.js';
+export { DocToolHandler } from './doc-tools.js';
 export { SetupToolHandler } from './setup-tools.js';
 export { UserToolHandler } from './user-tools.js';
 export { UtilityToolHandler } from './utility-tools.js';

@@ -68,9 +68,13 @@ export class WorkspaceToolHandler implements BaseToolHandler {
         inputSchema: createWorkspaceSchema.shape,
         annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
       },
-      async ({ name, description }) => {
+      async ({ name, description, type }) => {
         try {
-          const workspace = await client.createWorkspace({ name, description });
+          const workspace = await client.createWorkspace({
+            name,
+            description,
+            ...(type !== undefined && { type }),
+          });
           return createSuccessResponse(workspace, 'Workspace created successfully:');
         } catch (error) {
           return createErrorResponse(error, 'creating workspace');

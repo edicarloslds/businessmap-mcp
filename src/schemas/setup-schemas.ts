@@ -69,6 +69,17 @@ export const setupWorkflowSchema = z.object({
     .describe('Additional lanes to create in the workflow (max 10)'),
 });
 
+// Board to create with optional structure during batch setup
+export const setupBoardSchema = z.object({
+  name: z.string().describe('The name of the board'),
+  description: z.string().optional().describe('Optional description for the board'),
+  workflows: z
+    .array(setupWorkflowSchema)
+    .max(5)
+    .optional()
+    .describe('Optional workflow configurations to apply after creating the board'),
+});
+
 // Schema for configuring the structure of an existing board
 export const configureBoardStructureSchema = z.object({
   board_id: z.number().describe('The ID of the board to configure'),
@@ -83,18 +94,32 @@ export const configureBoardStructureSchema = z.object({
 export const createBoardsInWorkspaceSchema = z.object({
   workspace_id: z.number().describe('The ID of the workspace where the boards will be created'),
   boards: z
+    .array(setupBoardSchema)
+    .min(1)
+    .max(3)
+    .describe('Boards to create with their structure (max 3 per call)'),
+});
+
+// Schema for creating workspaces together with their boards and full structure
+export const createWorkspacesAndBoardsSchema = z.object({
+  workspaces: z
     .array(
       z.object({
-        name: z.string().describe('The name of the board'),
-        description: z.string().optional().describe('Optional description for the board'),
-        workflows: z
-          .array(setupWorkflowSchema)
-          .max(5)
+        name: z.string().min(1).max(100).describe('The name of the workspace (1-100 chars)'),
+        type: z
+          .number()
+          .min(1)
+          .max(2)
           .optional()
-          .describe('Optional workflow configurations to apply after creating the board'),
+          .describe('The workspace type: 1=team (default), 2=management'),
+        boards: z
+          .array(setupBoardSchema)
+          .max(10)
+          .optional()
+          .describe('Boards to create in the workspace with their structure (max 10)'),
       })
     )
     .min(1)
     .max(3)
-    .describe('Boards to create with their structure (max 3 per call)'),
+    .describe('Workspaces to create with their boards (max 3 per call)'),
 });

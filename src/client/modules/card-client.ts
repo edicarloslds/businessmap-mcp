@@ -6,6 +6,9 @@ import {
   CardCustomFieldsResponse,
   CardHistoryItem,
   CardHistoryResponse,
+  CardRevisionItem,
+  CardRevisionsResponse,
+  ChildGraphResponse,
   CardOutcomesResponse,
   CardStickerItem,
   CardStickerResponse,
@@ -415,6 +418,32 @@ export class CardClient extends BaseClientModuleImpl {
    */
   async getCardChildren(cardId: number): Promise<ChildCardItem[]> {
     const response = await this.http.get<ChildCardsResponse>(`/cards/${cardId}/children`);
+    return response.data.data;
+  }
+
+  /**
+   * Get the hierarchical graph of a card's children (children of children too)
+   */
+  async getCardChildGraph(cardId: number): Promise<ParentGraphItem[]> {
+    const response = await this.http.get<ChildGraphResponse>(`/cards/${cardId}/childGraph`);
+    return response.data.data;
+  }
+
+  /**
+   * Get the chronological list of revisions (change history) of a card
+   */
+  async getCardRevisions(cardId: number): Promise<CardRevisionItem[]> {
+    const response = await this.http.get<CardRevisionsResponse>(`/cards/${cardId}/revisions`);
+    return response.data.data;
+  }
+
+  /**
+   * Get the full card state at a specific revision
+   */
+  async getCardRevision(cardId: number, revision: number): Promise<unknown> {
+    const response = await this.http.get<ApiResponse<unknown>>(
+      `/cards/${cardId}/revisions/${revision}`
+    );
     return response.data.data;
   }
 
