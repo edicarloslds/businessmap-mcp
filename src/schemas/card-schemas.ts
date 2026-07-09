@@ -1,5 +1,6 @@
 import { z } from 'zod/v3';
 import {
+  dateRangeFilters,
   fileAttachmentSchema,
   fileAttachmentWithIdSchema,
   idArrayFilters,
@@ -10,180 +11,17 @@ import {
 export const listCardsSchema = z.object({
   board_id: z.number().describe('The ID of the board'),
 
-  // Date and time filters using the common schema, extended for specific cases
-  archived_from: z
-    .string()
-    .optional()
-    .describe('The first date and time of archived cards for which you want results'),
-  archived_from_date: z
-    .string()
-    .optional()
-    .describe('The first date of archived cards for which you want results'),
-  archived_to: z
-    .string()
-    .optional()
-    .describe('The last date and time of archived cards for which you want results'),
-  archived_to_date: z
-    .string()
-    .optional()
-    .describe('The last date of archived cards for which you want results'),
-
-  created_from: z
-    .string()
-    .optional()
-    .describe('The first date and time of created cards for which you want results'),
-  created_from_date: z
-    .string()
-    .optional()
-    .describe('The first date of created cards for which you want results'),
-  created_to: z
-    .string()
-    .optional()
-    .describe('The last date and time of created cards for which you want results'),
-  created_to_date: z
-    .string()
-    .optional()
-    .describe('The last date of created cards for which you want results'),
-
-  deadline_from: z
-    .string()
-    .optional()
-    .describe('The first date and time of deadline cards for which you want results'),
-  deadline_from_date: z
-    .string()
-    .optional()
-    .describe('The first date of deadline cards for which you want results'),
-  deadline_to: z
-    .string()
-    .optional()
-    .describe('The last date and time of deadline cards for which you want results'),
-  deadline_to_date: z
-    .string()
-    .optional()
-    .describe('The last date of deadline cards for which you want results'),
-
-  discarded_from: z
-    .string()
-    .optional()
-    .describe('The first date and time of discarded cards for which you want results'),
-  discarded_from_date: z
-    .string()
-    .optional()
-    .describe('The first date of discarded cards for which you want results'),
-  discarded_to: z
-    .string()
-    .optional()
-    .describe('The last date and time of discarded cards for which you want results'),
-  discarded_to_date: z
-    .string()
-    .optional()
-    .describe('The last date of discarded cards for which you want results'),
-
-  first_end_from: z
-    .string()
-    .optional()
-    .describe('The first date and time of first end cards for which you want results'),
-  first_end_from_date: z
-    .string()
-    .optional()
-    .describe('The first date of first end cards for which you want results'),
-  first_end_to: z
-    .string()
-    .optional()
-    .describe('The last date and time of first end cards for which you want results'),
-  first_end_to_date: z
-    .string()
-    .optional()
-    .describe('The last date of first end cards for which you want results'),
-
-  first_start_from: z
-    .string()
-    .optional()
-    .describe('The first date and time of first start cards for which you want results'),
-  first_start_from_date: z
-    .string()
-    .optional()
-    .describe('The first date of first start cards for which you want results'),
-  first_start_to: z
-    .string()
-    .optional()
-    .describe('The last date and time of first start cards for which you want results'),
-  first_start_to_date: z
-    .string()
-    .optional()
-    .describe('The last date of first start cards for which you want results'),
-
-  in_current_position_since_from: z
-    .string()
-    .optional()
-    .describe(
-      'The first date and time of in current position since cards for which you want results'
-    ),
-  in_current_position_since_from_date: z
-    .string()
-    .optional()
-    .describe('The first date of in current position since cards for which you want results'),
-  in_current_position_since_to: z
-    .string()
-    .optional()
-    .describe(
-      'The last date and time of in current position since cards for which you want results'
-    ),
-  in_current_position_since_to_date: z
-    .string()
-    .optional()
-    .describe('The last date of in current position since cards for which you want results'),
-
-  last_end_from: z
-    .string()
-    .optional()
-    .describe('The first date and time of last end cards for which you want results'),
-  last_end_from_date: z
-    .string()
-    .optional()
-    .describe('The first date of last end cards for which you want results'),
-  last_end_to: z
-    .string()
-    .optional()
-    .describe('The last date and time of last end cards for which you want results'),
-  last_end_to_date: z
-    .string()
-    .optional()
-    .describe('The last date of last end cards for which you want results'),
-
-  last_modified_from: z
-    .string()
-    .optional()
-    .describe('The first date and time of last modified cards for which you want results'),
-  last_modified_from_date: z
-    .string()
-    .optional()
-    .describe('The first date of last modified cards for which you want results'),
-  last_modified_to: z
-    .string()
-    .optional()
-    .describe('The last date and time of last modified cards for which you want results'),
-  last_modified_to_date: z
-    .string()
-    .optional()
-    .describe('The last date of last modified cards for which you want results'),
-
-  last_start_from: z
-    .string()
-    .optional()
-    .describe('The first date and time of last start cards for which you want results'),
-  last_start_from_date: z
-    .string()
-    .optional()
-    .describe('The first date of last start cards for which you want results'),
-  last_start_to: z
-    .string()
-    .optional()
-    .describe('The last date and time of last start cards for which you want results'),
-  last_start_to_date: z
-    .string()
-    .optional()
-    .describe('The last date of last start cards for which you want results'),
+  // Date and time filters (generated quartets: _from, _from_date, _to, _to_date)
+  ...dateRangeFilters('archived', 'archived'),
+  ...dateRangeFilters('created', 'created'),
+  ...dateRangeFilters('deadline', 'deadline'),
+  ...dateRangeFilters('discarded', 'discarded'),
+  ...dateRangeFilters('first_end', 'first end'),
+  ...dateRangeFilters('first_start', 'first start'),
+  ...dateRangeFilters('in_current_position_since', 'in current position since'),
+  ...dateRangeFilters('last_end', 'last end'),
+  ...dateRangeFilters('last_modified', 'last modified'),
+  ...dateRangeFilters('last_start', 'last start'),
 
   // ID filters (arrays) - using common schemas, extended
   ...idArrayFilters,

@@ -15,7 +15,7 @@ export class CardResourceHandler implements BaseResourceHandler {
                     if (Number.isNaN(boardId)) {
                         throw new TypeError(`Invalid board_id: "${variables.board_id}" is not a valid number`);
                     }
-                    const cards = await client.getCards(boardId);
+                    const cards = await client.cards.getCards(boardId);
                     return {
                         contents: [
                             {
@@ -41,7 +41,7 @@ export class CardResourceHandler implements BaseResourceHandler {
                     if (Number.isNaN(cardId)) {
                         throw new TypeError(`Invalid card_id: "${variables.card_id}" is not a valid number`);
                     }
-                    const card = await client.getCard(cardId);
+                    const card = await client.cards.getCard(cardId);
                     return {
                         contents: [
                             {

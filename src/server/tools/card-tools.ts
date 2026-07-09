@@ -21,8 +21,8 @@ import {
   getCardCommentSchema,
   getCardFlowHistorySchema,
   getCardHistorySchema,
-  getCardLoggedTimeSchema,
   getCardLinkedCardsSchema,
+  getCardLoggedTimeSchema,
   getCardOutcomesSchema,
   getCardParentGraphSchema,
   getCardParentSchema,
@@ -44,1035 +44,608 @@ import {
   updateCardSubtaskSchema,
   updateCommentSchema,
 } from '../../schemas/index.js';
-import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
+import {
+  BaseToolHandler,
+  READ_ONLY,
+  WRITE,
+  WRITE_IDEMPOTENT,
+  registerTool,
+} from './base-tool.js';
 
 export class CardToolHandler implements BaseToolHandler {
   registerTools(server: McpServer, client: BusinessMapClient, readOnlyMode: boolean): void {
-    this.registerListCards(server, client);
-    this.registerSearchCards(server, client);
-    this.registerGetCard(server, client);
-    this.registerGetCardLoggedTime(server, client);
-    this.registerGetCardBlockedTimes(server, client);
-    this.registerGetCardFlowHistory(server, client);
-    this.registerGetCardSize(server, client);
-    this.registerGetCardComments(server, client);
-    this.registerGetCardComment(server, client);
-    this.registerGetCardCustomFields(server, client);
-    this.registerGetCardTypes(server, client);
-    this.registerGetCardHistory(server, client);
-    this.registerGetCardOutcomes(server, client);
-    this.registerGetCardLinkedCards(server, client);
-    this.registerGetCardSubtasks(server, client);
-    this.registerGetCardSubtask(server, client);
-    this.registerGetCardParents(server, client);
-    this.registerGetCardParent(server, client);
-    this.registerGetCardParentGraph(server, client);
-    this.registerGetCardChildren(server, client);
-    this.registerGetCardChildGraph(server, client);
-    this.registerGetCardRevisions(server, client);
+    this.registerReadTools(server, client);
 
     if (!readOnlyMode) {
-      this.registerCreateCard(server, client);
-      this.registerMoveCard(server, client);
-      this.registerUpdateCard(server, client);
-      this.registerSetCardSize(server, client);
-      this.registerDeleteCard(server, client);
-      this.registerCreateCardSubtask(server, client);
-      this.registerUpdateCardSubtask(server, client);
-      this.registerDeleteCardSubtask(server, client);
-      this.registerAddCardParent(server, client);
-      this.registerRemoveCardParent(server, client);
-      // Block / Unblock
-      this.registerBlockCard(server, client);
-      this.registerUnblockCard(server, client);
-      // Comments
-      this.registerCreateComment(server, client);
-      this.registerUpdateComment(server, client);
-      this.registerDeleteComment(server, client);
-      // Tags
-      this.registerCreateTag(server, client);
-      this.registerAddTagToCard(server, client);
-      this.registerRemoveTagFromCard(server, client);
-      // Stickers
-      this.registerAddStickerToCard(server, client);
-      this.registerRemoveStickerFromCard(server, client);
-      // Predecessors
-      this.registerAddPredecessor(server, client);
-      this.registerRemovePredecessor(server, client);
+      this.registerCardWriteTools(server, client);
+      this.registerSubtaskWriteTools(server, client);
+      this.registerRelationshipWriteTools(server, client);
+      this.registerCommentWriteTools(server, client);
+      this.registerTagStickerWriteTools(server, client);
     }
   }
 
-  private registerListCards(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'list_cards',
-      {
-        title: 'List Cards',
-        description: 'Get a list of cards from a board with optional filters',
-        inputSchema: listCardsSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
+  private registerReadTools(server: McpServer, client: BusinessMapClient): void {
+    registerTool(server, {
+      name: 'list_cards',
+      title: 'List Cards',
+      description: 'Get a list of cards from a board with optional filters',
+      schema: listCardsSchema,
+      annotations: READ_ONLY,
+      errorContext: 'fetching cards',
+      handler: ({ board_id, ...filters }) => client.cards.getCards(board_id, filters),
+    });
+
+    registerTool(server, {
+      name: 'search_cards',
+      title: 'Search Cards',
+      description:
+        'Search for cards across all boards (or a subset of boards) using advanced filters: owners, priorities, sizes, blocked state, types, dates, lifecycle state and more',
+      schema: searchCardsSchema,
+      annotations: READ_ONLY,
+      errorContext: 'searching cards',
+      handler: (params) => client.cards.searchCards(params),
+    });
+
+    registerTool(server, {
+      name: 'get_card',
+      title: 'Get Card',
+      description: 'Get details of a specific card',
+      schema: getCardSchema,
+      annotations: READ_ONLY,
+      errorContext: 'fetching card',
+      handler: ({ card_id }) => client.cards.getCard(card_id),
+    });
+
+    registerTool(server, {
+      name: 'get_card_size',
+      title: 'Get Card Size',
+      description: 'Get the size/points of a specific card',
+      schema: getCardSchema,
+      annotations: READ_ONLY,
+      errorContext: 'fetching card size',
+      handler: async ({ card_id }) => {
+        const card = await client.cards.getCard(card_id);
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: `Card "${card.title}" (ID: ${card_id}) has size: ${card.size || 0} points`,
+            },
+          ],
+        };
       },
-      async (params) => {
-        try {
-          const { board_id, ...filters } = params;
-          const cards = await client.getCards(board_id, filters);
-          return createSuccessResponse(cards);
-        } catch (error) {
-          return createErrorResponse(error, 'fetching cards');
+    });
+
+    registerTool(server, {
+      name: 'get_card_logged_time',
+      title: 'Get Card Logged Time',
+      description:
+        'Get the time logged on a card (and optionally its subtasks), with the individual logged time entries',
+      schema: getCardLoggedTimeSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card logged time',
+      handler: async ({ card_id, include_subtasks }) => {
+        const entries = await client.cards.getCardLoggedTimes(card_id, include_subtasks ?? true);
+        const totalTime = entries.reduce((sum, entry) => sum + (entry.time || 0), 0);
+        return { total_time: totalTime, entries, count: entries.length };
+      },
+    });
+
+    registerTool(server, {
+      name: 'get_card_blocked_times',
+      title: 'Get Card Blocked Times',
+      description:
+        'Get the full blocking history of a card, including when and where blocks occurred',
+      schema: getCardBlockedTimesSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card blocked times',
+      handler: async ({ card_id }) => {
+        const card = await client.cards.getCardBlockTimes(card_id);
+        if (!card) {
+          throw new Error(`Card ${card_id} not found`);
         }
-      }
-    );
+        return card;
+      },
+    });
+
+    registerTool(server, {
+      name: 'get_card_flow_history',
+      title: 'Get Card Flow History',
+      description:
+        "Get the card's movement history (transitions) across boards, workflows and columns with timing details",
+      schema: getCardFlowHistorySchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card flow history',
+      handler: async ({ card_id }) => {
+        const card = await client.cards.getCardTransitions(card_id);
+        if (!card) {
+          throw new Error(`Card ${card_id} not found`);
+        }
+        return card;
+      },
+    });
+
+    registerTool(server, {
+      name: 'get_card_comments',
+      title: 'Get Card Comments',
+      description: 'Get all comments for a specific card',
+      schema: cardCommentsSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card comments',
+      handler: async ({ card_id }) => {
+        const comments = await client.cards.getCardComments(card_id);
+        return { comments, count: comments.length };
+      },
+    });
+
+    registerTool(server, {
+      name: 'get_card_comment',
+      title: 'Get Card Comment',
+      description: 'Get details of a specific comment from a card',
+      schema: getCardCommentSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card comment',
+      handler: ({ card_id, comment_id }) => client.cards.getCardComment(card_id, comment_id),
+    });
+
+    registerTool(server, {
+      name: 'get_card_custom_fields',
+      title: 'Get Card Custom Fields',
+      description: 'Get all custom fields for a specific card',
+      schema: getCardSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card custom fields',
+      handler: async ({ card_id }) => {
+        const customFields = await client.cards.getCardCustomFields(card_id);
+        return { customFields, count: customFields.length };
+      },
+    });
+
+    registerTool(server, {
+      name: 'get_card_types',
+      title: 'Get Card Types',
+      description: 'Get all available card types',
+      schema: getCardTypesSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card types',
+      handler: async () => {
+        const cardTypes = await client.cards.getCardTypes();
+        return { cardTypes, count: cardTypes.length };
+      },
+    });
+
+    registerTool(server, {
+      name: 'get_card_history',
+      title: 'Get Card History',
+      description: 'Get the history of a specific card outcome',
+      schema: getCardHistorySchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card history',
+      handler: async ({ card_id, outcome_id }) => {
+        const history = await client.cards.getCardHistory(card_id, outcome_id);
+        return { history, count: history.length };
+      },
+    });
+
+    registerTool(server, {
+      name: 'get_card_outcomes',
+      title: 'Get Card Outcomes',
+      description: 'Get all outcomes for a specific card',
+      schema: getCardOutcomesSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card outcomes',
+      handler: async ({ card_id }) => {
+        const outcomes = await client.cards.getCardOutcomes(card_id);
+        return { outcomes, count: outcomes.length };
+      },
+    });
+
+    registerTool(server, {
+      name: 'get_card_linked_cards',
+      title: 'Get Card Linked Cards',
+      description: 'Get all linked cards for a specific card',
+      schema: getCardLinkedCardsSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card linked cards',
+      handler: async ({ card_id }) => {
+        const linkedCards = await client.cards.getCardLinkedCards(card_id);
+        return { linkedCards, count: linkedCards.length };
+      },
+    });
+
+    registerTool(server, {
+      name: 'get_card_subtasks',
+      title: 'Get Card Subtasks',
+      description: 'Get all subtasks for a specific card',
+      schema: getCardSubtasksSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card subtasks',
+      handler: async ({ card_id }) => {
+        const subtasks = await client.cards.getCardSubtasks(card_id);
+        return { subtasks, count: subtasks.length };
+      },
+    });
+
+    registerTool(server, {
+      name: 'get_card_subtask',
+      title: 'Get Card Subtask',
+      description: 'Get details of a specific subtask from a card',
+      schema: getCardSubtaskSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card subtask',
+      handler: ({ card_id, subtask_id }) => client.cards.getCardSubtask(card_id, subtask_id),
+    });
+
+    registerTool(server, {
+      name: 'get_card_parents',
+      title: 'Get Card Parents',
+      description: 'Get a list of parent cards for a specific card',
+      schema: getCardParentsSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card parents',
+      handler: async ({ card_id }) => {
+        const parents = await client.cards.getCardParents(card_id);
+        return { parents, count: parents.length };
+      },
+    });
+
+    registerTool(server, {
+      name: 'get_card_parent',
+      title: 'Get Card Parent',
+      description: 'Check if a card is a parent of a given card',
+      schema: getCardParentSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card parent',
+      handler: ({ card_id, parent_card_id }) => client.cards.getCardParent(card_id, parent_card_id),
+    });
+
+    registerTool(server, {
+      name: 'get_card_parent_graph',
+      title: 'Get Card Parent Graph',
+      description: 'Get a list of parent cards including their parent cards too',
+      schema: getCardParentGraphSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card parent graph',
+      handler: async ({ card_id }) => {
+        const parentGraph = await client.cards.getCardParentGraph(card_id);
+        return { parentGraph, count: parentGraph.length };
+      },
+    });
+
+    registerTool(server, {
+      name: 'get_card_children',
+      title: 'Get Card Children',
+      description: 'Get a list of child cards of a specified parent card',
+      schema: getCardChildrenSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card children',
+      handler: async ({ card_id }) => {
+        const children = await client.cards.getCardChildren(card_id);
+        return { children, count: children.length };
+      },
+    });
+
+    registerTool(server, {
+      name: 'get_card_child_graph',
+      title: 'Get Card Child Graph',
+      description: "Get the hierarchical graph of a card's children, including children of children",
+      schema: getCardChildGraphSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card child graph',
+      handler: async ({ card_id }) => {
+        const graph = await client.cards.getCardChildGraph(card_id);
+        return { children: graph, count: graph.length };
+      },
+    });
+
+    registerTool(server, {
+      name: 'get_card_revisions',
+      title: 'Get Card Revisions',
+      description:
+        'Get the chronological change history (revisions) of a card. Pass a revision number to get the full card state at that revision.',
+      schema: getCardRevisionsSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card revisions',
+      handler: async ({ card_id, revision }) => {
+        if (revision !== undefined) {
+          return client.cards.getCardRevision(card_id, revision);
+        }
+        const revisions = await client.cards.getCardRevisions(card_id);
+        return { revisions, count: revisions.length };
+      },
+    });
   }
 
-  private registerSearchCards(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'search_cards',
-      {
-        title: 'Search Cards',
-        description:
-          'Search for cards across all boards (or a subset of boards) using advanced filters: owners, priorities, sizes, blocked state, types, dates, lifecycle state and more',
-        inputSchema: searchCardsSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
+  private registerCardWriteTools(server: McpServer, client: BusinessMapClient): void {
+    registerTool(server, {
+      name: 'create_card',
+      title: 'Create Card',
+      description: 'Create a new card in a board',
+      schema: createCardSchema,
+      annotations: WRITE,
+      errorContext: 'creating card',
+      successMessage: 'Card created successfully:',
+      handler: (params) => client.cards.createCard(params),
+    });
+
+    registerTool(server, {
+      name: 'move_card',
+      title: 'Move Card',
+      description: 'Move a card to a different column or lane',
+      schema: moveCardSchema,
+      annotations: WRITE,
+      errorContext: 'moving card',
+      successMessage: 'Card moved successfully:',
+      handler: ({ card_id, column_id, lane_id, position }) =>
+        client.cards.moveCard(card_id, column_id, lane_id, position),
+    });
+
+    registerTool(server, {
+      name: 'update_card',
+      title: 'Update Card',
+      description: "Update a card's properties",
+      schema: updateCardSchema,
+      annotations: WRITE,
+      errorContext: 'updating card',
+      successMessage: 'Card updated successfully:',
+      handler: (params) => client.cards.updateCard(params),
+    });
+
+    registerTool(server, {
+      name: 'set_card_size',
+      title: 'Set Card Size',
+      description: 'Set the size/points of a specific card',
+      schema: cardSizeSchema,
+      annotations: WRITE,
+      errorContext: 'setting card size',
+      handler: async ({ card_id, size }) => {
+        const card = await client.cards.updateCard({ card_id, size });
+        return {
+          content: [
+            {
+              type: 'text' as const,
+              text: `Card "${card.title}" (ID: ${card_id}) size updated to: ${size} points`,
+            },
+          ],
+        };
       },
-      async (params) => {
-        try {
-          const result = await client.searchCards(params);
-          return createSuccessResponse(result);
-        } catch (error) {
-          return createErrorResponse(error, 'searching cards');
-        }
-      }
-    );
+    });
+
+    registerTool(server, {
+      name: 'delete_card',
+      title: 'Delete Card',
+      description:
+        'Permanently delete a card. This action cannot be undone and the card cannot be recovered.',
+      schema: deleteCardSchema,
+      errorContext: 'deleting card',
+      successMessage: 'Card deleted successfully:',
+      handler: async ({ card_id }) => {
+        await client.cards.deleteCard(card_id);
+        return { card_id };
+      },
+    });
+
+    registerTool(server, {
+      name: 'block_card',
+      title: 'Block Card',
+      description: 'Block a card and set a reason/comment explaining why it is blocked',
+      schema: blockCardSchema,
+      errorContext: 'blocking card',
+      successMessage: 'Card blocked successfully:',
+      handler: async ({ card_id, reason }) => {
+        await client.cards.blockCard(card_id, reason);
+        return { card_id, reason };
+      },
+    });
+
+    registerTool(server, {
+      name: 'unblock_card',
+      title: 'Unblock Card',
+      description: 'Unblock a card by removing its block reason',
+      schema: unblockCardSchema,
+      errorContext: 'unblocking card',
+      successMessage: 'Card unblocked successfully:',
+      handler: async ({ card_id }) => {
+        await client.cards.unblockCard(card_id);
+        return { card_id };
+      },
+    });
   }
 
-  private registerGetCardLoggedTime(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_logged_time',
-      {
-        title: 'Get Card Logged Time',
-        description:
-          'Get the time logged on a card (and optionally its subtasks), with the individual logged time entries',
-        inputSchema: getCardLoggedTimeSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
+  private registerSubtaskWriteTools(server: McpServer, client: BusinessMapClient): void {
+    registerTool(server, {
+      name: 'create_card_subtask',
+      title: 'Create Card Subtask',
+      description: 'Create a new subtask for a card',
+      schema: createCardSubtaskSchema,
+      annotations: WRITE,
+      errorContext: 'creating card subtask',
+      successMessage: 'Subtask created successfully:',
+      handler: ({ card_id, ...subtaskData }) => client.cards.createCardSubtask(card_id, subtaskData),
+    });
+
+    registerTool(server, {
+      name: 'update_card_subtask',
+      title: 'Update Card Subtask',
+      description:
+        'Update an existing subtask of a card (description, owner, finished state, deadline, position)',
+      schema: updateCardSubtaskSchema,
+      annotations: WRITE_IDEMPOTENT,
+      errorContext: 'updating card subtask',
+      successMessage: 'Subtask updated successfully:',
+      handler: ({ card_id, subtask_id, ...subtaskData }) =>
+        client.cards.updateCardSubtask(card_id, subtask_id, subtaskData),
+    });
+
+    registerTool(server, {
+      name: 'delete_card_subtask',
+      title: 'Delete Card Subtask',
+      description: 'Delete a subtask from a card',
+      schema: deleteCardSubtaskSchema,
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+      errorContext: 'deleting card subtask',
+      successMessage: 'Subtask deleted successfully:',
+      handler: async ({ card_id, subtask_id }) => {
+        await client.cards.deleteCardSubtask(card_id, subtask_id);
+        return { card_id, subtask_id };
       },
-      async ({ card_id, include_subtasks }) => {
-        try {
-          const entries = await client.getCardLoggedTimes(card_id, include_subtasks ?? true);
-          const totalTime = entries.reduce((sum, entry) => sum + (entry.time || 0), 0);
-          return createSuccessResponse({ total_time: totalTime, entries, count: entries.length });
-        } catch (error) {
-          return createErrorResponse(error, 'getting card logged time');
-        }
-      }
-    );
+    });
   }
 
-  private registerGetCardBlockedTimes(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_blocked_times',
-      {
-        title: 'Get Card Blocked Times',
-        description:
-          'Get the full blocking history of a card, including when and where blocks occurred',
-        inputSchema: getCardBlockedTimesSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
+  private registerRelationshipWriteTools(server: McpServer, client: BusinessMapClient): void {
+    registerTool(server, {
+      name: 'add_card_parent',
+      title: 'Add Card Parent',
+      description: 'Make a card a parent of a given card',
+      schema: addCardParentSchema,
+      annotations: WRITE,
+      errorContext: 'adding card parent',
+      successMessage: 'Card parent added successfully:',
+      handler: ({ card_id, parent_card_id }) => client.cards.addCardParent(card_id, parent_card_id),
+    });
+
+    registerTool(server, {
+      name: 'remove_card_parent',
+      title: 'Remove Card Parent',
+      description: 'Remove the link between a child card and a parent card',
+      schema: removeCardParentSchema,
+      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false },
+      errorContext: 'removing card parent',
+      successMessage: 'Card parent removed successfully:',
+      handler: async ({ card_id, parent_card_id }) => {
+        await client.cards.removeCardParent(card_id, parent_card_id);
+        return { card_id, parent_card_id };
       },
-      async ({ card_id }) => {
-        try {
-          const card = await client.getCardBlockTimes(card_id);
-          if (!card) {
-            return createErrorResponse(
-              new Error(`Card ${card_id} not found`),
-              'getting card blocked times'
-            );
-          }
-          return createSuccessResponse(card);
-        } catch (error) {
-          return createErrorResponse(error, 'getting card blocked times');
-        }
-      }
-    );
+    });
+
+    registerTool(server, {
+      name: 'add_predecessor',
+      title: 'Add Predecessor',
+      description:
+        'Establish or update a predecessor-successor relationship between two cards. The predecessor_card_id becomes a prerequisite that must be completed before the card.',
+      schema: addPredecessorSchema,
+      errorContext: 'adding predecessor',
+      successMessage: 'Predecessor added successfully:',
+      handler: async ({ card_id, predecessor_card_id, linked_card_position, card_position }) => {
+        await client.cards.addPredecessor(card_id, predecessor_card_id, {
+          ...(linked_card_position !== undefined && { linked_card_position }),
+          ...(card_position !== undefined && { card_position }),
+        });
+        return { card_id, predecessor_card_id };
+      },
+    });
+
+    registerTool(server, {
+      name: 'remove_predecessor',
+      title: 'Remove Predecessor',
+      description: 'Remove the predecessor-successor relationship between two cards.',
+      schema: removePredecessorSchema,
+      errorContext: 'removing predecessor',
+      successMessage: 'Predecessor removed successfully:',
+      handler: async ({ card_id, predecessor_card_id }) => {
+        await client.cards.removePredecessor(card_id, predecessor_card_id);
+        return { card_id, predecessor_card_id };
+      },
+    });
   }
 
-  private registerGetCardFlowHistory(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_flow_history',
-      {
-        title: 'Get Card Flow History',
-        description:
-          "Get the card's movement history (transitions) across boards, workflows and columns with timing details",
-        inputSchema: getCardFlowHistorySchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
+  private registerCommentWriteTools(server: McpServer, client: BusinessMapClient): void {
+    registerTool(server, {
+      name: 'create_comment',
+      title: 'Create Comment',
+      description: 'Add a new comment to a card',
+      schema: createCommentSchema,
+      errorContext: 'creating comment',
+      successMessage: 'Comment created successfully:',
+      handler: ({ card_id, text }) => client.cards.createCardComment(card_id, { text }),
+    });
+
+    registerTool(server, {
+      name: 'update_comment',
+      title: 'Update Comment',
+      description: 'Update the text of an existing comment on a card',
+      schema: updateCommentSchema,
+      errorContext: 'updating comment',
+      successMessage: 'Comment updated successfully:',
+      handler: ({ card_id, comment_id, text }) =>
+        client.cards.updateCardComment(card_id, comment_id, { text }),
+    });
+
+    registerTool(server, {
+      name: 'delete_comment',
+      title: 'Delete Comment',
+      description: 'Delete a comment from a card',
+      schema: deleteCommentSchema,
+      errorContext: 'deleting comment',
+      successMessage: 'Comment deleted successfully:',
+      handler: async ({ card_id, comment_id }) => {
+        await client.cards.deleteCardComment(card_id, comment_id);
+        return { card_id, comment_id };
       },
-      async ({ card_id }) => {
-        try {
-          const card = await client.getCardTransitions(card_id);
-          if (!card) {
-            return createErrorResponse(
-              new Error(`Card ${card_id} not found`),
-              'getting card flow history'
-            );
-          }
-          return createSuccessResponse(card);
-        } catch (error) {
-          return createErrorResponse(error, 'getting card flow history');
-        }
-      }
-    );
+    });
   }
 
-  private registerGetCard(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card',
-      {
-        title: 'Get Card',
-        description: 'Get details of a specific card',
-        inputSchema: getCardSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
+  private registerTagStickerWriteTools(server: McpServer, client: BusinessMapClient): void {
+    registerTool(server, {
+      name: 'create_tag',
+      title: 'Create Tag',
+      description: 'Create a new tag in the workspace',
+      schema: createTagSchema,
+      errorContext: 'creating tag',
+      successMessage: 'Tag created successfully:',
+      handler: ({ label, color }) => client.cards.createTag({ label, color }),
+    });
+
+    registerTool(server, {
+      name: 'add_tag_to_card',
+      title: 'Add Tag to Card',
+      description: 'Add an existing tag to a card',
+      schema: addTagToCardSchema,
+      errorContext: 'adding tag to card',
+      successMessage: 'Tag added to card successfully:',
+      handler: async ({ card_id, tag_id }) => {
+        await client.cards.addTagToCard(card_id, tag_id);
+        return { card_id, tag_id };
       },
-      async ({ card_id }) => {
-        try {
-          const card = await client.getCard(card_id);
-          return createSuccessResponse(card);
-        } catch (error) {
-          return createErrorResponse(error, 'fetching card');
-        }
-      }
-    );
-  }
+    });
 
-  private registerGetCardSize(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_size',
-      {
-        title: 'Get Card Size',
-        description: 'Get the size/points of a specific card',
-        inputSchema: getCardSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
+    registerTool(server, {
+      name: 'remove_tag_from_card',
+      title: 'Remove Tag from Card',
+      description: 'Remove a tag from a card',
+      schema: removeTagFromCardSchema,
+      errorContext: 'removing tag from card',
+      successMessage: 'Tag removed from card successfully:',
+      handler: async ({ card_id, tag_id }) => {
+        await client.cards.removeTagFromCard(card_id, tag_id);
+        return { card_id, tag_id };
       },
-      async ({ card_id }) => {
-        try {
-          const card = await client.getCard(card_id);
-          const size = card.size || 0;
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Card "${card.title}" (ID: ${card_id}) has size: ${size} points`,
-              },
-            ],
-          };
-        } catch (error) {
-          return createErrorResponse(error, 'fetching card size');
-        }
-      }
-    );
-  }
+    });
 
-  private registerCreateCard(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'create_card',
-      {
-        title: 'Create Card',
-        description: 'Create a new card in a board',
-        inputSchema: createCardSchema.shape,
-        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
+    registerTool(server, {
+      name: 'add_sticker_to_card',
+      title: 'Add Sticker to Card',
+      description: 'Add a sticker to a card',
+      schema: addStickerToCardSchema,
+      errorContext: 'adding sticker to card',
+      successMessage: 'Sticker added to card successfully:',
+      handler: ({ card_id, sticker_id }) => client.cards.addStickerToCard(card_id, sticker_id),
+    });
+
+    registerTool(server, {
+      name: 'remove_sticker_from_card',
+      title: 'Remove Sticker from Card',
+      description:
+        'Remove a sticker from a card using the sticker-card association ID ' +
+        '(the "id" field returned when listing or adding stickers to a card)',
+      schema: removeStickerFromCardSchema,
+      errorContext: 'removing sticker from card',
+      successMessage: 'Sticker removed from card successfully:',
+      handler: async ({ card_id, sticker_card_id }) => {
+        await client.cards.removeStickerFromCard(card_id, sticker_card_id);
+        return { card_id, sticker_card_id };
       },
-      async (params) => {
-        try {
-          const card = await client.createCard(params);
-          return createSuccessResponse(card, 'Card created successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'creating card');
-        }
-      }
-    );
-  }
-
-  private registerMoveCard(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'move_card',
-      {
-        title: 'Move Card',
-        description: 'Move a card to a different column or lane',
-        inputSchema: moveCardSchema.shape,
-        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
-      },
-      async ({ card_id, column_id, lane_id, position }) => {
-        try {
-          const card = await client.moveCard(card_id, column_id, lane_id, position);
-          return createSuccessResponse(card, 'Card moved successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'moving card');
-        }
-      }
-    );
-  }
-
-  private registerUpdateCard(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'update_card',
-      {
-        title: 'Update Card',
-        description: "Update a card's properties",
-        inputSchema: updateCardSchema.shape,
-        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
-      },
-      async (params) => {
-        try {
-          const card = await client.updateCard(params);
-          return createSuccessResponse(card, 'Card updated successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'updating card');
-        }
-      }
-    );
-  }
-
-  private registerSetCardSize(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'set_card_size',
-      {
-        title: 'Set Card Size',
-        description: 'Set the size/points of a specific card',
-        inputSchema: cardSizeSchema.shape,
-        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
-      },
-      async ({ card_id, size }) => {
-        try {
-          const card = await client.updateCard({ card_id, size });
-          return {
-            content: [
-              {
-                type: 'text' as const,
-                text: `Card "${card.title}" (ID: ${card_id}) size updated to: ${size} points`,
-              },
-            ],
-          };
-        } catch (error) {
-          return createErrorResponse(error, 'setting card size');
-        }
-      }
-    );
-  }
-
-  private registerGetCardComments(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_comments',
-      {
-        title: 'Get Card Comments',
-        description: 'Get all comments for a specific card',
-        inputSchema: cardCommentsSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ card_id }) => {
-        try {
-          const comments = await client.getCardComments(card_id);
-          return createSuccessResponse({
-            comments,
-            count: comments.length,
-          });
-        } catch (error) {
-          return createErrorResponse(error, 'getting card comments');
-        }
-      }
-    );
-  }
-
-  private registerGetCardComment(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_comment',
-      {
-        title: 'Get Card Comment',
-        description: 'Get details of a specific comment from a card',
-        inputSchema: getCardCommentSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ card_id, comment_id }) => {
-        try {
-          const comment = await client.getCardComment(card_id, comment_id);
-          return createSuccessResponse(comment);
-        } catch (error) {
-          return createErrorResponse(error, 'getting card comment');
-        }
-      }
-    );
-  }
-
-  private registerGetCardCustomFields(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_custom_fields',
-      {
-        title: 'Get Card Custom Fields',
-        description: 'Get all custom fields for a specific card',
-        inputSchema: getCardSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ card_id }) => {
-        try {
-          const customFields = await client.getCardCustomFields(card_id);
-          return createSuccessResponse({
-            customFields,
-            count: customFields.length,
-          });
-        } catch (error) {
-          return createErrorResponse(error, 'getting card custom fields');
-        }
-      }
-    );
-  }
-
-  private registerGetCardTypes(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_types',
-      {
-        title: 'Get Card Types',
-        description: 'Get all available card types',
-        inputSchema: getCardTypesSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async () => {
-        try {
-          const cardTypes = await client.getCardTypes();
-          return createSuccessResponse({
-            cardTypes,
-            count: cardTypes.length,
-          });
-        } catch (error) {
-          return createErrorResponse(error, 'getting card types');
-        }
-      }
-    );
-  }
-
-  private registerGetCardHistory(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_history',
-      {
-        title: 'Get Card History',
-        description: 'Get the history of a specific card outcome',
-        inputSchema: getCardHistorySchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ card_id, outcome_id }) => {
-        try {
-          const history = await client.getCardHistory(card_id, outcome_id);
-          return createSuccessResponse({
-            history,
-            count: history.length,
-          });
-        } catch (error) {
-          return createErrorResponse(error, 'getting card history');
-        }
-      }
-    );
-  }
-
-  private registerGetCardOutcomes(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_outcomes',
-      {
-        title: 'Get Card Outcomes',
-        description: 'Get all outcomes for a specific card',
-        inputSchema: getCardOutcomesSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ card_id }) => {
-        try {
-          const outcomes = await client.getCardOutcomes(card_id);
-          return createSuccessResponse({
-            outcomes,
-            count: outcomes.length,
-          });
-        } catch (error) {
-          return createErrorResponse(error, 'getting card outcomes');
-        }
-      }
-    );
-  }
-
-  private registerGetCardLinkedCards(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_linked_cards',
-      {
-        title: 'Get Card Linked Cards',
-        description: 'Get all linked cards for a specific card',
-        inputSchema: getCardLinkedCardsSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ card_id }) => {
-        try {
-          const linkedCards = await client.getCardLinkedCards(card_id);
-          return createSuccessResponse({
-            linkedCards,
-            count: linkedCards.length,
-          });
-        } catch (error) {
-          return createErrorResponse(error, 'getting card linked cards');
-        }
-      }
-    );
-  }
-
-  private registerGetCardSubtasks(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_subtasks',
-      {
-        title: 'Get Card Subtasks',
-        description: 'Get all subtasks for a specific card',
-        inputSchema: getCardSubtasksSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ card_id }) => {
-        try {
-          const subtasks = await client.getCardSubtasks(card_id);
-          return createSuccessResponse({
-            subtasks,
-            count: subtasks.length,
-          });
-        } catch (error) {
-          return createErrorResponse(error, 'getting card subtasks');
-        }
-      }
-    );
-  }
-
-  private registerGetCardSubtask(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_subtask',
-      {
-        title: 'Get Card Subtask',
-        description: 'Get details of a specific subtask from a card',
-        inputSchema: getCardSubtaskSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ card_id, subtask_id }) => {
-        try {
-          const subtask = await client.getCardSubtask(card_id, subtask_id);
-          return createSuccessResponse(subtask);
-        } catch (error) {
-          return createErrorResponse(error, 'getting card subtask');
-        }
-      }
-    );
-  }
-
-  private registerCreateCardSubtask(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'create_card_subtask',
-      {
-        title: 'Create Card Subtask',
-        description: 'Create a new subtask for a card',
-        inputSchema: createCardSubtaskSchema.shape,
-        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
-      },
-      async (params) => {
-        try {
-          const { card_id, ...subtaskData } = params;
-          const subtask = await client.createCardSubtask(card_id, subtaskData);
-          return createSuccessResponse(subtask, 'Subtask created successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'creating card subtask');
-        }
-      }
-    );
-  }
-
-  private registerGetCardChildGraph(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_child_graph',
-      {
-        title: 'Get Card Child Graph',
-        description:
-          "Get the hierarchical graph of a card's children, including children of children",
-        inputSchema: getCardChildGraphSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ card_id }) => {
-        try {
-          const graph = await client.getCardChildGraph(card_id);
-          return createSuccessResponse({ children: graph, count: graph.length });
-        } catch (error) {
-          return createErrorResponse(error, 'getting card child graph');
-        }
-      }
-    );
-  }
-
-  private registerGetCardRevisions(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_revisions',
-      {
-        title: 'Get Card Revisions',
-        description:
-          'Get the chronological change history (revisions) of a card. Pass a revision number to get the full card state at that revision.',
-        inputSchema: getCardRevisionsSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ card_id, revision }) => {
-        try {
-          if (revision !== undefined) {
-            const details = await client.getCardRevision(card_id, revision);
-            return createSuccessResponse(details);
-          }
-          const revisions = await client.getCardRevisions(card_id);
-          return createSuccessResponse({ revisions, count: revisions.length });
-        } catch (error) {
-          return createErrorResponse(error, 'getting card revisions');
-        }
-      }
-    );
-  }
-
-  private registerUpdateCardSubtask(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'update_card_subtask',
-      {
-        title: 'Update Card Subtask',
-        description:
-          'Update an existing subtask of a card (description, owner, finished state, deadline, position)',
-        inputSchema: updateCardSubtaskSchema.shape,
-        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
-      },
-      async (params) => {
-        try {
-          const { card_id, subtask_id, ...subtaskData } = params;
-          const subtask = await client.updateCardSubtask(card_id, subtask_id, subtaskData);
-          return createSuccessResponse(subtask, 'Subtask updated successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'updating card subtask');
-        }
-      }
-    );
-  }
-
-  private registerDeleteCardSubtask(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'delete_card_subtask',
-      {
-        title: 'Delete Card Subtask',
-        description: 'Delete a subtask from a card',
-        inputSchema: deleteCardSubtaskSchema.shape,
-        annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
-      },
-      async ({ card_id, subtask_id }) => {
-        try {
-          await client.deleteCardSubtask(card_id, subtask_id);
-          return createSuccessResponse({ card_id, subtask_id }, 'Subtask deleted successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'deleting card subtask');
-        }
-      }
-    );
-  }
-
-  private registerGetCardParents(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_parents',
-      {
-        title: 'Get Card Parents',
-        description: 'Get a list of parent cards for a specific card',
-        inputSchema: getCardParentsSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ card_id }) => {
-        try {
-          const parents = await client.getCardParents(card_id);
-          return createSuccessResponse({
-            parents,
-            count: parents.length,
-          });
-        } catch (error) {
-          return createErrorResponse(error, 'getting card parents');
-        }
-      }
-    );
-  }
-
-  private registerGetCardParent(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_parent',
-      {
-        title: 'Get Card Parent',
-        description: 'Check if a card is a parent of a given card',
-        inputSchema: getCardParentSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ card_id, parent_card_id }) => {
-        try {
-          const parent = await client.getCardParent(card_id, parent_card_id);
-          return createSuccessResponse(parent);
-        } catch (error) {
-          return createErrorResponse(error, 'getting card parent');
-        }
-      }
-    );
-  }
-
-  private registerAddCardParent(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'add_card_parent',
-      {
-        title: 'Add Card Parent',
-        description: 'Make a card a parent of a given card',
-        inputSchema: addCardParentSchema.shape,
-        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
-      },
-      async ({ card_id, parent_card_id }) => {
-        try {
-          const result = await client.addCardParent(card_id, parent_card_id);
-          return createSuccessResponse(result, 'Card parent added successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'adding card parent');
-        }
-      }
-    );
-  }
-
-  private registerRemoveCardParent(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'remove_card_parent',
-      {
-        title: 'Remove Card Parent',
-        description: 'Remove the link between a child card and a parent card',
-        inputSchema: removeCardParentSchema.shape,
-        annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false },
-      },
-      async ({ card_id, parent_card_id }) => {
-        try {
-          await client.removeCardParent(card_id, parent_card_id);
-          return createSuccessResponse(
-            { card_id, parent_card_id },
-            'Card parent removed successfully:'
-          );
-        } catch (error) {
-          return createErrorResponse(error, 'removing card parent');
-        }
-      }
-    );
-  }
-
-  private registerGetCardParentGraph(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_parent_graph',
-      {
-        title: 'Get Card Parent Graph',
-        description: 'Get a list of parent cards including their parent cards too',
-        inputSchema: getCardParentGraphSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ card_id }) => {
-        try {
-          const parentGraph = await client.getCardParentGraph(card_id);
-          return createSuccessResponse({
-            parentGraph,
-            count: parentGraph.length,
-          });
-        } catch (error) {
-          return createErrorResponse(error, 'getting card parent graph');
-        }
-      }
-    );
-  }
-
-  private registerGetCardChildren(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_card_children',
-      {
-        title: 'Get Card Children',
-        description: 'Get a list of child cards of a specified parent card',
-        inputSchema: getCardChildrenSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ card_id }) => {
-        try {
-          const children = await client.getCardChildren(card_id);
-          return createSuccessResponse({
-            children,
-            count: children.length,
-          });
-        } catch (error) {
-          return createErrorResponse(error, 'getting card children');
-        }
-      }
-    );
-  }
-
-  // ─── Block / Unblock ────────────────────────────────────────────────────────
-
-  private registerBlockCard(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'block_card',
-      {
-        title: 'Block Card',
-        description: 'Block a card and set a reason/comment explaining why it is blocked',
-        inputSchema: blockCardSchema.shape,
-      },
-      async ({ card_id, reason }) => {
-        try {
-          await client.blockCard(card_id, reason);
-          return createSuccessResponse({ card_id, reason }, 'Card blocked successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'blocking card');
-        }
-      }
-    );
-  }
-
-  private registerUnblockCard(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'unblock_card',
-      {
-        title: 'Unblock Card',
-        description: 'Unblock a card by removing its block reason',
-        inputSchema: unblockCardSchema.shape,
-      },
-      async ({ card_id }) => {
-        try {
-          await client.unblockCard(card_id);
-          return createSuccessResponse({ card_id }, 'Card unblocked successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'unblocking card');
-        }
-      }
-    );
-  }
-
-  // ─── Comments ───────────────────────────────────────────────────────────────
-
-  private registerCreateComment(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'create_comment',
-      {
-        title: 'Create Comment',
-        description: 'Add a new comment to a card',
-        inputSchema: createCommentSchema.shape,
-      },
-      async ({ card_id, text }) => {
-        try {
-          const comment = await client.createCardComment(card_id, { text });
-          return createSuccessResponse(comment, 'Comment created successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'creating comment');
-        }
-      }
-    );
-  }
-
-  private registerUpdateComment(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'update_comment',
-      {
-        title: 'Update Comment',
-        description: 'Update the text of an existing comment on a card',
-        inputSchema: updateCommentSchema.shape,
-      },
-      async ({ card_id, comment_id, text }) => {
-        try {
-          const comment = await client.updateCardComment(card_id, comment_id, { text });
-          return createSuccessResponse(comment, 'Comment updated successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'updating comment');
-        }
-      }
-    );
-  }
-
-  private registerDeleteComment(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'delete_comment',
-      {
-        title: 'Delete Comment',
-        description: 'Delete a comment from a card',
-        inputSchema: deleteCommentSchema.shape,
-      },
-      async ({ card_id, comment_id }) => {
-        try {
-          await client.deleteCardComment(card_id, comment_id);
-          return createSuccessResponse({ card_id, comment_id }, 'Comment deleted successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'deleting comment');
-        }
-      }
-    );
-  }
-
-  // ─── Tags ────────────────────────────────────────────────────────────────────
-
-  private registerCreateTag(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'create_tag',
-      {
-        title: 'Create Tag',
-        description: 'Create a new tag in the workspace',
-        inputSchema: createTagSchema.shape,
-      },
-      async ({ label, color }) => {
-        try {
-          const tag = await client.createTag({ label, color });
-          return createSuccessResponse(tag, 'Tag created successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'creating tag');
-        }
-      }
-    );
-  }
-
-  private registerAddTagToCard(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'add_tag_to_card',
-      {
-        title: 'Add Tag to Card',
-        description: 'Add an existing tag to a card',
-        inputSchema: addTagToCardSchema.shape,
-      },
-      async ({ card_id, tag_id }) => {
-        try {
-          await client.addTagToCard(card_id, tag_id);
-          return createSuccessResponse({ card_id, tag_id }, 'Tag added to card successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'adding tag to card');
-        }
-      }
-    );
-  }
-
-  private registerRemoveTagFromCard(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'remove_tag_from_card',
-      {
-        title: 'Remove Tag from Card',
-        description: 'Remove a tag from a card',
-        inputSchema: removeTagFromCardSchema.shape,
-      },
-      async ({ card_id, tag_id }) => {
-        try {
-          await client.removeTagFromCard(card_id, tag_id);
-          return createSuccessResponse(
-            { card_id, tag_id },
-            'Tag removed from card successfully:'
-          );
-        } catch (error) {
-          return createErrorResponse(error, 'removing tag from card');
-        }
-      }
-    );
-  }
-
-  // ─── Stickers ───────────────────────────────────────────────────────────────
-
-  private registerAddStickerToCard(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'add_sticker_to_card',
-      {
-        title: 'Add Sticker to Card',
-        description: 'Add a sticker to a card',
-        inputSchema: addStickerToCardSchema.shape,
-      },
-      async ({ card_id, sticker_id }) => {
-        try {
-          const result = await client.addStickerToCard(card_id, sticker_id);
-          return createSuccessResponse(result, 'Sticker added to card successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'adding sticker to card');
-        }
-      }
-    );
-  }
-
-  private registerRemoveStickerFromCard(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'remove_sticker_from_card',
-      {
-        title: 'Remove Sticker from Card',
-        description:
-          'Remove a sticker from a card using the sticker-card association ID ' +
-          '(the "id" field returned when listing or adding stickers to a card)',
-        inputSchema: removeStickerFromCardSchema.shape,
-      },
-      async ({ card_id, sticker_card_id }) => {
-        try {
-          await client.removeStickerFromCard(card_id, sticker_card_id);
-          return createSuccessResponse(
-            { card_id, sticker_card_id },
-            'Sticker removed from card successfully:'
-          );
-        } catch (error) {
-          return createErrorResponse(error, 'removing sticker from card');
-        }
-      }
-    );
-  }
-
-  // ─── Delete Card ─────────────────────────────────────────────────────────────
-
-  private registerDeleteCard(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'delete_card',
-      {
-        title: 'Delete Card',
-        description:
-          'Permanently delete a card. This action cannot be undone and the card cannot be recovered.',
-        inputSchema: deleteCardSchema.shape,
-      },
-      async ({ card_id }) => {
-        try {
-          await client.deleteCard(card_id);
-          return createSuccessResponse({ card_id }, 'Card deleted successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'deleting card');
-        }
-      }
-    );
-  }
-
-  // ─── Predecessors ─────────────────────────────────────────────────────────────
-
-  private registerAddPredecessor(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'add_predecessor',
-      {
-        title: 'Add Predecessor',
-        description:
-          'Establish or update a predecessor-successor relationship between two cards. The predecessor_card_id becomes a prerequisite that must be completed before the card.',
-        inputSchema: addPredecessorSchema.shape,
-      },
-      async ({ card_id, predecessor_card_id, linked_card_position, card_position }) => {
-        try {
-          const params: Record<string, number> = {};
-          if (linked_card_position !== undefined) params['linked_card_position'] = linked_card_position;
-          if (card_position !== undefined) params['card_position'] = card_position;
-          await client.addPredecessor(card_id, predecessor_card_id, params);
-          return createSuccessResponse(
-            { card_id, predecessor_card_id },
-            'Predecessor added successfully:'
-          );
-        } catch (error) {
-          return createErrorResponse(error, 'adding predecessor');
-        }
-      }
-    );
-  }
-
-  private registerRemovePredecessor(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'remove_predecessor',
-      {
-        title: 'Remove Predecessor',
-        description:
-          'Remove the predecessor-successor relationship between two cards.',
-        inputSchema: removePredecessorSchema.shape,
-      },
-      async ({ card_id, predecessor_card_id }) => {
-        try {
-          await client.removePredecessor(card_id, predecessor_card_id);
-          return createSuccessResponse(
-            { card_id, predecessor_card_id },
-            'Predecessor removed successfully:'
-          );
-        } catch (error) {
-          return createErrorResponse(error, 'removing predecessor');
-        }
-      }
-    );
+    });
   }
 }

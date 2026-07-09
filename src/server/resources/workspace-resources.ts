@@ -10,7 +10,7 @@ export class WorkspaceResourceHandler implements BaseResourceHandler {
             {},
             async (uri) => {
                 try {
-                    const workspaces = await client.getWorkspaces();
+                    const workspaces = await client.workspaces.getWorkspaces();
                     return {
                         contents: [
                             {

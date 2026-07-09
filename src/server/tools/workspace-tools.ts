@@ -6,100 +6,53 @@ import {
   listWorkspacesSchema,
   updateWorkspaceSchema,
 } from '../../schemas/workspace-schemas.js';
-import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
+import { BaseToolHandler, READ_ONLY, WRITE, WRITE_IDEMPOTENT, registerTool } from './base-tool.js';
 
 export class WorkspaceToolHandler implements BaseToolHandler {
   registerTools(server: McpServer, client: BusinessMapClient, readOnlyMode: boolean): void {
-    this.registerListWorkspaces(server, client);
-    this.registerGetWorkspace(server, client);
+    registerTool(server, {
+      name: 'list_workspaces',
+      title: 'List Workspaces',
+      description: 'Get a list of all workspaces',
+      schema: listWorkspacesSchema,
+      annotations: READ_ONLY,
+      errorContext: 'fetching workspaces',
+      handler: () => client.workspaces.getWorkspaces(),
+    });
+
+    registerTool(server, {
+      name: 'get_workspace',
+      title: 'Get Workspace',
+      description: 'Get details of a specific workspace',
+      schema: getWorkspaceSchema,
+      annotations: READ_ONLY,
+      errorContext: 'fetching workspace',
+      handler: ({ workspace_id }) => client.workspaces.getWorkspace(workspace_id),
+    });
 
     if (!readOnlyMode) {
-      this.registerCreateWorkspace(server, client);
-      this.registerUpdateWorkspace(server, client);
-    }
-  }
-
-  private registerListWorkspaces(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'list_workspaces',
-      {
-        title: 'List Workspaces',
-        description: 'Get a list of all workspaces',
-        inputSchema: listWorkspacesSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async () => {
-        try {
-          const workspaces = await client.getWorkspaces();
-          return createSuccessResponse(workspaces);
-        } catch (error) {
-          return createErrorResponse(error, 'fetching workspaces');
-        }
-      }
-    );
-  }
-
-  private registerGetWorkspace(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_workspace',
-      {
-        title: 'Get Workspace',
-        description: 'Get details of a specific workspace',
-        inputSchema: getWorkspaceSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ workspace_id }) => {
-        try {
-          const workspace = await client.getWorkspace(workspace_id);
-          return createSuccessResponse(workspace);
-        } catch (error) {
-          return createErrorResponse(error, 'fetching workspace');
-        }
-      }
-    );
-  }
-
-  private registerCreateWorkspace(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'create_workspace',
-      {
+      registerTool(server, {
+        name: 'create_workspace',
         title: 'Create Workspace',
         description: 'Create a new workspace',
-        inputSchema: createWorkspaceSchema.shape,
-        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
-      },
-      async ({ name, description, type }) => {
-        try {
-          const workspace = await client.createWorkspace({
-            name,
-            description,
-            ...(type !== undefined && { type }),
-          });
-          return createSuccessResponse(workspace, 'Workspace created successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'creating workspace');
-        }
-      }
-    );
-  }
+        schema: createWorkspaceSchema,
+        annotations: WRITE,
+        errorContext: 'creating workspace',
+        successMessage: 'Workspace created successfully:',
+        handler: ({ name, description, type }) =>
+          client.workspaces.createWorkspace({ name, description, ...(type !== undefined && { type }) }),
+      });
 
-  private registerUpdateWorkspace(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'update_workspace',
-      {
+      registerTool(server, {
+        name: 'update_workspace',
         title: 'Update Workspace',
         description: 'Update the name of an existing workspace',
-        inputSchema: updateWorkspaceSchema.shape,
-        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
-      },
-      async ({ workspace_id, name }) => {
-        try {
-          const workspace = await client.updateWorkspace(workspace_id, { name });
-          return createSuccessResponse(workspace, 'Workspace updated successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'updating workspace');
-        }
-      }
-    );
+        schema: updateWorkspaceSchema,
+        annotations: WRITE_IDEMPOTENT,
+        errorContext: 'updating workspace',
+        successMessage: 'Workspace updated successfully:',
+        handler: ({ workspace_id, name }) => client.workspaces.updateWorkspace(workspace_id, { name }),
+      });
+    }
   }
 }

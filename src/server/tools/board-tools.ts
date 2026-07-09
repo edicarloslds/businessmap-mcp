@@ -18,82 +18,219 @@ import {
   updateLaneSchema,
 } from '../../schemas/index.js';
 import { logger } from '../../utils/logger.js';
-import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
+import {
+  BaseToolHandler,
+  READ_ONLY,
+  WRITE,
+  WRITE_IDEMPOTENT,
+  createErrorResponse,
+  createSuccessResponse,
+  registerTool,
+} from './base-tool.js';
 
 export class BoardToolHandler implements BaseToolHandler {
   registerTools(server: McpServer, client: BusinessMapClient, readOnlyMode: boolean): void {
-    this.registerListBoards(server, client);
-    this.registerSearchBoard(server, client);
-    this.registerGetColumns(server, client);
-    this.registerGetLanes(server, client);
-    this.registerGetLane(server, client);
-    this.registerGetCurrentBoardStructure(server, client);
+    registerTool(server, {
+      name: 'list_boards',
+      title: 'List Boards',
+      description: 'Get a list of boards with optional filters',
+      schema: listBoardsSchema,
+      annotations: READ_ONLY,
+      errorContext: 'fetching boards',
+      handler: (params) => client.boards.getBoards(params),
+    });
+
+    registerTool(server, {
+      name: 'search_board',
+      title: 'Search Board',
+      description:
+        'Search for a board by ID or name, with intelligent fallback to list all boards if direct search fails',
+      schema: searchBoardSchema,
+      annotations: READ_ONLY,
+      errorContext: 'searching for board',
+      handler: async ({ board_id, board_name, workspace_id }) => {
+        if (board_id) {
+          return this.searchBoardById(client, board_id, workspace_id);
+        }
+        if (board_name) {
+          return this.searchBoardByName(client, board_name, workspace_id);
+        }
+        // If neither ID nor name provided, list all boards
+        return this.getAllBoards(client, workspace_id);
+      },
+    });
+
+    registerTool(server, {
+      name: 'get_columns',
+      title: 'Get Board Columns',
+      description: 'Get all columns for a board',
+      schema: getColumnsSchema,
+      annotations: READ_ONLY,
+      errorContext: 'fetching board columns',
+      handler: ({ board_id }) => client.boards.getColumns(board_id),
+    });
+
+    registerTool(server, {
+      name: 'get_lanes',
+      title: 'Get Board Lanes',
+      description: 'Get all lanes/swimlanes for a board',
+      schema: getLanesSchema,
+      annotations: READ_ONLY,
+      errorContext: 'fetching board lanes',
+      handler: ({ board_id }) => client.boards.getLanes(board_id),
+    });
+
+    registerTool(server, {
+      name: 'get_lane',
+      title: 'Get Lane Details',
+      description: 'Get details of a specific lane/swimlane',
+      schema: getLaneSchema,
+      annotations: READ_ONLY,
+      errorContext: 'fetching lane details',
+      handler: ({ board_id, lane_id }) => client.boards.getLane(board_id, lane_id),
+    });
+
+    registerTool(server, {
+      name: 'get_current_board_structure',
+      title: 'Get Current Board Structure',
+      description:
+        'Get the complete current structure of a board including workflows, columns, lanes, and configurations',
+      schema: getCurrentBoardStructureSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting current board structure',
+      successMessage: 'Board structure retrieved successfully:',
+      handler: ({ board_id }) => client.boards.getCurrentBoardStructure(board_id),
+    });
 
     if (!readOnlyMode) {
-      this.registerCreateBoard(server, client);
-      this.registerUpdateBoard(server, client);
-      this.registerCreateLane(server, client);
-      this.registerUpdateLane(server, client);
-      this.registerCreateColumn(server, client);
-      this.registerUpdateColumn(server, client);
-      this.registerDeleteColumn(server, client);
-    }
-  }
+      registerTool(server, {
+        name: 'create_board',
+        title: 'Create Board',
+        description: 'Create a new board in a workspace',
+        schema: createBoardSchema,
+        annotations: WRITE,
+        errorContext: 'creating board',
+        successMessage: 'Board created successfully:',
+        handler: ({ name, workspace_id, description }) =>
+          client.boards.createBoard({ name, workspace_id, description }),
+      });
 
-  private registerListBoards(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'list_boards',
-      {
-        title: 'List Boards',
-        description: 'Get a list of boards with optional filters',
-        inputSchema: listBoardsSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async (params) => {
-        try {
-          const boards = await client.getBoards(params);
-          return createSuccessResponse(boards);
-        } catch (error) {
-          return createErrorResponse(error, 'fetching boards');
-        }
-      }
-    );
-  }
+      registerTool(server, {
+        name: 'update_board',
+        title: 'Update Board',
+        description: 'Update the name and/or description of an existing board',
+        schema: updateBoardSchema,
+        annotations: WRITE_IDEMPOTENT,
+        errorContext: 'updating board',
+        successMessage: 'Board updated successfully:',
+        handler: ({ board_id, name, description }) =>
+          client.boards.updateBoard(board_id, {
+            ...(name !== undefined && { name }),
+            ...(description !== undefined && { description }),
+          }),
+      });
 
-  private registerSearchBoard(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'search_board',
-      {
-        title: 'Search Board',
+      registerTool(server, {
+        name: 'create_lane',
+        title: 'Create Lane',
+        description: 'Create a new lane/swimlane in a board',
+        schema: createLaneSchema,
+        annotations: WRITE,
+        errorContext: 'creating lane',
+        successMessage: 'Lane created successfully:',
+        handler: ({ board_id, workflow_id, name, description, color, position, parent_lane_id }) =>
+          client.boards.createLane(board_id, {
+            workflow_id,
+            name,
+            description: description || null,
+            ...(color !== undefined && { color }),
+            position,
+            ...(parent_lane_id !== undefined && { parent_lane_id }),
+          }),
+      });
+
+      registerTool(server, {
+        name: 'update_lane',
+        title: 'Update Lane',
         description:
-          'Search for a board by ID or name, with intelligent fallback to list all boards if direct search fails',
-        inputSchema: searchBoardSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ board_id, board_name, workspace_id }) => {
-        try {
-          if (board_id) {
-            return await this.searchBoardById(client, board_id, workspace_id);
-          }
+          'Update an existing lane/swimlane (name, description, color, position or parent lane)',
+        schema: updateLaneSchema,
+        annotations: WRITE_IDEMPOTENT,
+        errorContext: 'updating lane',
+        successMessage: 'Lane updated successfully:',
+        handler: ({ board_id, lane_id, name, description, color, position, parent_lane_id }) =>
+          client.boards.updateLane(board_id, lane_id, {
+            ...(name !== undefined && { name }),
+            ...(description !== undefined && { description }),
+            ...(color !== undefined && { color }),
+            ...(position !== undefined && { position }),
+            ...(parent_lane_id !== undefined && { parent_lane_id }),
+          }),
+      });
 
-          if (board_name) {
-            return await this.searchBoardByName(client, board_name, workspace_id);
-          }
+      registerTool(server, {
+        name: 'create_column',
+        title: 'Create Column',
+        description:
+          'Create a new column on a board. Supports both main columns (requires workflow_id and section) and sub-columns (requires parent_column_id). Section values: 1=Backlog, 2=Requested, 3=Progress, 4=Done.',
+        schema: createColumnInputSchema,
+        errorContext: 'creating column',
+        successMessage: 'Column created successfully:',
+        handler: (params) => {
+          const { board_id, workflow_id, section, parent_column_id, position, name, limit, description } =
+            createColumnSchema.parse(params);
+          const sharedFields = {
+            position,
+            name,
+            ...(limit !== undefined && { limit }),
+            ...(description && { description }),
+          };
+          return client.boards.createColumn(
+            board_id,
+            parent_column_id
+              ? { parent_column_id, ...sharedFields }
+              : { workflow_id, section, ...sharedFields }
+          );
+        },
+      });
 
-          // If neither ID nor name provided, list all boards
-          return await this.getAllBoards(client, workspace_id);
-        } catch (error) {
-          return createErrorResponse(error, 'searching for board');
-        }
-      }
-    );
+      registerTool(server, {
+        name: 'update_column',
+        title: 'Update Column',
+        description: 'Update the details of a specific column on a board',
+        schema: updateColumnSchema,
+        errorContext: 'updating column',
+        successMessage: 'Column updated successfully:',
+        handler: ({ board_id, column_id, name, limit, section, position, description }) =>
+          client.boards.updateColumn(board_id, column_id, {
+            ...(name !== undefined && { name }),
+            ...(limit !== undefined && { limit }),
+            ...(section !== undefined && { section }),
+            ...(position !== undefined && { position }),
+            ...(description !== undefined && { description }),
+          }),
+      });
+
+      registerTool(server, {
+        name: 'delete_column',
+        title: 'Delete Column',
+        description: 'Delete a column from a board',
+        schema: deleteColumnSchema,
+        errorContext: 'deleting column',
+        successMessage: 'Column deleted successfully:',
+        handler: async ({ board_id, column_id }) => {
+          await client.boards.deleteColumn(board_id, column_id);
+          return { board_id, column_id };
+        },
+      });
+    }
   }
 
   private async searchBoardById(client: BusinessMapClient, boardId: number, workspaceId?: number) {
     try {
       const [board, structure] = await Promise.all([
-        client.getBoard(boardId),
-        client.getBoardStructure(boardId),
+        client.boards.getBoard(boardId),
+        client.boards.getBoardStructure(boardId),
       ]);
       return createSuccessResponse({ ...board, structure }, 'Board found directly:');
     } catch (directError) {
@@ -109,7 +246,7 @@ export class BoardToolHandler implements BaseToolHandler {
     boardId: number,
     workspaceId?: number
   ) {
-    const boards = await client.getBoards(workspaceId ? { workspace_id: workspaceId } : undefined);
+    const boards = await client.boards.getBoards(workspaceId ? { workspace_id: workspaceId } : undefined);
     const foundBoard = boards.find((b) => b.board_id === boardId);
 
     if (!foundBoard) {
@@ -129,7 +266,7 @@ export class BoardToolHandler implements BaseToolHandler {
     boardName: string,
     workspaceId?: number
   ) {
-    const boards = await client.getBoards(workspaceId ? { workspace_id: workspaceId } : undefined);
+    const boards = await client.boards.getBoards(workspaceId ? { workspace_id: workspaceId } : undefined);
     const foundBoards = boards.filter((b) =>
       b.name.toLowerCase().includes(boardName.toLowerCase())
     );
@@ -158,7 +295,7 @@ export class BoardToolHandler implements BaseToolHandler {
   }
 
   private async getAllBoards(client: BusinessMapClient, workspaceId?: number) {
-    const boards = await client.getBoards(workspaceId ? { workspace_id: workspaceId } : undefined);
+    const boards = await client.boards.getBoards(workspaceId ? { workspace_id: workspaceId } : undefined);
     return createSuccessResponse(this.formatBoardsList(boards), 'All available boards:');
   }
 
@@ -168,7 +305,7 @@ export class BoardToolHandler implements BaseToolHandler {
     successMessage: string
   ) {
     try {
-      const structure = await client.getBoardStructure(board.board_id!);
+      const structure = await client.boards.getBoardStructure(board.board_id!);
       return createSuccessResponse({ ...board, structure }, successMessage);
     } catch (structureError) {
       logger.warn(
@@ -187,264 +324,5 @@ export class BoardToolHandler implements BaseToolHandler {
       name: b.name,
       workspace_id: b.workspace_id,
     }));
-  }
-
-  private registerGetColumns(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_columns',
-      {
-        title: 'Get Board Columns',
-        description: 'Get all columns for a board',
-        inputSchema: getColumnsSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ board_id }) => {
-        try {
-          const columns = await client.getColumns(board_id);
-          return createSuccessResponse(columns);
-        } catch (error) {
-          return createErrorResponse(error, 'fetching board columns');
-        }
-      }
-    );
-  }
-
-  private registerGetLanes(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_lanes',
-      {
-        title: 'Get Board Lanes',
-        description: 'Get all lanes/swimlanes for a board',
-        inputSchema: getLanesSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ board_id }) => {
-        try {
-          const lanes = await client.getLanes(board_id);
-          return createSuccessResponse(lanes);
-        } catch (error) {
-          return createErrorResponse(error, 'fetching board lanes');
-        }
-      }
-    );
-  }
-
-  private registerGetLane(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_lane',
-      {
-        title: 'Get Lane Details',
-        description: 'Get details of a specific lane/swimlane',
-        inputSchema: getLaneSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ board_id, lane_id }) => {
-        try {
-          const lane = await client.getLane(board_id, lane_id);
-          return createSuccessResponse(lane);
-        } catch (error) {
-          return createErrorResponse(error, 'fetching lane details');
-        }
-      }
-    );
-  }
-
-  private registerCreateBoard(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'create_board',
-      {
-        title: 'Create Board',
-        description: 'Create a new board in a workspace',
-        inputSchema: createBoardSchema.shape,
-        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
-      },
-      async ({ name, workspace_id, description }) => {
-        try {
-          const board = await client.createBoard({
-            name,
-            workspace_id,
-            description,
-          });
-          return createSuccessResponse(board, 'Board created successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'creating board');
-        }
-      }
-    );
-  }
-
-  private registerCreateLane(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'create_lane',
-      {
-        title: 'Create Lane',
-        description: 'Create a new lane/swimlane in a board',
-        inputSchema: createLaneSchema.shape,
-        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false },
-      },
-      async ({ board_id, workflow_id, name, description, color, position, parent_lane_id }) => {
-        try {
-          const lane = await client.createLane(board_id, {
-            workflow_id,
-            name,
-            description: description || null,
-            ...(color !== undefined && { color }),
-            position,
-            ...(parent_lane_id !== undefined && { parent_lane_id }),
-          });
-          return createSuccessResponse(lane, 'Lane created successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'creating lane');
-        }
-      }
-    );
-  }
-
-  private registerUpdateLane(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'update_lane',
-      {
-        title: 'Update Lane',
-        description:
-          'Update an existing lane/swimlane (name, description, color, position or parent lane)',
-        inputSchema: updateLaneSchema.shape,
-        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
-      },
-      async ({ board_id, lane_id, name, description, color, position, parent_lane_id }) => {
-        try {
-          const lane = await client.updateLane(board_id, lane_id, {
-            ...(name !== undefined && { name }),
-            ...(description !== undefined && { description }),
-            ...(color !== undefined && { color }),
-            ...(position !== undefined && { position }),
-            ...(parent_lane_id !== undefined && { parent_lane_id }),
-          });
-          return createSuccessResponse(lane, 'Lane updated successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'updating lane');
-        }
-      }
-    );
-  }
-
-  private registerUpdateBoard(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'update_board',
-      {
-        title: 'Update Board',
-        description: 'Update the name and/or description of an existing board',
-        inputSchema: updateBoardSchema.shape,
-        annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true },
-      },
-      async ({ board_id, name, description }) => {
-        try {
-          const board = await client.updateBoard(board_id, {
-            ...(name !== undefined && { name }),
-            ...(description !== undefined && { description }),
-          });
-          return createSuccessResponse(board, 'Board updated successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'updating board');
-        }
-      }
-    );
-  }
-
-  private registerGetCurrentBoardStructure(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_current_board_structure',
-      {
-        title: 'Get Current Board Structure',
-        description:
-          'Get the complete current structure of a board including workflows, columns, lanes, and configurations',
-        inputSchema: getCurrentBoardStructureSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ board_id }) => {
-        try {
-          const structure = await client.getCurrentBoardStructure(board_id);
-          return createSuccessResponse(structure, 'Board structure retrieved successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'getting current board structure');
-        }
-      }
-    );
-  }
-
-  private registerCreateColumn(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'create_column',
-      {
-        title: 'Create Column',
-        description:
-          'Create a new column on a board. Supports both main columns (requires workflow_id and section) and sub-columns (requires parent_column_id). Section values: 1=Backlog, 2=Requested, 3=Progress, 4=Done.',
-        inputSchema: createColumnInputSchema.shape,
-      },
-      async (params) => {
-        try {
-          const {
-            board_id,
-            workflow_id,
-            section,
-            parent_column_id,
-            position,
-            name,
-            limit,
-            description,
-          } = createColumnSchema.parse(params);
-          const columnParams = parent_column_id
-            ? { parent_column_id, position, name, ...(limit !== undefined && { limit }), ...(description && { description }) }
-            : { workflow_id, section, position, name, ...(limit !== undefined && { limit }), ...(description && { description }) };
-          const column = await client.createColumn(board_id, columnParams);
-          return createSuccessResponse(column, 'Column created successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'creating column');
-        }
-      }
-    );
-  }
-
-  private registerUpdateColumn(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'update_column',
-      {
-        title: 'Update Column',
-        description: 'Update the details of a specific column on a board',
-        inputSchema: updateColumnSchema.shape,
-      },
-      async ({ board_id, column_id, name, limit, section, position, description }) => {
-        try {
-          const params: Record<string, unknown> = {};
-          if (name !== undefined) params['name'] = name;
-          if (limit !== undefined) params['limit'] = limit;
-          if (section !== undefined) params['section'] = section;
-          if (position !== undefined) params['position'] = position;
-          if (description !== undefined) params['description'] = description;
-          const column = await client.updateColumn(board_id, column_id, params);
-          return createSuccessResponse(column, 'Column updated successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'updating column');
-        }
-      }
-    );
-  }
-
-  private registerDeleteColumn(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'delete_column',
-      {
-        title: 'Delete Column',
-        description: 'Delete a column from a board',
-        inputSchema: deleteColumnSchema.shape,
-      },
-      async ({ board_id, column_id }) => {
-        try {
-          await client.deleteColumn(board_id, column_id);
-          return createSuccessResponse({ board_id, column_id }, 'Column deleted successfully:');
-        } catch (error) {
-          return createErrorResponse(error, 'deleting column');
-        }
-      }
-    );
   }
 }

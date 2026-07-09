@@ -10,6 +10,38 @@ export const dateTimeFilterSchema = {
   to_date: z.string().optional(),
 };
 
+/**
+ * Generate the standard `<prefix>_from`, `<prefix>_from_date`, `<prefix>_to`,
+ * `<prefix>_to_date` quartet of optional date filters used by card listing endpoints.
+ * `label` is the human wording used in the descriptions (e.g. 'archived', 'first end').
+ */
+export function dateRangeFilters<P extends string>(
+  prefix: P,
+  label: string
+): Record<`${P}_from` | `${P}_from_date` | `${P}_to` | `${P}_to_date`, z.ZodOptional<z.ZodString>> {
+  return {
+    [`${prefix}_from`]: z
+      .string()
+      .optional()
+      .describe(`The first date and time of ${label} cards for which you want results`),
+    [`${prefix}_from_date`]: z
+      .string()
+      .optional()
+      .describe(`The first date of ${label} cards for which you want results`),
+    [`${prefix}_to`]: z
+      .string()
+      .optional()
+      .describe(`The last date and time of ${label} cards for which you want results`),
+    [`${prefix}_to_date`]: z
+      .string()
+      .optional()
+      .describe(`The last date of ${label} cards for which you want results`),
+  } as Record<
+    `${P}_from` | `${P}_from_date` | `${P}_to` | `${P}_to_date`,
+    z.ZodOptional<z.ZodString>
+  >;
+}
+
 // Pagination
 export const paginationSchema = {
   page: z

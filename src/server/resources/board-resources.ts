@@ -11,7 +11,7 @@ export class BoardResourceHandler implements BaseResourceHandler {
             {},
             async (uri) => {
                 try {
-                    const boards = await client.getBoards();
+                    const boards = await client.boards.getBoards();
                     return {
                         contents: [
                             {
@@ -37,7 +37,7 @@ export class BoardResourceHandler implements BaseResourceHandler {
                     if (Number.isNaN(boardId)) {
                         throw new TypeError(`Invalid board_id: "${variables.board_id}" is not a valid number`);
                     }
-                    const board = await client.getBoard(boardId);
+                    const board = await client.boards.getBoard(boardId);
                     return {
                         contents: [
                             {

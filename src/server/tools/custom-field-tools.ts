@@ -1,30 +1,18 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
-import { BaseToolHandler, createErrorResponse, createSuccessResponse } from './base-tool.js';
 import { getCustomFieldSchema } from '../../schemas/custom-field-schemas.js';
+import { BaseToolHandler, READ_ONLY, registerTool } from './base-tool.js';
 
 export class CustomFieldToolHandler implements BaseToolHandler {
-  registerTools(server: McpServer, client: BusinessMapClient, readOnlyMode: boolean): void {
-    this.registerGetCustomField(server, client);
-  }
-
-  private registerGetCustomField(server: McpServer, client: BusinessMapClient): void {
-    server.registerTool(
-      'get_custom_field',
-      {
-        title: 'Get Custom Field',
-        description: 'Get details of a specific custom field by ID',
-        inputSchema: getCustomFieldSchema.shape,
-        annotations: { readOnlyHint: true, idempotentHint: true },
-      },
-      async ({ custom_field_id }) => {
-        try {
-          const customField = await client.getCustomField(custom_field_id);
-          return createSuccessResponse(customField);
-        } catch (error) {
-          return createErrorResponse(error, 'fetching custom field');
-        }
-      }
-    );
+  registerTools(server: McpServer, client: BusinessMapClient): void {
+    registerTool(server, {
+      name: 'get_custom_field',
+      title: 'Get Custom Field',
+      description: 'Get details of a specific custom field by ID',
+      schema: getCustomFieldSchema,
+      annotations: READ_ONLY,
+      errorContext: 'fetching custom field',
+      handler: ({ custom_field_id }) => client.customFields.getCustomField(custom_field_id),
+    });
   }
 }

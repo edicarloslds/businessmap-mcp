@@ -7,7 +7,7 @@ export class CustomFieldClient extends BaseClientModuleImpl {
    */
   async getCustomField(customFieldId: number): Promise<CustomField> {
     const response = await this.http.get<ApiResponse<CustomField>>(
-      `/custom_fields/${customFieldId}`
+      `/customFields/${customFieldId}`
     );
     return response.data.data;
   }
