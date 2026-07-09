@@ -97,6 +97,11 @@ export const listCardsSchema = z.object({
 
   // Pagination using the common schema
   ...paginationSchema,
+  include_pagination: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe('Return cards with pagination metadata instead of the legacy cards array'),
 
   // Legacy compatibility
   assignee_user_id: z

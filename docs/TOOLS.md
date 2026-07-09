@@ -73,6 +73,10 @@ Complete reference for all tools, resources, and prompts provided by the Busines
 }
 ```
 
+By default, `list_cards` keeps its legacy array response. Set
+`include_pagination: true` to receive `{ data, pagination }`; use `page` and
+`per_page` to select the requested page.
+
 #### Comments
 
 | Tool                | Description                            | Read-Only Safe |

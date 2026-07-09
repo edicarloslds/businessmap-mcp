@@ -20,6 +20,7 @@ import {
 import { logger } from '../../utils/logger.js';
 import {
   BaseToolHandler,
+  DESTRUCTIVE_IDEMPOTENT,
   READ_ONLY,
   WRITE,
   WRITE_IDEMPOTENT,
@@ -174,6 +175,7 @@ export class BoardToolHandler implements BaseToolHandler {
         description:
           'Create a new column on a board. Supports both main columns (requires workflow_id and section) and sub-columns (requires parent_column_id). Section values: 1=Backlog, 2=Requested, 3=Progress, 4=Done.',
         schema: createColumnInputSchema,
+        annotations: WRITE,
         errorContext: 'creating column',
         successMessage: 'Column created successfully:',
         handler: (params) => {
@@ -199,6 +201,7 @@ export class BoardToolHandler implements BaseToolHandler {
         title: 'Update Column',
         description: 'Update the details of a specific column on a board',
         schema: updateColumnSchema,
+        annotations: WRITE_IDEMPOTENT,
         errorContext: 'updating column',
         successMessage: 'Column updated successfully:',
         handler: ({ board_id, column_id, name, limit, section, position, description }) =>
@@ -216,6 +219,7 @@ export class BoardToolHandler implements BaseToolHandler {
         title: 'Delete Column',
         description: 'Delete a column from a board',
         schema: deleteColumnSchema,
+        annotations: DESTRUCTIVE_IDEMPOTENT,
         errorContext: 'deleting column',
         successMessage: 'Column deleted successfully:',
         handler: async ({ board_id, column_id }) => {

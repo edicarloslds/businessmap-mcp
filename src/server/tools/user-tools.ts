@@ -6,7 +6,7 @@ import {
   inviteUserSchema,
   listUsersSchema,
 } from '../../schemas/user-schemas.js';
-import { BaseToolHandler, READ_ONLY, registerTool } from './base-tool.js';
+import { BaseToolHandler, READ_ONLY, WRITE, registerTool } from './base-tool.js';
 
 export class UserToolHandler implements BaseToolHandler {
   registerTools(server: McpServer, client: BusinessMapClient, readOnlyMode: boolean): void {
@@ -47,6 +47,7 @@ export class UserToolHandler implements BaseToolHandler {
         description:
           'Add and invite a new user by email. Sends an invitation email with a link to set their password and log in.',
         schema: inviteUserSchema,
+        annotations: WRITE,
         errorContext: 'inviting user',
         successMessage: 'User invited successfully:',
         handler: ({ email, do_not_send_confirmation_email }) =>

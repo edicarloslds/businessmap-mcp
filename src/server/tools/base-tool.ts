@@ -68,6 +68,18 @@ export const WRITE_IDEMPOTENT: ToolAnnotations = {
   destructiveHint: false,
   idempotentHint: true,
 };
+/** Annotations for destructive operations that are safe to repeat */
+export const DESTRUCTIVE_IDEMPOTENT: ToolAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: true,
+  idempotentHint: true,
+};
+/** Annotations for destructive operations that may not be safe to repeat */
+export const DESTRUCTIVE: ToolAnnotations = {
+  readOnlyHint: false,
+  destructiveHint: true,
+  idempotentHint: false,
+};
 
 export interface ToolDefinition<Shape extends z.ZodRawShape> {
   name: string;

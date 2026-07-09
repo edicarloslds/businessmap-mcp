@@ -46,6 +46,8 @@ import {
 } from '../../schemas/index.js';
 import {
   BaseToolHandler,
+  DESTRUCTIVE,
+  DESTRUCTIVE_IDEMPOTENT,
   READ_ONLY,
   WRITE,
   WRITE_IDEMPOTENT,
@@ -69,11 +71,15 @@ export class CardToolHandler implements BaseToolHandler {
     registerTool(server, {
       name: 'list_cards',
       title: 'List Cards',
-      description: 'Get a list of cards from a board with optional filters',
+      description:
+        'Get a list of cards from a board with optional filters. Set include_pagination to return pagination metadata.',
       schema: listCardsSchema,
       annotations: READ_ONLY,
       errorContext: 'fetching cards',
-      handler: ({ board_id, ...filters }) => client.cards.getCards(board_id, filters),
+      handler: ({ board_id, include_pagination, ...filters }) =>
+        include_pagination
+          ? client.cards.getCardsPage(board_id, filters)
+          : client.cards.getCards(board_id, filters),
     });
 
     registerTool(server, {
@@ -418,6 +424,7 @@ export class CardToolHandler implements BaseToolHandler {
       description:
         'Permanently delete a card. This action cannot be undone and the card cannot be recovered.',
       schema: deleteCardSchema,
+      annotations: DESTRUCTIVE_IDEMPOTENT,
       errorContext: 'deleting card',
       successMessage: 'Card deleted successfully:',
       handler: async ({ card_id }) => {
@@ -431,6 +438,7 @@ export class CardToolHandler implements BaseToolHandler {
       title: 'Block Card',
       description: 'Block a card and set a reason/comment explaining why it is blocked',
       schema: blockCardSchema,
+      annotations: WRITE_IDEMPOTENT,
       errorContext: 'blocking card',
       successMessage: 'Card blocked successfully:',
       handler: async ({ card_id, reason }) => {
@@ -444,6 +452,7 @@ export class CardToolHandler implements BaseToolHandler {
       title: 'Unblock Card',
       description: 'Unblock a card by removing its block reason',
       schema: unblockCardSchema,
+      annotations: WRITE_IDEMPOTENT,
       errorContext: 'unblocking card',
       successMessage: 'Card unblocked successfully:',
       handler: async ({ card_id }) => {
@@ -483,7 +492,7 @@ export class CardToolHandler implements BaseToolHandler {
       title: 'Delete Card Subtask',
       description: 'Delete a subtask from a card',
       schema: deleteCardSubtaskSchema,
-      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true },
+      annotations: DESTRUCTIVE_IDEMPOTENT,
       errorContext: 'deleting card subtask',
       successMessage: 'Subtask deleted successfully:',
       handler: async ({ card_id, subtask_id }) => {
@@ -510,7 +519,7 @@ export class CardToolHandler implements BaseToolHandler {
       title: 'Remove Card Parent',
       description: 'Remove the link between a child card and a parent card',
       schema: removeCardParentSchema,
-      annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: false },
+      annotations: DESTRUCTIVE,
       errorContext: 'removing card parent',
       successMessage: 'Card parent removed successfully:',
       handler: async ({ card_id, parent_card_id }) => {
@@ -525,6 +534,7 @@ export class CardToolHandler implements BaseToolHandler {
       description:
         'Establish or update a predecessor-successor relationship between two cards. The predecessor_card_id becomes a prerequisite that must be completed before the card.',
       schema: addPredecessorSchema,
+      annotations: WRITE_IDEMPOTENT,
       errorContext: 'adding predecessor',
       successMessage: 'Predecessor added successfully:',
       handler: async ({ card_id, predecessor_card_id, linked_card_position, card_position }) => {
@@ -541,6 +551,7 @@ export class CardToolHandler implements BaseToolHandler {
       title: 'Remove Predecessor',
       description: 'Remove the predecessor-successor relationship between two cards.',
       schema: removePredecessorSchema,
+      annotations: DESTRUCTIVE_IDEMPOTENT,
       errorContext: 'removing predecessor',
       successMessage: 'Predecessor removed successfully:',
       handler: async ({ card_id, predecessor_card_id }) => {
@@ -556,6 +567,7 @@ export class CardToolHandler implements BaseToolHandler {
       title: 'Create Comment',
       description: 'Add a new comment to a card',
       schema: createCommentSchema,
+      annotations: WRITE,
       errorContext: 'creating comment',
       successMessage: 'Comment created successfully:',
       handler: ({ card_id, text }) => client.cards.createCardComment(card_id, { text }),
@@ -566,6 +578,7 @@ export class CardToolHandler implements BaseToolHandler {
       title: 'Update Comment',
       description: 'Update the text of an existing comment on a card',
       schema: updateCommentSchema,
+      annotations: WRITE_IDEMPOTENT,
       errorContext: 'updating comment',
       successMessage: 'Comment updated successfully:',
       handler: ({ card_id, comment_id, text }) =>
@@ -577,6 +590,7 @@ export class CardToolHandler implements BaseToolHandler {
       title: 'Delete Comment',
       description: 'Delete a comment from a card',
       schema: deleteCommentSchema,
+      annotations: DESTRUCTIVE_IDEMPOTENT,
       errorContext: 'deleting comment',
       successMessage: 'Comment deleted successfully:',
       handler: async ({ card_id, comment_id }) => {
@@ -592,6 +606,7 @@ export class CardToolHandler implements BaseToolHandler {
       title: 'Create Tag',
       description: 'Create a new tag in the workspace',
       schema: createTagSchema,
+      annotations: WRITE,
       errorContext: 'creating tag',
       successMessage: 'Tag created successfully:',
       handler: ({ label, color }) => client.cards.createTag({ label, color }),
@@ -602,6 +617,7 @@ export class CardToolHandler implements BaseToolHandler {
       title: 'Add Tag to Card',
       description: 'Add an existing tag to a card',
       schema: addTagToCardSchema,
+      annotations: WRITE_IDEMPOTENT,
       errorContext: 'adding tag to card',
       successMessage: 'Tag added to card successfully:',
       handler: async ({ card_id, tag_id }) => {
@@ -615,6 +631,7 @@ export class CardToolHandler implements BaseToolHandler {
       title: 'Remove Tag from Card',
       description: 'Remove a tag from a card',
       schema: removeTagFromCardSchema,
+      annotations: DESTRUCTIVE_IDEMPOTENT,
       errorContext: 'removing tag from card',
       successMessage: 'Tag removed from card successfully:',
       handler: async ({ card_id, tag_id }) => {
@@ -628,6 +645,7 @@ export class CardToolHandler implements BaseToolHandler {
       title: 'Add Sticker to Card',
       description: 'Add a sticker to a card',
       schema: addStickerToCardSchema,
+      annotations: WRITE,
       errorContext: 'adding sticker to card',
       successMessage: 'Sticker added to card successfully:',
       handler: ({ card_id, sticker_id }) => client.cards.addStickerToCard(card_id, sticker_id),
@@ -640,6 +658,7 @@ export class CardToolHandler implements BaseToolHandler {
         'Remove a sticker from a card using the sticker-card association ID ' +
         '(the "id" field returned when listing or adding stickers to a card)',
       schema: removeStickerFromCardSchema,
+      annotations: DESTRUCTIVE_IDEMPOTENT,
       errorContext: 'removing sticker from card',
       successMessage: 'Sticker removed from card successfully:',
       handler: async ({ card_id, sticker_card_id }) => {

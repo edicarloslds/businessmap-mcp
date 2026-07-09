@@ -142,12 +142,19 @@ export interface LinkedCard {
   link_type: string;
 }
 
+export interface CardPagination {
+  all_pages: number;
+  current_page: number;
+  results_per_page: number;
+}
+
 export interface CardListResponse {
-  pagination: {
-    all_pages: number;
-    current_page: number;
-    results_per_page: number;
-  };
+  pagination: CardPagination;
+  data: Card[];
+}
+
+export interface CardPage {
+  pagination?: CardPagination;
   data: Card[];
 }
 

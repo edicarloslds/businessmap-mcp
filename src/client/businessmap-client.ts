@@ -10,6 +10,7 @@ import {
   WorkspaceClient,
 } from './modules/index.js';
 import { BusinessMapConfig } from '../types/index.js';
+import { BusinessMapApiError, transformAxiosError } from './businessmap-error.js';
 
 /**
  * BusinessMap API client, organized in domain modules.
@@ -49,7 +50,7 @@ export class BusinessMapClient {
     this.http.interceptors.response.use(
       (response) => response,
       (error: AxiosError) => {
-        throw this.transformError(error);
+        throw transformAxiosError(error);
       }
     );
 
@@ -99,7 +100,7 @@ export class BusinessMapClient {
       try {
         await this.utility.getApiInfo();
       } catch (error) {
-        if (error instanceof Error && error.message.includes('401')) {
+        if (error instanceof BusinessMapApiError && error.status === 401) {
           throw new Error(
             'Authentication failed - please verify your API token has the correct permissions'
           );
@@ -121,23 +122,5 @@ export class BusinessMapClient {
    */
   get initialized(): boolean {
     return this.isInitialized;
-  }
-
-  private transformError(error: AxiosError): Error {
-    if (error.response) {
-      const data = error.response.data;
-      const apiMessage =
-        data !== null &&
-        typeof data === 'object' &&
-        'error' in data &&
-        data.error !== null &&
-        typeof data.error === 'object' &&
-        'message' in data.error &&
-        typeof data.error.message === 'string'
-          ? data.error.message
-          : null;
-      return new Error(`BusinessMap API Error: ${apiMessage ?? error.message}`);
-    }
-    return new Error(`Network Error: ${error.message}`);
   }
 }

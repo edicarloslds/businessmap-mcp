@@ -2,6 +2,8 @@ import {
   AddStickerParams,
   ApiResponse,
   Card,
+  CardListResponse,
+  CardPage,
   CardCustomField,
   CardCustomFieldsResponse,
   CardHistoryItem,
@@ -134,9 +136,35 @@ export class CardClient extends BaseClientModuleImpl {
    * Get cards from a board with optional filters
    */
   async getCards(boardId: number, filters?: CardFilters): Promise<Card[]> {
+    const page = await this.getCardsPage(boardId, filters);
+    return page.data;
+  }
+
+  /**
+   * Get cards and pagination metadata without changing the legacy getCards return type.
+   */
+  async getCardsPage(boardId: number, filters?: CardFilters): Promise<CardPage> {
     const params = { board_id: boardId, ...filters };
-    const response = await this.http.get<ApiResponse<Card[]>>('/cards', { params });
-    return response.data.data;
+    const response = await this.http.get<ApiResponse<CardListResponse | Card[]>>('/cards', {
+      params,
+    });
+    const payload = response.data.data;
+
+    if (!Array.isArray(payload)) {
+      return payload;
+    }
+
+    const { page, per_page: perPage, total_count: totalCount } = response.data.meta ?? {};
+    const pagination =
+      page !== undefined && perPage !== undefined && perPage > 0 && totalCount !== undefined
+        ? {
+            all_pages: Math.ceil(totalCount / perPage),
+            current_page: page,
+            results_per_page: perPage,
+          }
+        : undefined;
+
+    return { data: payload, ...(pagination && { pagination }) };
   }
 
   /**
@@ -145,7 +173,7 @@ export class CardClient extends BaseClientModuleImpl {
    */
   async searchCards(
     filters?: SearchCardFilters
-  ): Promise<{ pagination?: unknown; data: Card[] } | Card[]> {
+  ): Promise<CardPage | Card[]> {
     // The API rejects expand[]=/fields[]= for these params; they must be comma-separated
     const { expand, fields, ...rest } = filters || {};
     const params = {
@@ -153,9 +181,7 @@ export class CardClient extends BaseClientModuleImpl {
       ...(expand?.length && { expand: expand.join(',') }),
       ...(fields?.length && { fields: fields.join(',') }),
     };
-    const response = await this.http.get<
-      ApiResponse<{ pagination?: unknown; data: Card[] } | Card[]>
-    >('/cards', { params });
+    const response = await this.http.get<ApiResponse<CardPage | Card[]>>('/cards', { params });
     return response.data.data;
   }
 

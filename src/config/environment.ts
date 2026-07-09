@@ -1,7 +1,39 @@
 import dotenv from 'dotenv';
+import { readFileSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { BusinessMapConfig } from '../types/index.js';
 import { logger } from '../utils/logger.js';
+
+function getPackageVersion(): string {
+  const candidates = [path.resolve(process.cwd(), 'package.json')];
+  const entrypoint = process.argv[1];
+  if (entrypoint) {
+    try {
+      candidates.push(path.resolve(path.dirname(realpathSync(entrypoint)), '..', 'package.json'));
+    } catch {
+      // The entrypoint may not exist in embedded runtimes; the CWD candidate still applies.
+    }
+  }
+
+  for (const candidate of candidates) {
+    try {
+      const packageJson = JSON.parse(readFileSync(candidate, 'utf8')) as {
+        name?: string;
+        version?: string;
+      };
+      if (
+        packageJson.name === '@edicarlos.lds/businessmap-mcp' &&
+        typeof packageJson.version === 'string'
+      ) {
+        return packageJson.version;
+      }
+    } catch {
+      // Try the next candidate.
+    }
+  }
+
+  return process.env['npm_package_version'] || 'unknown';
+}
 
 // Load environment variables
 // Load environment variables from current working directory
@@ -99,7 +131,7 @@ export const config: EnvironmentConfig = {
   },
   server: {
     name: process.env.MCP_SERVER_NAME || 'businessmap-mcp',
-    version: process.env.MCP_SERVER_VERSION || '1.0.0',
+    version: process.env.MCP_SERVER_VERSION || getPackageVersion(),
     port,
     allowedOrigins: getCsvEnvVar('ALLOWED_ORIGINS', ['http://localhost']),
     allowedHosts: getCsvEnvVar('ALLOWED_HOSTS', defaultAllowedHosts),

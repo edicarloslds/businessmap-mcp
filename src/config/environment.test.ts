@@ -1,3 +1,5 @@
+import packageJson from '../../package.json';
+
 describe('validateConfig', () => {
   const originalEnv = process.env;
 
@@ -71,5 +73,23 @@ describe('validateConfig', () => {
 
     const { config } = await import('./environment.js');
     expect(config.transport.type).toBe('http');
+  });
+
+  it('uses the package version by default', async () => {
+    process.env['BUSINESSMAP_API_URL'] = 'https://example.businessmap.io';
+    process.env['BUSINESSMAP_API_TOKEN'] = 'token';
+    process.env['MCP_SERVER_VERSION'] = '';
+
+    const { config } = await import('./environment.js');
+    expect(config.server.version).toBe(packageJson.version);
+  });
+
+  it('parses the default workspace ID', async () => {
+    process.env['BUSINESSMAP_API_URL'] = 'https://example.businessmap.io';
+    process.env['BUSINESSMAP_API_TOKEN'] = 'token';
+    process.env['BUSINESSMAP_DEFAULT_WORKSPACE_ID'] = '42';
+
+    const { config } = await import('./environment.js');
+    expect(config.businessMap.defaultWorkspaceId).toBe(42);
   });
 });

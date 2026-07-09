@@ -39,7 +39,15 @@ export class BoardClient extends BaseClientModuleImpl {
    * Get all boards with optional filters
    */
   async getBoards(filters?: BoardFilters): Promise<Board[]> {
-    const params = filters || {};
+    const hasWorkspaceFilter =
+      filters?.workspace_id !== undefined || filters?.workspace_ids !== undefined;
+    const params = {
+      ...filters,
+      ...(!hasWorkspaceFilter &&
+        this.config.defaultWorkspaceId !== undefined && {
+          workspace_id: this.config.defaultWorkspaceId,
+        }),
+    };
     const response = await this.http.get<ApiResponse<Board[]>>('/boards', { params });
     return response.data.data;
   }
@@ -57,7 +65,14 @@ export class BoardClient extends BaseClientModuleImpl {
    */
   async createBoard(params: CreateBoardParams): Promise<Board> {
     this.checkReadOnlyMode('create board');
-    const response = await this.http.post<ApiResponse<Board>>('/boards', params);
+    const request = {
+      ...params,
+      ...(params.workspace_id === undefined &&
+        this.config.defaultWorkspaceId !== undefined && {
+          workspace_id: this.config.defaultWorkspaceId,
+        }),
+    };
+    const response = await this.http.post<ApiResponse<Board>>('/boards', request);
     return response.data.data;
   }
 
