@@ -11,14 +11,8 @@ permissions:
 
 jobs:
   validate:
-    name: Node.js ${{ matrix.node-version }}
+    name: Node.js 22
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        node-version:
-          - 18
-          - 22
     env:
       BUSINESSMAP_API_URL: https://example.kanbanize.com/api/v2
       BUSINESSMAP_API_TOKEN: ci-placeholder-token
@@ -30,7 +24,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 22
           cache: npm
 
       - name: Install dependencies
@@ -39,12 +33,7 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Test
-        if: matrix.node-version == 18
-        run: npm test -- --runInBand
-
       - name: Test with coverage
-        if: matrix.node-version == 22
         run: npm run test:coverage
 
       - name: Build

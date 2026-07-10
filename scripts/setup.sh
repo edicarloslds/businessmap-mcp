@@ -7,8 +7,8 @@ echo "🚀 Setting up BusinessMap MCP Server..."
 
 # Check Node.js version
 node_version=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
-if [ "$node_version" -lt 18 ]; then
-  echo "❌ Node.js 18+ required. Current version: $(node -v)"
+if [ "$node_version" -lt 22 ]; then
+  echo "❌ Node.js 22+ required. Current version: $(node -v)"
   exit 1
 fi
 

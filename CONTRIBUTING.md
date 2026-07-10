@@ -6,7 +6,7 @@ Thank you for helping improve BusinessMap MCP.
 
 Requirements:
 
-- Node.js 18 or newer
+- Node.js 22 or newer
 - npm
 
 Install dependencies:
@@ -51,7 +51,7 @@ Never commit `.env` files or API tokens.
 
 Keep changes focused and include tests for behavior changes. Before opening a
 pull request, run the local checks listed above. CI runs the same checks on
-Node.js 18 and 22.
+Node.js 22.
 
 Use conventional commits when practical:
 
