@@ -13,7 +13,7 @@ export default {
         useESM: true,
         tsconfig: {
           module: 'ESNext',
-          moduleResolution: 'node',
+          moduleResolution: 'bundler',
           types: ['jest', 'node'],
         },
       },

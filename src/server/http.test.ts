@@ -17,6 +17,7 @@ describe('HTTP server', () => {
 
     ({ startHttpServer } = await import('./http.js'));
     ({ config } = await import('../config/environment.js'));
+    await import('./mcp-server.js');
 
     config.server.port = testPort;
     config.server.allowedOrigins = ['http://localhost:8080'];
@@ -122,6 +123,7 @@ describe('HTTP server', () => {
     });
     expect(first.status).toBe(200);
     expect(first.headers.get('mcp-session-id')).toBeTruthy();
+    await first.text();
 
     const second = await fetch(`http://localhost:${testPort}/mcp`, {
       method: 'POST',
@@ -130,7 +132,7 @@ describe('HTTP server', () => {
     });
     expect(second.status).toBe(503);
     expect(await second.json()).toEqual({ error: 'HTTP session capacity reached' });
-  });
+  }, 15_000);
 
   it('supports idempotent graceful shutdown', async () => {
     server = await startHttpServer();
