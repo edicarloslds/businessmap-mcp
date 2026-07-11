@@ -38,14 +38,16 @@ function getPackageVersion(): string {
 // Load environment variables
 // Load environment variables from current working directory
 const envPath = path.resolve(process.cwd(), '.env');
-const result = dotenv.config({ path: envPath });
+// quiet: dotenv >= 17 logs to stdout by default, which would corrupt the
+// JSON-RPC stream when running as a stdio MCP server.
+const result = dotenv.config({ path: envPath, quiet: true });
 
 if (result.error) {
   // If .env file doesn't exist, dotenv returns an error. 
   // We'll try loading without path (default behavior) as fallback, 
   // but also log that we checked CWD.
   logger.info(`No .env file found at ${envPath}, checking default locations...`);
-  dotenv.config();
+  dotenv.config({ quiet: true });
 } else {
   logger.info(`Loaded environment variables from ${envPath}`);
 }
