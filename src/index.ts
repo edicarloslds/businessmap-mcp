@@ -7,7 +7,8 @@ import { config, validateConfig } from './config/environment.js';
 import { BusinessMapMcpServer } from './server/mcp-server.js';
 import { logger } from './utils/logger.js';
 
-export { startHttpServer, HttpServerOptions, ManagedHttpServer } from './server/http.js';
+export { startHttpServer } from './server/http.js';
+export type { HttpServerOptions, ManagedHttpServer } from './server/http.js';
 export { BusinessMapMcpServer } from './server/mcp-server.js';
 
 let closeActiveServer: (() => Promise<void>) | undefined;

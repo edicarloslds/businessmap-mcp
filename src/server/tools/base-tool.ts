@@ -202,7 +202,20 @@ export function registerTool<Shape extends z.ZodRawShape>(
     }
     return runWithRequestContext({ correlationId: randomUUID() }, () => execute(args));
   };
-  server.registerTool(
+  // The SDK infers its own callback arg/return types from the raw shape; our callback is
+  // structurally compatible (validated args in, ToolResponse out). Calling through a
+  // non-generic signature also keeps TS from recursing into the schema generics (TS2589).
+  const register = server.registerTool.bind(server) as (
+    name: string,
+    toolConfig: {
+      title?: string;
+      description?: string;
+      inputSchema?: z.ZodRawShape;
+      annotations?: ToolDefinition<Shape>['annotations'];
+    },
+    cb: typeof callback
+  ) => void;
+  register(
     def.name,
     {
       title: def.title,
@@ -210,8 +223,6 @@ export function registerTool<Shape extends z.ZodRawShape>(
       inputSchema: def.schema.shape,
       ...(def.annotations && { annotations: def.annotations }),
     },
-    // The SDK infers its own callback arg/return types from the raw shape; our callback is
-    // structurally compatible (validated args in, ToolResponse out), so bridge the generics here.
-    callback as unknown as Parameters<McpServer['registerTool']>[2]
+    callback
   );
 }

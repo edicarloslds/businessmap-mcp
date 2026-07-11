@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v3';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
-import { BasePromptHandler } from './base-prompt.js';
+import { BasePromptHandler, registerPrompt } from './base-prompt.js';
 
 export class BoardPromptHandler implements BasePromptHandler {
   registerPrompts(server: McpServer, _client: BusinessMapClient): void {
@@ -10,7 +10,8 @@ export class BoardPromptHandler implements BasePromptHandler {
   }
 
   private registerAnalyzeBoardPerformance(server: McpServer): void {
-    server.registerPrompt(
+    registerPrompt(
+      server,
       'analyze-board-performance',
       {
         title: 'Analyze Board Performance',
@@ -61,7 +62,8 @@ Format the response as a clear executive report with sections and bullet points.
   }
 
   private registerGenerateBoardReport(server: McpServer): void {
-    server.registerPrompt(
+    registerPrompt(
+      server,
       'generate-board-report',
       {
         title: 'Generate Board Report',
