@@ -1,7 +1,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v3';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
-import { BasePromptHandler } from './base-prompt.js';
+import { BasePromptHandler, registerPrompt } from './base-prompt.js';
 
 export class WorkspacePromptHandler implements BasePromptHandler {
   registerPrompts(server: McpServer, _client: BusinessMapClient): void {
@@ -9,7 +9,8 @@ export class WorkspacePromptHandler implements BasePromptHandler {
   }
 
   private registerWorkspaceStatusOverview(server: McpServer): void {
-    server.registerPrompt(
+    registerPrompt(
+      server,
       'workspace-status-overview',
       {
         title: 'Workspace Status Overview',
