@@ -134,18 +134,20 @@ export class BusinessMapClient {
       } catch (error) {
         if (error instanceof BusinessMapApiError && error.status === 401) {
           throw new Error(
-            'Authentication failed - please verify your API token has the correct permissions'
+            'Authentication failed - please verify your API token has the correct permissions',
+            { cause: error }
           );
         }
         throw new Error(
-          `API verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          `API verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          { cause: error }
         );
       }
 
       this.isInitialized = true;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to initialize BusinessMap client: ${message}`);
+      throw new Error(`Failed to initialize BusinessMap client: ${message}`, { cause: error });
     }
   }
 
