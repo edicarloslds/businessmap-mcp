@@ -84,7 +84,7 @@
     "prettier": "^3.9.6",
     "ts-jest": "^29.4.12",
     "tsx": "^4.22.4",
-    "typescript": "^5.0.0",
+    "typescript": "^7.0.2",
     "typescript-eslint": "^8.65.0"
   },
   "engines": {
