@@ -11,6 +11,7 @@ export const ESSENTIAL_TOOLS = new Set([
   'get_workspace',
   'list_boards',
   'search_board',
+  'get_board',
   'get_columns',
   'get_lanes',
   'get_current_board_structure',
@@ -211,7 +212,7 @@ export function registerTool<Shape extends z.ZodRawShape>(
       title?: string;
       description?: string;
       inputSchema?: z.ZodRawShape;
-      annotations?: ToolDefinition<Shape>['annotations'];
+      annotations?: ToolAnnotations;
     },
     cb: typeof callback
   ) => void;

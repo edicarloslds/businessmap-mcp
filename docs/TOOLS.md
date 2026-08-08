@@ -4,16 +4,23 @@ Complete reference for all tools, resources, and prompts provided by the Busines
 
 ## Summary
 
-| Category  | Count |
-| --------- | :---: |
-| Tools     |  92   |
-| Resources |   6   |
-| Prompts   |   4   |
+| Category                    | Count |
+| --------------------------- | :---: |
+| Default tools (`essential`) |  27   |
+| Full-profile tools          |  93   |
+| Resources                   |   6   |
+| Prompts                     |   4   |
 
-The counts above describe the default `full` profile. Set
-`BUSINESSMAP_TOOL_PROFILE=essential` to register a smaller catalog of common
-workspace, board, card, docs, user, and health operations. Read-only mode is
-applied independently and removes mutation tools from either profile.
+The default `essential` profile exposes an agent-oriented discovery-to-detail
+catalog. Set `BUSINESSMAP_TOOL_PROFILE=full` to register every advanced
+operation. Read-only mode is applied independently and removes mutation tools
+from either profile.
+
+Run `npm run eval:hierarchy` to validate the progressive-disclosure contracts:
+bounded card discovery, compact payloads, board discovery without implicit
+structure fetches, and explicit summary/full detail levels. These deterministic
+checks complement production trajectory evals, where tool-call count, latency,
+and token cost should also be monitored.
 
 ---
 
@@ -30,23 +37,24 @@ applied independently and removes mutation tools from either profile.
 
 ---
 
-### Board Management (13 tools)
+### Board Management (14 tools)
 
-| Tool                          | Description                                                                                    | Read-Only Safe |
-| :---------------------------- | :--------------------------------------------------------------------------------------------- | :------------: |
-| `list_boards`                 | Get a list of boards with optional workspace filter                                            |       ✅       |
-| `search_board`                | Search for a board by ID or name, with fallback to list                                        |       ✅       |
-| `get_columns`                 | Get all columns for a board                                                                    |       ✅       |
-| `get_lanes`                   | Get all lanes/swimlanes for a board                                                            |       ✅       |
-| `get_lane`                    | Get details of a specific lane/swimlane                                                        |       ✅       |
-| `get_current_board_structure` | Get the complete structure of a board (workflows, columns, lanes, configs)                     |       ✅       |
-| `create_board`                | Create a new board in a workspace                                                              |       ❌       |
-| `update_board`                | Update the name and/or description of a board                                                  |       ❌       |
-| `create_lane`                 | Create a new lane/swimlane in a board (supports sub-lanes via `parent_lane_id`)                |       ❌       |
-| `update_lane`                 | Update a lane (name, description, color, position, parent lane)                                |       ❌       |
+| Tool                          | Description                                                                                   | Read-Only Safe |
+| :---------------------------- | :-------------------------------------------------------------------------------------------- | :------------: |
+| `list_boards`                 | Discover compact board candidates; set `detail_level=full` for complete board payloads        |       ✅       |
+| `search_board`                | Find compact candidates by name fragment; use `get_board` when the ID is known                |       ✅       |
+| `get_board`                   | Get board details without loading its structure                                               |       ✅       |
+| `get_columns`                 | Get all columns for a board                                                                   |       ✅       |
+| `get_lanes`                   | Get all lanes/swimlanes for a board                                                           |       ✅       |
+| `get_lane`                    | Get details of a specific lane/swimlane                                                       |       ✅       |
+| `get_current_board_structure` | Get the complete structure of a board (workflows, columns, lanes, configs)                    |       ✅       |
+| `create_board`                | Create a new board in a workspace                                                             |       ❌       |
+| `update_board`                | Update the name and/or description of a board                                                 |       ❌       |
+| `create_lane`                 | Create a new lane/swimlane in a board (supports sub-lanes via `parent_lane_id`)               |       ❌       |
+| `update_lane`                 | Update a lane (name, description, color, position, parent lane)                               |       ❌       |
 | `create_column`               | Create a new column (main or sub-column). Section: 1=Backlog, 2=Requested, 3=Progress, 4=Done |       ❌       |
-| `update_column`               | Update the details of a specific column                                                        |       ❌       |
-| `delete_column`               | Delete a column from a board                                                                   |     ❌ ⚠️      |
+| `update_column`               | Update the details of a specific column                                                       |       ❌       |
+| `delete_column`               | Delete a column from a board                                                                  |     ❌ ⚠️      |
 
 ---
 
@@ -54,18 +62,18 @@ applied independently and removes mutation tools from either profile.
 
 #### Basic Operations
 
-| Tool             | Description                                  | Read-Only Safe |
-| :--------------- | :------------------------------------------- | :------------: |
-| `list_cards`     | Get cards from a board with optional filters |       ✅       |
-| `search_cards`   | Search cards across all boards with advanced filters (owners, priorities, sizes, blocked state, dates, lifecycle state) |       ✅       |
-| `get_card`       | Get detailed card information                |       ✅       |
-| `get_card_size`  | Get the size/points of a specific card       |       ✅       |
-| `get_card_types` | Get all available card types                 |       ✅       |
-| `create_card`    | Create a new card in a board                 |       ❌       |
-| `move_card`      | Move a card to a different column or lane    |       ❌       |
-| `update_card`    | Update card properties                       |       ❌       |
-| `set_card_size`  | Set the size/points of a specific card       |       ❌       |
-| `delete_card`    | Permanently delete a card (irreversible)     |     ❌ ⚠️      |
+| Tool             | Description                                                          | Read-Only Safe |
+| :--------------- | :------------------------------------------------------------------- | :------------: |
+| `list_cards`     | Discover a compact, paginated page of cards on a board               |       ✅       |
+| `search_cards`   | Discover compact cards across boards with advanced filters           |       ✅       |
+| `get_card`       | Get a card summary; set `detail_level=full` for the complete payload |       ✅       |
+| `get_card_size`  | Get the size/points of a specific card                               |       ✅       |
+| `get_card_types` | Get all available card types                                         |       ✅       |
+| `create_card`    | Create a new card in a board                                         |       ❌       |
+| `move_card`      | Move a card to a different column or lane                            |       ❌       |
+| `update_card`    | Update card properties                                               |       ❌       |
+| `set_card_size`  | Set the size/points of a specific card                               |       ❌       |
+| `delete_card`    | Permanently delete a card (irreversible)                             |     ❌ ⚠️      |
 
 `list_cards` supports a `state` parameter (`active` | `archived` | `discarded` | `all`) to control which card lifecycle states are returned. The API defaults to `active`, so archived or discarded cards are only included when explicitly requested:
 
@@ -78,11 +86,11 @@ applied independently and removes mutation tools from either profile.
 }
 ```
 
-By default, `list_cards` keeps its legacy array response. Set
-`include_pagination: true` to receive `{ data, pagination }`; use `page` and
-`per_page` to select the requested page. Set `compact: true` on `list_cards` or
-`search_cards` to return only identifiers, placement, ownership, status, and
-planning fields.
+By default, `list_cards` returns a compact `{ data, pagination }` page bounded
+to 50 cards, and `search_cards` also defaults to compact results with a 50-card
+page size. Use `page` and `per_page` to navigate. Set `compact: false` only when
+full list payloads are required; set `include_pagination: false` on `list_cards`
+only for legacy array compatibility.
 
 #### Comments
 
@@ -102,13 +110,13 @@ planning fields.
 
 #### Outcomes & History
 
-| Tool                     | Description                                                              | Read-Only Safe |
-| :----------------------- | :----------------------------------------------------------------------- | :------------: |
-| `get_card_outcomes`      | Get all outcomes for a specific card                                     |       ✅       |
-| `get_card_history`       | Get the history of a specific card outcome                               |       ✅       |
-| `get_card_flow_history`  | Get the card's movement (transitions) across workflows/columns with timing |       ✅       |
-| `get_card_blocked_times` | Get the full blocking history of a card                                  |       ✅       |
-| `get_card_logged_time`   | Get time logged on a card and its subtasks, with individual entries      |       ✅       |
+| Tool                     | Description                                                                                                              | Read-Only Safe |
+| :----------------------- | :----------------------------------------------------------------------------------------------------------------------- | :------------: |
+| `get_card_outcomes`      | Get all outcomes for a specific card                                                                                     |       ✅       |
+| `get_card_history`       | Get the history of a specific card outcome                                                                               |       ✅       |
+| `get_card_flow_history`  | Get the card's movement (transitions) across workflows/columns with timing                                               |       ✅       |
+| `get_card_blocked_times` | Get the full blocking history of a card                                                                                  |       ✅       |
+| `get_card_logged_time`   | Get time logged on a card and its subtasks, with individual entries                                                      |       ✅       |
 | `get_card_revisions`     | Get the chronological change history (revisions) of a card; pass a revision number for the full card state at that point |       ✅       |
 
 #### Relationships
@@ -119,25 +127,25 @@ planning fields.
 
 #### Subtasks
 
-| Tool                  | Description                          | Read-Only Safe |
-| :-------------------- | :----------------------------------- | :------------: |
-| `get_card_subtasks`   | Get all subtasks for a specific card |       ✅       |
-| `get_card_subtask`    | Get details of a specific subtask    |       ✅       |
-| `create_card_subtask` | Create a new subtask for a card      |       ❌       |
+| Tool                  | Description                                                               | Read-Only Safe |
+| :-------------------- | :------------------------------------------------------------------------ | :------------: |
+| `get_card_subtasks`   | Get all subtasks for a specific card                                      |       ✅       |
+| `get_card_subtask`    | Get details of a specific subtask                                         |       ✅       |
+| `create_card_subtask` | Create a new subtask for a card                                           |       ❌       |
 | `update_card_subtask` | Update a subtask (description, owner, finished state, deadline, position) |       ❌       |
-| `delete_card_subtask` | Delete a subtask from a card         |     ❌ ⚠️      |
+| `delete_card_subtask` | Delete a subtask from a card                                              |     ❌ ⚠️      |
 
 #### Parent-Child Relationships
 
-| Tool                    | Description                                            | Read-Only Safe |
-| :---------------------- | :----------------------------------------------------- | :------------: |
-| `get_card_parents`      | Get a list of parent cards for a specific card         |       ✅       |
-| `get_card_parent`       | Check if a card is a parent of a given card            |       ✅       |
-| `get_card_parent_graph` | Get parent cards including their parents (full graph)  |       ✅       |
-| `get_card_children`     | Get a list of child cards of a specified parent card   |       ✅       |
+| Tool                    | Description                                                                | Read-Only Safe |
+| :---------------------- | :------------------------------------------------------------------------- | :------------: |
+| `get_card_parents`      | Get a list of parent cards for a specific card                             |       ✅       |
+| `get_card_parent`       | Check if a card is a parent of a given card                                |       ✅       |
+| `get_card_parent_graph` | Get parent cards including their parents (full graph)                      |       ✅       |
+| `get_card_children`     | Get a list of child cards of a specified parent card                       |       ✅       |
 | `get_card_child_graph`  | Get the hierarchical graph of a card's children (children of children too) |       ✅       |
-| `add_card_parent`       | Make a card a parent of a given card                   |       ❌       |
-| `remove_card_parent`    | Remove the link between a child card and a parent card |       ❌       |
+| `add_card_parent`       | Make a card a parent of a given card                                       |       ❌       |
+| `remove_card_parent`    | Remove the link between a child card and a parent card                     |       ❌       |
 
 #### Blocking
 
@@ -180,46 +188,46 @@ planning fields.
 
 ### Workflow Management & Cycle Time Analysis (8 tools)
 
-| Tool                                        | Description                                                            | Read-Only Safe |
-| :------------------------------------------ | :---------------------------------------------------------------------- | :------------: |
-| `list_workflows`                            | Get a list of workflows for a board                                     |       ✅       |
-| `get_workflow`                              | Get the details of a workflow                                           |       ✅       |
-| `get_workflow_cycle_time_columns`           | Get workflow's cycle time columns                                       |       ✅       |
-| `get_workflow_effective_cycle_time_columns` | Get workflow's effective cycle time columns                             |       ✅       |
-| `create_workflow`                           | Create a new workflow on a board (0=cards, 1=initiatives, 2=timeline)   |       ❌       |
-| `update_workflow`                           | Update a workflow (name, position, enabled/collapsible)                 |       ❌       |
-| `link_related_workflow`                     | Link a workflow from another board as a related workflow                |       ❌       |
-| `unlink_related_workflow`                   | Remove a related workflow from a board                                  |     ❌ ⚠️      |
+| Tool                                        | Description                                                           | Read-Only Safe |
+| :------------------------------------------ | :-------------------------------------------------------------------- | :------------: |
+| `list_workflows`                            | Get a list of workflows for a board                                   |       ✅       |
+| `get_workflow`                              | Get the details of a workflow                                         |       ✅       |
+| `get_workflow_cycle_time_columns`           | Get workflow's cycle time columns                                     |       ✅       |
+| `get_workflow_effective_cycle_time_columns` | Get workflow's effective cycle time columns                           |       ✅       |
+| `create_workflow`                           | Create a new workflow on a board (0=cards, 1=initiatives, 2=timeline) |       ❌       |
+| `update_workflow`                           | Update a workflow (name, position, enabled/collapsible)               |       ❌       |
+| `link_related_workflow`                     | Link a workflow from another board as a related workflow              |       ❌       |
+| `unlink_related_workflow`                   | Remove a related workflow from a board                                |     ❌ ⚠️      |
 
 ---
 
 ### Quick Setup — Batch (3 tools)
 
-| Tool                           | Description                                                                                             | Read-Only Safe |
-| :----------------------------- | :------------------------------------------------------------------------------------------------------ | :------------: |
-| `create_workspaces_and_boards` | Create up to 3 workspaces together with their boards and full board structure in one call               |       ❌       |
-| `create_boards_in_workspace`   | Create up to 3 boards with their full structure (workflows, renamed default columns, columns, lanes) in one call |       ❌       |
-| `configure_board_structure`  | Configure an existing board's structure in one call: create/rename workflows, rename built-in columns, add columns and lanes |       ❌       |
+| Tool                           | Description                                                                                                                  | Read-Only Safe |
+| :----------------------------- | :--------------------------------------------------------------------------------------------------------------------------- | :------------: |
+| `create_workspaces_and_boards` | Create up to 3 workspaces together with their boards and full board structure in one call                                    |       ❌       |
+| `create_boards_in_workspace`   | Create up to 3 boards with their full structure (workflows, renamed default columns, columns, lanes) in one call             |       ❌       |
+| `configure_board_structure`    | Configure an existing board's structure in one call: create/rename workflows, rename built-in columns, add columns and lanes |       ❌       |
 
 ---
 
 ### Docs (13 tools)
 
-| Tool                        | Description                                                                                              | Read-Only Safe |
-| :-------------------------- | :------------------------------------------------------------------------------------------------------- | :------------: |
-| `search_docs`               | Search docs by title (case-insensitive substring), optionally including archived and personal docs       |       ✅       |
-| `get_docs_text_title_search`| Search docs by title AND content, returning matches with content snippets                                |       ✅       |
-| `get_doc_hierarchy`         | Get the hierarchical parent/child tree of docs, optionally rooted at a specific doc                      |       ✅       |
-| `list_docs`                 | Get a list of docs (metadata only) with filters (ids, title, archived, important, parent)                |       ✅       |
-| `list_personal_docs`        | Get a list of your personal docs (metadata only)                                                         |       ✅       |
-| `get_doc_content_batch`     | Get the full details (including content) of up to 20 docs in one call (shared or personal)               |       ✅       |
-| `get_docs_for_boards_batch` | Get the docs pinned to each of up to 10 boards in one call                                               |       ✅       |
-| `create_doc`                | Create a new doc, optionally as a child of another doc                                                   |       ❌       |
-| `update_doc`                | Update the title, content, position, or parent of an existing doc                                        |       ❌       |
-| `archive_doc`               | Archive a doc                                                                                            |       ❌       |
-| `unarchive_doc`             | Restore an archived doc                                                                                  |       ❌       |
-| `create_personal_doc`       | Create a new personal doc (visible only to you)                                                          |       ❌       |
-| `update_personal_doc`       | Update the title, content, or position of an existing personal doc                                       |       ❌       |
+| Tool                         | Description                                                                                        | Read-Only Safe |
+| :--------------------------- | :------------------------------------------------------------------------------------------------- | :------------: |
+| `search_docs`                | Search docs by title (case-insensitive substring), optionally including archived and personal docs |       ✅       |
+| `get_docs_text_title_search` | Search docs by title AND content, returning matches with content snippets                          |       ✅       |
+| `get_doc_hierarchy`          | Get the hierarchical parent/child tree of docs, optionally rooted at a specific doc                |       ✅       |
+| `list_docs`                  | Get a list of docs (metadata only) with filters (ids, title, archived, important, parent)          |       ✅       |
+| `list_personal_docs`         | Get a list of your personal docs (metadata only)                                                   |       ✅       |
+| `get_doc_content_batch`      | Get the full details (including content) of up to 20 docs in one call (shared or personal)         |       ✅       |
+| `get_docs_for_boards_batch`  | Get the docs pinned to each of up to 10 boards in one call                                         |       ✅       |
+| `create_doc`                 | Create a new doc, optionally as a child of another doc                                             |       ❌       |
+| `update_doc`                 | Update the title, content, position, or parent of an existing doc                                  |       ❌       |
+| `archive_doc`                | Archive a doc                                                                                      |       ❌       |
+| `unarchive_doc`              | Restore an archived doc                                                                            |       ❌       |
+| `create_personal_doc`        | Create a new personal doc (visible only to you)                                                    |       ❌       |
+| `update_personal_doc`        | Update the title, content, or position of an existing personal doc                                 |       ❌       |
 
 ---
 
@@ -247,14 +255,14 @@ planning fields.
 
 MCP resources provide structured data access via URI. Clients can read resources directly without invoking tools.
 
-| URI                                     | Name         | Description                         | Listable |
-| :-------------------------------------- | :----------- | :---------------------------------- | :------: |
-| `businessmap://workspaces`              | `workspaces` | List all workspaces                 |    ✅    |
-| `businessmap://boards`                  | `boards`     | List all boards                     |    ✅    |
-| `businessmap://boards/{board_id}`       | `board`      | Get details of a specific board     |    ❌    |
-| `businessmap://boards/{board_id}/cards` | `cards`      | List all cards for a specific board |    ✅    |
-| `businessmap://boards/{board_id}/cards/pages/{page}/size/{per_page}` | `card-page` | Read a bounded card page (maximum 100) | ❌ |
-| `businessmap://cards/{card_id}`         | `card`       | Get details of a specific card      |    ❌    |
+| URI                                                                  | Name         | Description                                                          | Listable |
+| :------------------------------------------------------------------- | :----------- | :------------------------------------------------------------------- | :------: |
+| `businessmap://workspaces`                                           | `workspaces` | List all workspaces                                                  |    ✅    |
+| `businessmap://boards`                                               | `boards`     | List all boards                                                      |    ✅    |
+| `businessmap://boards/{board_id}`                                    | `board`      | Get details of a specific board                                      |    ❌    |
+| `businessmap://boards/{board_id}/cards`                              | `cards`      | Read the first compact card page (50 items) with pagination metadata |    ✅    |
+| `businessmap://boards/{board_id}/cards/pages/{page}/size/{per_page}` | `card-page`  | Read a bounded card page (maximum 100)                               |    ❌    |
+| `businessmap://cards/{card_id}`                                      | `card`       | Get details of a specific card                                       |    ❌    |
 
 ---
 
@@ -275,7 +283,7 @@ Analyze a board's performance: flow efficiency, bottlenecks, cycle time, and wor
 **Workflow:**
 
 1. Uses `get_current_board_structure` to retrieve the full board structure
-2. Uses `list_cards` to retrieve all active cards
+2. Uses compact, paginated `list_cards` calls to retrieve active cards
 3. Uses `get_workflow_cycle_time_columns` for each workflow
 4. Delivers a structured analysis covering flow efficiency, cycle time, workload distribution, and actionable recommendations
 
@@ -294,8 +302,8 @@ Generate a comprehensive status report for a board, including cards summary, pro
 **Workflow:**
 
 1. Uses `get_current_board_structure` to get the board structure
-2. Uses `list_cards` to get all cards
-3. Uses `get_card` for detailed info on a sample of cards
+2. Uses compact, paginated `list_cards` for a bounded card snapshot
+3. Uses summary-level `get_card` for detailed info on a sample of cards
 4. Generates a structured report with: Executive Summary, Column Breakdown, Recently Updated Cards, Risks & Blockers, and Next Steps
 
 ---
@@ -334,7 +342,7 @@ Generate a high-level status overview of a workspace, including all boards and t
 
 1. Uses `get_workspace` to get workspace details
 2. Uses `list_boards` with `workspace_id` filter to list all boards
-3. Uses `list_cards` for each board to get active card counts
+3. Uses bounded, compact `list_cards` calls for each board to get active card counts
 4. Uses `get_current_board_structure` for up to 3 boards
 5. Delivers a structured overview with: Workspace Summary, Board Summaries, Highlights, and Recommendations
 

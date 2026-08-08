@@ -30,8 +30,8 @@ export class WorkspacePromptHandler implements BasePromptHandler {
 
 Steps:
 1. Use \`get_workspace\` to get workspace details.
-2. Use \`list_boards\` with workspace_id filter to list all boards in this workspace.
-3. For each board (up to 5 boards), use \`list_cards\` to get a count of active cards.
+2. Use \`list_boards\` with workspace_id and the default summary detail to discover boards in this workspace.
+3. For each board (up to 5 boards), use \`list_cards\` with \`compact=true\`, \`include_pagination=true\`, and \`per_page=50\` to get a bounded active-card count.
 4. For up to 3 boards, use \`get_current_board_structure\` for column distribution.
 
 Deliver a structured overview:

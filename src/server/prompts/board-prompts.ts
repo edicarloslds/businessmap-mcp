@@ -31,7 +31,7 @@ export class BoardPromptHandler implements BasePromptHandler {
 
 Follow these steps:
 1. Use \`get_current_board_structure\` to retrieve the full board structure (workflows, columns, lanes).
-2. Use \`list_cards\` to retrieve all active cards on the board.
+2. Use \`list_cards\` with \`compact=true\`, \`include_pagination=true\`, and \`per_page=50\` to retrieve active cards page by page. Stop when pagination indicates the last page.
 3. Use \`get_workflow_cycle_time_columns\` for each workflow to understand which columns count for cycle time.
 
 Based on the data collected, provide a structured analysis including:
@@ -83,8 +83,8 @@ Format the response as a clear executive report with sections and bullet points.
 
 Steps to gather data:
 1. Use \`get_current_board_structure\` to get the board structure.
-2. Use \`list_cards\` to get all cards (use filters as needed for active cards).
-3. For a sample of cards (up to 10), use \`get_card\` to get detailed information.
+2. Use \`list_cards\` with \`compact=true\`, \`include_pagination=true\`, and \`per_page=50\` for a bounded active-card snapshot.
+3. For a sample of cards (up to 10), use \`get_card\` at its default summary level. Request \`detail_level=full\` only if the summary is insufficient.
 
 Report structure:
 # Board Status Report — [Board Name]

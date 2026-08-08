@@ -2,6 +2,13 @@ import { z } from 'zod/v3';
 
 // Board listing schema
 export const listBoardsSchema = z.object({
+  detail_level: z
+    .enum(['summary', 'full'])
+    .optional()
+    .default('summary')
+    .describe(
+      'Response detail level. summary returns identifiers and names for discovery; full returns the API board payload.'
+    ),
   // ID filters (arrays)
   board_ids: z
     .array(z.number())
@@ -51,8 +58,7 @@ export const listBoardsSchema = z.object({
 
 // Board search schema
 export const searchBoardSchema = z.object({
-  board_id: z.number().optional().describe('The ID of the board to search for'),
-  board_name: z.string().optional().describe('The name of the board to search for'),
+  board_name: z.string().min(1).describe('A name fragment used to find candidate boards'),
   workspace_id: z.number().optional().describe('Optional workspace ID to limit search scope'),
 });
 

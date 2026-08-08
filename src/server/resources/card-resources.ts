@@ -1,10 +1,26 @@
 import { ResourceTemplate, McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BusinessMapClient } from '../../client/businessmap-client.js';
+import { Card } from '../../types/index.js';
 import { BaseResourceHandler } from './base-resource.js';
+
+function compactCard(card: Card) {
+    return {
+        card_id: card.card_id,
+        custom_id: card.custom_id,
+        board_id: card.board_id,
+        title: card.title,
+        owner_user_id: card.owner_user_id,
+        column_id: card.column_id,
+        lane_id: card.lane_id,
+        priority: card.priority,
+        deadline: card.deadline,
+        is_blocked: card.is_blocked,
+    };
+}
 
 export class CardResourceHandler implements BaseResourceHandler {
     registerResources(server: McpServer, client: BusinessMapClient): void {
-        // List cards for a specific board
+        // Return a bounded discovery page. Clients can follow the page resource for more.
         server.registerResource(
             'cards',
             new ResourceTemplate('businessmap://boards/{board_id}/cards', { list: undefined }),
@@ -15,12 +31,17 @@ export class CardResourceHandler implements BaseResourceHandler {
                     if (Number.isNaN(boardId)) {
                         throw new TypeError(`Invalid board_id: "${variables.board_id}" is not a valid number`);
                     }
-                    const cards = await client.cards.getCards(boardId);
+                    const cards = await client.cards.getCardsPage(boardId, { page: 1, per_page: 50 });
                     return {
                         contents: [
                             {
                                 uri: uri.href,
-                                text: JSON.stringify(cards, null, 2),
+                                text: JSON.stringify({
+                                    ...cards,
+                                    data: cards.data.map(compactCard),
+                                    next_resource_template:
+                                        'businessmap://boards/{board_id}/cards/pages/{page}/size/{per_page}',
+                                }, null, 2),
                             },
                         ],
                     };
@@ -56,7 +77,7 @@ export class CardResourceHandler implements BaseResourceHandler {
                     contents: [
                         {
                             uri: uri.href,
-                            text: JSON.stringify(cards, null, 2),
+                            text: JSON.stringify({ ...cards, data: cards.data.map(compactCard) }, null, 2),
                         },
                     ],
                 };
