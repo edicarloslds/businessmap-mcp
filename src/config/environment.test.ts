@@ -126,4 +126,13 @@ describe('validateConfig', () => {
     const { config } = await import('./environment.js');
     expect(config.businessMap.toolProfile).toBe('essential');
   });
+
+  it('defaults to the essential tool profile', async () => {
+    process.env['BUSINESSMAP_API_URL'] = 'https://example.businessmap.io';
+    process.env['BUSINESSMAP_API_TOKEN'] = 'token';
+    delete process.env['BUSINESSMAP_TOOL_PROFILE'];
+
+    const { config } = await import('./environment.js');
+    expect(config.businessMap.toolProfile).toBe('essential');
+  });
 });

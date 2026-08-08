@@ -100,13 +100,17 @@ export const listCardsSchema = z.object({
   include_pagination: z
     .boolean()
     .optional()
-    .default(false)
-    .describe('Return cards with pagination metadata instead of the legacy cards array'),
+    .default(true)
+    .describe(
+      'Return cards with pagination metadata. Defaults to true; set false only for legacy array compatibility.'
+    ),
   compact: z
     .boolean()
     .optional()
-    .default(false)
-    .describe('Return only the most useful card fields to reduce response size'),
+    .default(true)
+    .describe(
+      'Return only the most useful card fields. Defaults to true for predictable payloads.'
+    ),
 
   // Legacy compatibility
   assignee_user_id: z
@@ -122,6 +126,17 @@ export const listCardsSchema = z.object({
 // Basic schema for get card
 export const getCardSchema = z.object({
   card_id: z.number().describe('The ID of the card'),
+});
+
+export const getCardDetailSchema = z.object({
+  card_id: z.number().describe('The ID of the card'),
+  detail_level: z
+    .enum(['summary', 'full'])
+    .optional()
+    .default('summary')
+    .describe(
+      'summary returns core fields and related-item counts; full returns the complete API card payload'
+    ),
 });
 
 // Card size schema
@@ -299,8 +314,8 @@ export const searchCardsSchema = z.object({
   compact: z
     .boolean()
     .optional()
-    .default(false)
-    .describe('Return only the most useful card fields to reduce response size'),
+    .default(true)
+    .describe('Return only the most useful card fields. Defaults to true for discovery.'),
 });
 
 // Complex schemas for card creation

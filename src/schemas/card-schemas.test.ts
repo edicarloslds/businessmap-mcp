@@ -1,6 +1,7 @@
 import {
   createCardSchema,
   deleteCardSubtaskSchema,
+  getCardDetailSchema,
   getCardLoggedTimeSchema,
   getCardSchema,
   listCardsSchema,
@@ -17,6 +18,8 @@ describe('listCardsSchema', () => {
   it('accepts minimum valid input with board_id only', () => {
     const result = listCardsSchema.parse({ board_id: 10 });
     expect(result.board_id).toBe(10);
+    expect(result.include_pagination).toBe(true);
+    expect(result.compact).toBe(true);
   });
 
   it('accepts optional date filters', () => {
@@ -43,13 +46,10 @@ describe('listCardsSchema', () => {
     expect(result.owner_user_ids).toEqual([101, 102]);
   });
 
-  it.each(['active', 'archived', 'discarded', 'all'] as const)(
-    'accepts state "%s"',
-    (state) => {
-      const result = listCardsSchema.parse({ board_id: 1, state });
-      expect(result.state).toBe(state);
-    }
-  );
+  it.each(['active', 'archived', 'discarded', 'all'] as const)('accepts state "%s"', (state) => {
+    const result = listCardsSchema.parse({ board_id: 1, state });
+    expect(result.state).toBe(state);
+  });
 
   it('keeps state undefined when omitted (backward compatible)', () => {
     const result = listCardsSchema.parse({ board_id: 1 });
@@ -86,6 +86,13 @@ describe('getCardSchema', () => {
 
   it('rejects non-number card_id', () => {
     expect(() => getCardSchema.parse({ card_id: 'xyz' })).toThrow();
+  });
+});
+
+describe('getCardDetailSchema', () => {
+  it('defaults to summary detail', () => {
+    const result = getCardDetailSchema.parse({ card_id: 999 });
+    expect(result.detail_level).toBe('summary');
   });
 });
 
@@ -127,6 +134,7 @@ describe('searchCardsSchema', () => {
   it('accepts empty input (searches across all boards)', () => {
     const result = searchCardsSchema.parse({});
     expect(result.board_ids).toBeUndefined();
+    expect(result.compact).toBe(true);
   });
 
   it('accepts advanced filters', () => {

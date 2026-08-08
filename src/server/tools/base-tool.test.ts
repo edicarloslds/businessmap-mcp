@@ -1,6 +1,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod/v3';
 import { logger } from '../../utils/logger.js';
+import { config } from '../../config/environment.js';
 import {
   WRITE_IDEMPOTENT,
   createErrorResponse,
@@ -66,6 +67,8 @@ describe('createSuccessResponse', () => {
 
 describe('registerTool mutation audit', () => {
   it('logs numeric identifiers without free-form values', async () => {
+    const originalProfile = config.businessMap.toolProfile;
+    config.businessMap.toolProfile = 'full';
     const register = jest.fn();
     const info = jest.spyOn(logger, 'info').mockImplementation(() => undefined);
     registerTool({ registerTool: register } as unknown as McpServer, {
@@ -94,5 +97,6 @@ describe('registerTool mutation audit', () => {
     );
     expect(JSON.stringify(info.mock.calls)).not.toContain('sensitive comment text');
     info.mockRestore();
+    config.businessMap.toolProfile = originalProfile;
   });
 });

@@ -84,7 +84,7 @@ function getBooleanEnvVar(name: string, defaultValue: boolean = false): boolean 
 }
 
 function getToolProfile(): 'full' | 'essential' {
-  const value = (process.env['BUSINESSMAP_TOOL_PROFILE'] || 'full').toLowerCase();
+  const value = (process.env['BUSINESSMAP_TOOL_PROFILE'] || 'essential').toLowerCase();
   if (value === 'full' || value === 'essential') {
     return value;
   }

@@ -20,6 +20,7 @@ import {
   getCardChildGraphSchema,
   getCardChildrenSchema,
   getCardCommentSchema,
+  getCardDetailSchema,
   getCardFlowHistorySchema,
   getCardHistorySchema,
   getCardLinkedCardsSchema,
@@ -72,6 +73,43 @@ function compactCard(card: Card) {
   };
 }
 
+function boundedText(value: string | undefined, maxLength = 2000) {
+  if (!value || value.length <= maxLength) return value;
+  return `${value.slice(0, maxLength)}…`;
+}
+
+function summarizeCard(card: Card) {
+  return {
+    ...compactCard(card),
+    workflow_id: card.workflow_id,
+    section: card.section,
+    description: boundedText(card.description),
+    description_truncated: (card.description?.length ?? 0) > 2000,
+    created_at: card.created_at,
+    last_modified: card.last_modified,
+    in_current_position_since: card.in_current_position_since,
+    current_cycle_time: card.current_cycle_time,
+    related_counts: {
+      attachments: card.attachments?.length ?? 0,
+      custom_fields: card.custom_fields?.length ?? 0,
+      subtasks: card.subtasks?.length ?? 0,
+      linked_cards: card.linked_cards?.length ?? 0,
+      outcomes: card.outcomes?.length ?? 0,
+    },
+    next_tools: [
+      'get_card_comments',
+      'get_card_subtasks',
+      'get_card_parents',
+      'get_card_children',
+    ],
+    full_profile_tools: [
+      'get_card_flow_history',
+      'get_card_blocked_times',
+      'get_card_revisions',
+    ],
+  };
+}
+
 function compactCardResult(result: Card[] | CardPage) {
   if (Array.isArray(result)) {
     return result.map(compactCard);
@@ -97,15 +135,18 @@ export class CardToolHandler implements BaseToolHandler {
       name: 'list_cards',
       title: 'List Cards',
       description:
-        'Get cards from a board with optional filters. Supports pagination metadata and compact responses.',
+        'Discover cards on one board. Returns a compact, paginated page by default; use get_card with a returned card_id for detail.',
       schema: listCardsSchema,
       annotations: READ_ONLY,
       errorContext: 'fetching cards',
       handler: async ({ board_id, include_pagination, compact, ...filters }) => {
-        const result = include_pagination
-          ? await client.cards.getCardsPage(board_id, filters)
-          : await client.cards.getCards(board_id, filters);
-        return compact ? compactCardResult(result) : result;
+        const shouldPaginate = include_pagination ?? true;
+        const shouldCompact = compact ?? true;
+        const boundedFilters = { ...filters, per_page: filters.per_page ?? 50 };
+        const result = shouldPaginate
+          ? await client.cards.getCardsPage(board_id, boundedFilters)
+          : await client.cards.getCards(board_id, boundedFilters);
+        return shouldCompact ? compactCardResult(result) : result;
       },
     });
 
@@ -113,24 +154,31 @@ export class CardToolHandler implements BaseToolHandler {
       name: 'search_cards',
       title: 'Search Cards',
       description:
-        'Search cards across boards using advanced filters, with an optional compact response.',
+        'Discover cards across boards using advanced filters. Returns compact results by default; use get_card with a returned card_id for detail.',
       schema: searchCardsSchema,
       annotations: READ_ONLY,
       errorContext: 'searching cards',
       handler: async ({ compact, ...params }) => {
-        const result = await client.cards.searchCards(params);
-        return compact ? compactCardResult(result) : result;
+        const result = await client.cards.searchCards({
+          ...params,
+          per_page: params.per_page ?? 50,
+        });
+        return (compact ?? true) ? compactCardResult(result) : result;
       },
     });
 
     registerTool(server, {
       name: 'get_card',
       title: 'Get Card',
-      description: 'Get details of a specific card',
-      schema: getCardSchema,
+      description:
+        'Inspect a card selected by card_id. Returns a useful summary and related-item counts by default; set detail_level=full only when the complete payload is required.',
+      schema: getCardDetailSchema,
       annotations: READ_ONLY,
       errorContext: 'fetching card',
-      handler: ({ card_id }) => client.cards.getCard(card_id),
+      handler: async ({ card_id, detail_level }) => {
+        const card = await client.cards.getCard(card_id);
+        return detail_level === 'full' ? card : summarizeCard(card);
+      },
     });
 
     registerTool(server, {

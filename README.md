@@ -13,7 +13,7 @@ Model Context Protocol (MCP) server for BusinessMap/Kanbanize. It gives AI clien
 
 ## What You Get
 
-- Up to 92 MCP tools for workspaces, boards, cards, docs, users, custom fields, workflow management, batch board setup, and health checks
+- 27 agent-oriented MCP tools by default, with a 93-tool full profile for advanced operations
 - 6 MCP resources for direct workspace, board, and paginated card reads
 - 4 guided prompts for board analysis, reporting, card creation, and workspace summaries
 - Optional read-only mode for safer exploration
@@ -50,20 +50,20 @@ BUSINESSMAP_API_URL=https://your-account.kanbanize.com/api/v2
 
 Optional settings:
 
-| Variable | Default | Description |
-| --- | --- | --- |
-| `BUSINESSMAP_READ_ONLY_MODE` | `false` | Use `true` to register only read-only tools. |
-| `BUSINESSMAP_DEFAULT_WORKSPACE_ID` | unset | Default workspace ID for tools that can use one. |
-| `BUSINESSMAP_TOOL_PROFILE` | `full` | Use `essential` for a smaller, general-purpose tool catalog. |
-| `LOG_LEVEL` | `1` | `0` debug, `1` info, `2` warn, `3` error, `4` none. |
-| `LOG_FORMAT` | `text` | Use `json` for structured logs. |
-| `TRANSPORT` | `stdio` | Use `stdio` or `http`. |
-| `PORT` | `3000` | HTTP server port. |
-| `ALLOWED_ORIGINS` | `http://localhost` | CORS allowlist for HTTP mode. |
-| `ALLOWED_HOSTS` | unset | Host header allowlist for HTTP mode. |
-| `HTTP_BODY_LIMIT` | `1mb` | Maximum JSON request body size (`b`, `kb`, or `mb`). |
-| `HTTP_MAX_SESSIONS` | `100` | Maximum concurrent initialized HTTP sessions. |
-| `HTTP_SESSION_TIMEOUT_MS` | `1800000` | Idle session timeout in milliseconds. |
+| Variable                           | Default            | Description                                                                                 |
+| ---------------------------------- | ------------------ | ------------------------------------------------------------------------------------------- |
+| `BUSINESSMAP_READ_ONLY_MODE`       | `false`            | Use `true` to register only read-only tools.                                                |
+| `BUSINESSMAP_DEFAULT_WORKSPACE_ID` | unset              | Default workspace ID for tools that can use one.                                            |
+| `BUSINESSMAP_TOOL_PROFILE`         | `essential`        | Agent-oriented catalog with progressive disclosure. Use `full` for all advanced operations. |
+| `LOG_LEVEL`                        | `1`                | `0` debug, `1` info, `2` warn, `3` error, `4` none.                                         |
+| `LOG_FORMAT`                       | `text`             | Use `json` for structured logs.                                                             |
+| `TRANSPORT`                        | `stdio`            | Use `stdio` or `http`.                                                                      |
+| `PORT`                             | `3000`             | HTTP server port.                                                                           |
+| `ALLOWED_ORIGINS`                  | `http://localhost` | CORS allowlist for HTTP mode.                                                               |
+| `ALLOWED_HOSTS`                    | unset              | Host header allowlist for HTTP mode.                                                        |
+| `HTTP_BODY_LIMIT`                  | `1mb`              | Maximum JSON request body size (`b`, `kb`, or `mb`).                                        |
+| `HTTP_MAX_SESSIONS`                | `100`              | Maximum concurrent initialized HTTP sessions.                                               |
+| `HTTP_SESSION_TIMEOUT_MS`          | `1800000`          | Idle session timeout in milliseconds.                                                       |
 
 ## MCP Client Setup
 

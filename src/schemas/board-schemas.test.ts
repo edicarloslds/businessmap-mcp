@@ -2,7 +2,7 @@ import { createBoardSchema, listBoardsSchema, searchBoardSchema } from './board-
 
 describe('listBoardsSchema', () => {
   it('accepts an empty object (all fields optional)', () => {
-    expect(() => listBoardsSchema.parse({})).not.toThrow();
+    expect(listBoardsSchema.parse({}).detail_level).toBe('summary');
   });
 
   it('accepts valid board_ids array', () => {
@@ -26,27 +26,20 @@ describe('listBoardsSchema', () => {
 });
 
 describe('searchBoardSchema', () => {
-  it('accepts object with board_id only', () => {
-    const result = searchBoardSchema.parse({ board_id: 42 });
-    expect(result.board_id).toBe(42);
-  });
-
   it('accepts object with board_name only', () => {
     const result = searchBoardSchema.parse({ board_name: 'My Board' });
     expect(result.board_name).toBe('My Board');
   });
 
-  it('accepts empty object (all fields optional)', () => {
-    expect(() => searchBoardSchema.parse({})).not.toThrow();
+  it('rejects an empty search', () => {
+    expect(() => searchBoardSchema.parse({})).toThrow();
   });
 
-  it('accepts all fields together', () => {
+  it('accepts a name scoped to a workspace', () => {
     const result = searchBoardSchema.parse({
-      board_id: 1,
       board_name: 'Test',
       workspace_id: 100,
     });
-    expect(result.board_id).toBe(1);
     expect(result.board_name).toBe('Test');
     expect(result.workspace_id).toBe(100);
   });
