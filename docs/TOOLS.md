@@ -22,6 +22,15 @@ structure fetches, and explicit summary/full detail levels. These deterministic
 checks complement production trajectory evals, where tool-call count, latency,
 and token cost should also be monitored.
 
+## Architecture inspiration
+
+The progressive-disclosure architecture used by this server was inspired by
+[“MCPs need to be designed too”](https://www.raindrop.ai/blog/mcp-design/), by
+Jackson Ferrigno at Raindrop. The article's tool-hierarchy approach informed
+the separation between compact discovery, focused detail, and deeper forensic
+operations in this project. Credit belongs to the author and the Raindrop team
+for publishing the design and its evaluation results.
+
 ---
 
 ## Tools
