@@ -260,7 +260,7 @@ export class CardClient extends BaseClientModuleImpl {
   async createCard(params: CreateCardParams): Promise<Card> {
     this.checkReadOnlyMode('create card');
     const response = await this.http.post<ApiResponse<Card[] | Card>>('/cards', params);
-    return this.toCard(response.data.data);
+    return this.toCreatedCard(response.data.data, params);
   }
 
   /**
@@ -273,7 +273,7 @@ export class CardClient extends BaseClientModuleImpl {
       `/cards/${card_id}`,
       updateData
     );
-    return this.toCard(response.data.data, card_id);
+    return this.toUpdatedCard(response.data.data, card_id);
   }
 
   /**
@@ -291,23 +291,39 @@ export class CardClient extends BaseClientModuleImpl {
       lane_id: laneId,
       position: position,
     });
-    return this.toCard(response.data.data, cardId);
+    return this.toUpdatedCard(response.data.data, cardId);
   }
 
   /**
-   * POST and PATCH /cards return an array with the cards that changed. A PATCH
-   * that changes nothing returns an empty array, so the card is fetched instead.
+   * POST and PATCH /cards return an array with every card that changed, sorted by
+   * card_id. Linking cards changes both sides, so linked cards come back too and
+   * the first item is not necessarily the requested card. A PATCH that changes
+   * nothing returns an empty array, so the card is fetched instead.
    */
-  private async toCard(data: Card[] | Card, cardId?: number): Promise<Card> {
-    const card = Array.isArray(data) ? data[0] : data;
-    if (card) {
+  private async toUpdatedCard(data: Card[] | Card, cardId: number | undefined): Promise<Card> {
+    const cards = Array.isArray(data) ? data : [data];
+    if (cardId === undefined) {
+      const [card] = cards;
+      if (!card) {
+        throw new Error('BusinessMap API returned no card');
+      }
       return card;
     }
-    if (cardId === undefined) {
+    return cards.find((card) => card?.card_id === cardId) ?? this.getCard(cardId);
+  }
+
+  private toCreatedCard(data: Card[] | Card, params: CreateCardParams): Card {
+    const cards = Array.isArray(data) ? data : [data];
+    const linkedCardIds = new Set(
+      params.links_to_existing_cards_to_add_or_update?.map((link) => link.linked_card_id)
+    );
+    const card = cards.find((item) => item && !linkedCardIds.has(item.card_id));
+    if (!card) {
       throw new Error('BusinessMap API returned no card');
     }
-    return this.getCard(cardId);
+    return card;
   }
+
 
   /**
    * Delete a card

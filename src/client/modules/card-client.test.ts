@@ -104,6 +104,51 @@ describe('CardClient write responses', () => {
     await expect(client.updateCard({ card_id: 7, title: 'Written card' })).resolves.toBe(card);
     expect(get).toHaveBeenCalledWith('/cards/7');
   });
+
+  it('returns the updated card when linked cards come first in the PATCH response', async () => {
+    // The API sorts changed cards by card_id, so a linked card with a lower ID comes first
+    const linkedCard = { card_id: 3, title: 'Linked card' } as Card;
+    const patch = jest.fn().mockResolvedValue({ data: { data: [linkedCard, card] } });
+    const get = jest.fn();
+    const client = createWriteClient({ patch, get });
+
+    await expect(
+      client.updateCard({
+        card_id: 7,
+        links_to_existing_cards_to_add_or_update: [{ linked_card_id: 3, link_type: 'parent' }],
+      })
+    ).resolves.toBe(card);
+    expect(get).not.toHaveBeenCalled();
+  });
+
+  it('fetches the card when only linked cards come back in the PATCH response', async () => {
+    const linkedCard = { card_id: 3, title: 'Linked card' } as Card;
+    const patch = jest.fn().mockResolvedValue({ data: { data: [linkedCard] } });
+    const get = jest.fn().mockResolvedValue({ data: { data: card } });
+    const client = createWriteClient({ patch, get });
+
+    await expect(
+      client.updateCard({
+        card_id: 7,
+        links_to_existing_cards_to_remove: [{ linked_card_id: 3, link_type: 'parent' }],
+      })
+    ).resolves.toBe(card);
+    expect(get).toHaveBeenCalledWith('/cards/7');
+  });
+
+  it('returns the created card instead of the cards it was linked to', async () => {
+    const linkedCard = { card_id: 3, title: 'Linked card' } as Card;
+    const post = jest.fn().mockResolvedValue({ data: { data: [linkedCard, card] } });
+    const client = createWriteClient({ post });
+
+    await expect(
+      client.createCard({
+        title: 'Written card',
+        column_id: 1,
+        links_to_existing_cards_to_add_or_update: [{ linked_card_id: 3, link_type: 'child' }],
+      })
+    ).resolves.toBe(card);
+  });
 });
 
 describe('CardClient expanded card lookup', () => {
