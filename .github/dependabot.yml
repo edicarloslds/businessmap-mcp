@@ -4,6 +4,12 @@ updates:
     directory: /
     schedule:
       interval: "weekly"
+    # Production updates become fix(deps) commits so they ship a patch release;
+    # development updates stay chore(deps-dev) and do not trigger a release
+    commit-message:
+      prefix: "fix"
+      prefix-development: "chore"
+      include: "scope"
     groups:
       development-dependencies:
         dependency-type: development

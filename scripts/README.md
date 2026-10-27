@@ -1,118 +1,44 @@
-# Publishing Scripts
+# Release Scripts
 
-This directory contains scripts to automate the release and publishing process of the BusinessMap MCP Server.
+Releases are published by the [Release workflow](../.github/workflows/release.yml)
+on every push to `main`. See [docs/RELEASE_PROCESS.md](../docs/RELEASE_PROCESS.md)
+for the full process.
 
 ## Available Scripts
 
-### 📦 `publish-npm.sh` – NPM Publish
+### 🚀 `release.sh` – Automated Release
 
-Publishes the package to the NPM Registry.
-
-**Usage:**
-
-```bash
-npm run publish:npm
-```
-
-**Features:**
-
-- Automatically detects if the current version has already been published
-- Automatically bumps the version when needed
-- Runs build and tests automatically
-- Publishes to NPM
-
-**Prerequisites:**
-
-- You must be logged in to NPM (`npm login`)
-
-### 🏷️ `publish-github.sh` – GitHub Release
-
-Creates a GitHub release with automatically generated release notes.
-
-**Usage:**
+Non-interactive release used by the workflow: computes the next version from
+Conventional Commits, creates the release commit and tag, pushes them,
+publishes to npm and creates the GitHub release. Safe to re-run: it finishes a
+release left halfway instead of creating a new one.
 
 ```bash
-npm run publish:github
+DRY_RUN=true bash scripts/release.sh
 ```
 
-**Features:**
+### 📈 `next-version.sh` – Bump Detection
 
-- Automatically detects if the release already exists
-- Automatically bumps the version when needed
-- Automatically creates git tags
-- Automatically generates release notes
-- Automatically pushes tags to the remote repository
+Prints `major`, `minor`, `patch` or `none` for a commit range.
 
-**Prerequisites:**
-
-- GitHub CLI must be authenticated (`gh auth login`)
+```bash
+bash scripts/next-version.sh v1.2.2..HEAD
+bash scripts/next-version.sh --apply minor 1.2.2   # 1.3.0
+```
 
 ### 📝 `generate-release-notes.sh` – Release Notes Generation
 
-Generates release notes based on commits since the last tag.
-
-**Usage:**
+Generates release notes based on commits in a range, crediting each commit to
+its GitHub author (resolved with `gh` when it is authenticated).
 
 ```bash
 bash scripts/generate-release-notes.sh <version> [commit-range]
 ```
 
-### 👀 `preview-release-notes.sh` – Release Notes Preview
+### 👀 `preview-release-notes.sh` – Release Preview
 
-Previews the release notes that would be generated.
-
-**Usage:**
-
-```bash
-npm run preview:release
-```
-
-## Workflows
-
-### Option 1: Fully Automated Process
-
-```bash
-# NPM detects published version and offers automatic bump
-npm run publish:npm
-
-# GitHub detects existing release and offers automatic bump
-npm run publish:github
-```
-
-### Option 2: Independent Flows
-
-```bash
-# Only publish to NPM (with automatic bump if needed)
-npm run publish:npm
-
-# Only create a GitHub release (with automatic bump if needed)
-npm run publish:github
-```
-
-## Safety Features
-
-- ✅ **Lock files** prevent duplicate execution
-- ✅ **Validations** check authentication and repository state
-- ✅ **Automatic rollback** in case of errors during version bump
-- ✅ **Confirmations** before performing irreversible actions
-- ✅ **Automatic cleanup** removes lock files on exit
-
-## Troubleshooting
-
-### Script is already running
-
-```bash
-rm /tmp/businessmap-mcp-publish*.lock
-```
-
-### Manually revert a version bump
-
-```bash
-git tag -d v<version>
-git reset --hard HEAD~1
-```
-
-### Preview the release notes
+Shows the version and release notes the workflow would publish for the current
+branch.
 
 ```bash
 npm run preview:release
