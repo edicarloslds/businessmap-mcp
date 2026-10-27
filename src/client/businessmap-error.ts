@@ -40,11 +40,24 @@ export class BusinessMapApiError extends Error {
   }
 }
 
+// The raw AxiosError keeps the request config and socket data, including the
+// apikey header, so only non-sensitive fields are kept as the error cause.
+function toSafeCause(error: AxiosError): Error {
+  const cause = new Error(error.message);
+  cause.name = error.name ?? 'AxiosError';
+  return Object.assign(cause, {
+    code: error.code,
+    method: error.config?.method?.toUpperCase(),
+    url: error.config?.url,
+    status: error.response?.status,
+  });
+}
+
 export function transformAxiosError(error: AxiosError): BusinessMapApiError {
   if (!error.response) {
     return new BusinessMapApiError(`Network Error: ${error.message}`, {
       isNetworkError: true,
-      cause: error,
+      cause: toSafeCause(error),
     });
   }
 
@@ -57,6 +70,6 @@ export function transformAxiosError(error: AxiosError): BusinessMapApiError {
     status,
     code: apiError?.code,
     details: apiError?.details,
-    cause: error,
+    cause: toSafeCause(error),
   });
 }
