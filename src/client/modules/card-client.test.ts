@@ -96,3 +96,28 @@ describe('CardClient expanded card lookup', () => {
     ]);
   });
 });
+
+describe('CardClient updateCard', () => {
+  it('sends link changes in the PATCH body without the card_id', async () => {
+    const card = { card_id: 1, title: 'Linked' } as Card;
+    const patch = jest.fn().mockResolvedValue({ data: { data: card } });
+    const client = new CardClient();
+    client.initialize({ patch } as unknown as AxiosInstance, {
+      apiUrl: 'https://example.kanbanize.com/api/v2',
+      apiToken: 'token',
+    });
+
+    await expect(
+      client.updateCard({
+        card_id: 1,
+        links_to_existing_cards_to_add_or_update: [{ linked_card_id: 2, link_type: 'parent' }],
+        links_to_existing_cards_to_remove: [{ linked_card_id: 3, link_type: 'relative' }],
+      })
+    ).resolves.toBe(card);
+
+    expect(patch).toHaveBeenCalledWith('/cards/1', {
+      links_to_existing_cards_to_add_or_update: [{ linked_card_id: 2, link_type: 'parent' }],
+      links_to_existing_cards_to_remove: [{ linked_card_id: 3, link_type: 'relative' }],
+    });
+  });
+});

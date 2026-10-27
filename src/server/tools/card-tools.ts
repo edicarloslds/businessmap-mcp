@@ -468,7 +468,8 @@ export class CardToolHandler implements BaseToolHandler {
     registerTool(server, {
       name: 'update_card',
       title: 'Update Card',
-      description: "Update a card's properties",
+      description:
+        "Update a card's properties, and add, reposition or remove its links (parent, child, relative, predecessor, successor) to existing cards",
       schema: updateCardSchema,
       annotations: WRITE,
       errorContext: 'updating card',

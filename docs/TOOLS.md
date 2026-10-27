@@ -80,7 +80,7 @@ for publishing the design and its evaluation results.
 | `get_card_types` | Get all available card types                                         |       ✅       |
 | `create_card`    | Create a new card in a board                                         |       ❌       |
 | `move_card`      | Move a card to a different column or lane                            |       ❌       |
-| `update_card`    | Update card properties                                               |       ❌       |
+| `update_card`    | Update card properties and links to other cards                      |       ❌       |
 | `set_card_size`  | Set the size/points of a specific card                               |       ❌       |
 | `delete_card`    | Permanently delete a card (irreversible)                             |     ❌ ⚠️      |
 
@@ -100,6 +100,22 @@ to 50 cards, and `search_cards` also defaults to compact results with a 50-card
 page size. Use `page` and `per_page` to navigate. Set `compact: false` only when
 full list payloads are required; set `include_pagination: false` on `list_cards`
 only for legacy array compatibility.
+
+`update_card` can also add, reposition or remove links on an existing card.
+`link_type` is one of `parent`, `child`, `relative`, `predecessor` or
+`successor`, and describes the linked card from the point of view of the
+updated card. Positions are optional:
+
+```json
+{
+  "card_id": 1234,
+  "links_to_existing_cards_to_add_or_update": [
+    { "linked_card_id": 1200, "link_type": "parent" },
+    { "linked_card_id": 1250, "link_type": "relative" }
+  ],
+  "links_to_existing_cards_to_remove": [{ "linked_card_id": 1100, "link_type": "predecessor" }]
+}
+```
 
 #### Comments
 
