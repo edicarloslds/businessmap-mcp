@@ -7,6 +7,7 @@ import {
   listCardsSchema,
   moveCardSchema,
   searchCardsSchema,
+  updateCardSchema,
   updateCardSubtaskSchema,
 } from './card-schemas.js';
 
@@ -127,6 +128,56 @@ describe('createCardSchema', () => {
 
   it('rejects non-string title', () => {
     expect(() => createCardSchema.parse({ title: 123, column_id: 1 })).toThrow();
+  });
+
+  it('accepts links to existing cards without positions', () => {
+    const result = createCardSchema.parse({
+      title: 'Linked card',
+      column_id: 10,
+      links_to_existing_cards_to_add_or_update: [{ linked_card_id: 7, link_type: 'parent' }],
+    });
+    expect(result.links_to_existing_cards_to_add_or_update).toEqual([
+      { linked_card_id: 7, link_type: 'parent' },
+    ]);
+  });
+});
+
+describe('updateCardSchema', () => {
+  it('requires card_id', () => {
+    expect(() => updateCardSchema.parse({ title: 'No id' })).toThrow();
+  });
+
+  it('accepts links to add, reposition and remove', () => {
+    const result = updateCardSchema.parse({
+      card_id: 1,
+      links_to_existing_cards_to_add_or_update: [
+        { linked_card_id: 2, link_type: 'relative' },
+        { linked_card_id: 3, link_type: 'child', linked_card_position: 0, card_position: 1 },
+      ],
+      links_to_existing_cards_to_remove: [{ linked_card_id: 4, link_type: 'predecessor' }],
+    });
+    expect(result.links_to_existing_cards_to_add_or_update).toHaveLength(2);
+    expect(result.links_to_existing_cards_to_remove).toEqual([
+      { linked_card_id: 4, link_type: 'predecessor' },
+    ]);
+  });
+
+  it('rejects unknown link types', () => {
+    expect(() =>
+      updateCardSchema.parse({
+        card_id: 1,
+        links_to_existing_cards_to_add_or_update: [{ linked_card_id: 2, link_type: 'blocks' }],
+      })
+    ).toThrow();
+  });
+
+  it('requires link_type when removing a link', () => {
+    expect(() =>
+      updateCardSchema.parse({
+        card_id: 1,
+        links_to_existing_cards_to_remove: [{ linked_card_id: 2 }],
+      })
+    ).toThrow();
   });
 });
 

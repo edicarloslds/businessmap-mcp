@@ -374,18 +374,43 @@ export const annotationSchema = z.object({
   content: z.string(),
 });
 
+export const cardLinkTypeSchema = z
+  .enum(['parent', 'child', 'relative', 'predecessor', 'successor'])
+  .describe(
+    'Type of the link from the point of view of the card: "parent" makes the linked card a parent of this card, ' +
+      '"child" makes it a child, "predecessor" makes it a prerequisite of this card, "successor" makes this card ' +
+      'its prerequisite, and "relative" is a plain related link'
+  );
+
 export const cardLinkSchema = z.object({
-  linked_card_id: z.number(),
-  link_type: z.string(),
-  linked_card_position: z.number(),
-  card_position: z.number(),
+  linked_card_id: z.number().describe('The ID of the existing card to link'),
+  link_type: cardLinkTypeSchema,
+  linked_card_position: z
+    .number()
+    .optional()
+    .describe('Optional position of the linked card within this card\'s list of linked cards'),
+  card_position: z
+    .number()
+    .optional()
+    .describe('Optional position of this card within the linked card\'s list of linked cards'),
 });
 
 export const newCardLinkSchema = z.object({
-  linked_new_card_reference: z.string(),
-  link_type: z.string(),
-  linked_card_position: z.number(),
-  card_position: z.number(),
+  linked_new_card_reference: z.string().min(1).describe('The reference of the new card to link'),
+  link_type: cardLinkTypeSchema,
+  linked_card_position: z
+    .number()
+    .optional()
+    .describe('Optional position of the linked card within this card\'s list of linked cards'),
+  card_position: z
+    .number()
+    .optional()
+    .describe('Optional position of this card within the linked card\'s list of linked cards'),
+});
+
+export const cardLinkToRemoveSchema = z.object({
+  linked_card_id: z.number().describe('The ID of the linked card'),
+  link_type: cardLinkTypeSchema,
 });
 
 export const cardPropertyToCopySchema = z.object({
@@ -534,6 +559,16 @@ export const updateCardSchema = z.object({
   size: z.number().optional().describe('New card size/points'),
   priority: z.string().optional().describe('New priority level'),
   deadline: z.string().optional().describe('New deadline (ISO date string)'),
+
+  // Links
+  links_to_existing_cards_to_add_or_update: z
+    .array(cardLinkSchema)
+    .optional()
+    .describe('Optional links to existing cards to add to the card, or whose position to update'),
+  links_to_existing_cards_to_remove: z
+    .array(cardLinkToRemoveSchema)
+    .optional()
+    .describe('Optional links to existing cards to remove from the card'),
 });
 
 // Parent card schemas

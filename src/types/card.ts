@@ -142,6 +142,15 @@ export interface LinkedCard {
   link_type: string;
 }
 
+export type CardLinkType = 'parent' | 'child' | 'relative' | 'predecessor' | 'successor';
+
+export interface CardLinkToAddOrUpdate {
+  linked_card_id: number;
+  link_type: CardLinkType;
+  linked_card_position?: number;
+  card_position?: number;
+}
+
 export interface CardPagination {
   all_pages: number;
   current_page: number;
@@ -266,17 +275,12 @@ export interface CreateCardParams {
     thread_id: string;
     content: string;
   }>;
-  links_to_existing_cards_to_add_or_update?: Array<{
-    linked_card_id: number;
-    link_type: string;
-    linked_card_position: number;
-    card_position: number;
-  }>;
+  links_to_existing_cards_to_add_or_update?: CardLinkToAddOrUpdate[];
   links_to_new_cards_to_add?: Array<{
     linked_new_card_reference: string;
-    link_type: string;
-    linked_card_position: number;
-    card_position: number;
+    link_type: CardLinkType;
+    linked_card_position?: number;
+    card_position?: number;
   }>;
   watch?: number;
   created_at?: string;
@@ -305,6 +309,11 @@ export interface UpdateCardParams {
   assignee_user_id?: number;
   deadline?: string;
   position?: number;
+  links_to_existing_cards_to_add_or_update?: CardLinkToAddOrUpdate[];
+  links_to_existing_cards_to_remove?: Array<{
+    linked_card_id: number;
+    link_type: CardLinkType;
+  }>;
 }
 
 // Comment types
