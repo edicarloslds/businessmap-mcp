@@ -67,6 +67,45 @@ describe('CardClient pagination', () => {
   });
 });
 
+describe('CardClient write responses', () => {
+  const card = { card_id: 7, title: 'Written card' } as Card;
+
+  function createWriteClient(http: Record<string, jest.Mock>): CardClient {
+    const client = new CardClient();
+    client.initialize(http as unknown as AxiosInstance, {
+      apiUrl: 'https://example.kanbanize.com/api/v2',
+      apiToken: 'token',
+    });
+    return client;
+  }
+
+  it('unwraps the created card from the array returned by POST /cards', async () => {
+    const post = jest.fn().mockResolvedValue({ data: { data: [card] } });
+    const client = createWriteClient({ post });
+
+    await expect(client.createCard({ title: 'Written card', column_id: 1 })).resolves.toBe(card);
+  });
+
+  it('unwraps the updated card from the array returned by PATCH /cards/{id}', async () => {
+    const patch = jest.fn().mockResolvedValue({ data: { data: [card] } });
+    const get = jest.fn();
+    const client = createWriteClient({ patch, get });
+
+    await expect(client.updateCard({ card_id: 7, size: 3 })).resolves.toBe(card);
+    await expect(client.moveCard(7, 2)).resolves.toBe(card);
+    expect(get).not.toHaveBeenCalled();
+  });
+
+  it('fetches the card when PATCH changes nothing and returns an empty array', async () => {
+    const patch = jest.fn().mockResolvedValue({ data: { data: [] } });
+    const get = jest.fn().mockResolvedValue({ data: { data: card } });
+    const client = createWriteClient({ patch, get });
+
+    await expect(client.updateCard({ card_id: 7, title: 'Written card' })).resolves.toBe(card);
+    expect(get).toHaveBeenCalledWith('/cards/7');
+  });
+});
+
 describe('CardClient expanded card lookup', () => {
   const card = { card_id: 42, title: 'Archived card' } as Card;
 

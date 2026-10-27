@@ -259,8 +259,8 @@ export class CardClient extends BaseClientModuleImpl {
    */
   async createCard(params: CreateCardParams): Promise<Card> {
     this.checkReadOnlyMode('create card');
-    const response = await this.http.post<ApiResponse<Card>>('/cards', params);
-    return response.data.data;
+    const response = await this.http.post<ApiResponse<Card[] | Card>>('/cards', params);
+    return this.toCard(response.data.data);
   }
 
   /**
@@ -269,8 +269,11 @@ export class CardClient extends BaseClientModuleImpl {
   async updateCard(params: UpdateCardParams): Promise<Card> {
     this.checkReadOnlyMode('update card');
     const { card_id, ...updateData } = params;
-    const response = await this.http.patch<ApiResponse<Card>>(`/cards/${card_id}`, updateData);
-    return response.data.data;
+    const response = await this.http.patch<ApiResponse<Card[] | Card>>(
+      `/cards/${card_id}`,
+      updateData
+    );
+    return this.toCard(response.data.data, card_id);
   }
 
   /**
@@ -283,12 +286,27 @@ export class CardClient extends BaseClientModuleImpl {
     position?: number
   ): Promise<Card> {
     this.checkReadOnlyMode('move card');
-    const response = await this.http.patch<ApiResponse<Card>>(`/cards/${cardId}`, {
+    const response = await this.http.patch<ApiResponse<Card[] | Card>>(`/cards/${cardId}`, {
       column_id: columnId,
       lane_id: laneId,
       position: position,
     });
-    return response.data.data;
+    return this.toCard(response.data.data, cardId);
+  }
+
+  /**
+   * POST and PATCH /cards return an array with the cards that changed. A PATCH
+   * that changes nothing returns an empty array, so the card is fetched instead.
+   */
+  private async toCard(data: Card[] | Card, cardId?: number): Promise<Card> {
+    const card = Array.isArray(data) ? data[0] : data;
+    if (card) {
+      return card;
+    }
+    if (cardId === undefined) {
+      throw new Error('BusinessMap API returned no card');
+    }
+    return this.getCard(cardId);
   }
 
   /**
