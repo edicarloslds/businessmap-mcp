@@ -1,146 +1,128 @@
 # Release Process
 
-This document describes the automated release process for the BusinessMap MCP Server.
+Releases are fully automated by the [Release workflow](../.github/workflows/release.yml).
+Merging to `main` is the only manual step.
 
-## 🚀 Automated Process
+## 🚀 What Happens on Every Push to `main`
 
-The release process has been fully automated and includes:
+1. **Validation**: lint, unit tests, build, knip and, when the smoke secrets are
+   configured, the `test:npx` package smoke test.
+2. **Version calculation** from [Conventional Commits](https://www.conventionalcommits.org)
+   since the last `vX.Y.Z` tag:
 
-1. **Version bump** (patch, minor, major)
-2. **Automatic release notes generation** based on commits
-3. **Git tag creation**
-4. **Push tag to GitHub**
-5. **GitHub release creation** with release notes
-6. **NPM publication**
+   | Commits since last tag | Release |
+   |---|---|
+   | `feat!:`, `fix(scope)!:` or a `BREAKING CHANGE:` footer | major |
+   | `feat:` | minor |
+   | `fix:`, `perf:` (including `fix(deps):` from Dependabot) | patch |
+   | only `chore:`, `docs:`, `test:`, `ci:`, `refactor:`, ... | no release |
 
-## 📝 How to Make a Release
+3. **Release commit and tag**: `chore(release): X.Y.Z` plus tag `vX.Y.Z`, pushed to `main`.
+4. **npm publication** with provenance, through npm Trusted Publishing (no token stored in GitHub).
+5. **GitHub release** with the generated release notes.
 
-### 1. Preparation
-
-Before making a release, ensure that:
-
-- [ ] All changes are committed
-- [ ] You are authenticated to NPM: `npm whoami` or make logging via `npm login`
-- [ ] You are authenticated to GitHub CLI: `gh auth status`
-- [ ] Working directory is clean
-
-### 2. Release Notes Preview
-
-To see how the release notes will look before publishing:
-
-```bash
-npm run preview:release
-# or for a specific version:
-npm run preview:release 1.2.3
-```
-
-### 3. Publication
-
-Execute the publish npm command:
-
-```bash
-npm run publish:npm
-```
-
-The script will:
-
-1. Verify authentications
-2. Build and test
-3. Show version options (patch/minor/major)
-4. Generate release notes preview
-5. Confirm publication
-6. Execute the entire process automatically
-
-## 📋 Release Notes Format
-
-Release notes are automatically generated based on commits since the last tag and organized by category:
-
-### 🚀 New Features
-
-- Commits starting with `feat:`, `feature:` or `FEAT:`
-
-### 🐛 Bug Fixes  
-
-- Commits starting with `fix:` or `FIX:`
-
-### ♻️ Code Refactoring
-
-- Commits starting with `refactor:` or `REFACTOR:`
-
-### 📚 Documentation
-
-- Commits starting with `docs:`, `doc:` or `DOCS:`
-
-### 🔧 Other Changes
-
-- All other commits
+Runs are serialized, so pushes made while a release is running are released by
+the next run.
 
 ## 🏷️ Commit Convention
 
-To maximize release notes quality, it's recommended to use the following prefixes:
+Pull requests are squash merged, so the **PR title** becomes the commit message
+that drives the release. Use:
 
-```bash
-feat: add new functionality
-fix: fix bug
-docs: update documentation
-refactor: refactor code
-test: add or update tests
-chore: maintenance tasks
+```text
+feat: add a new capability            -> minor
+fix: correct existing behavior        -> patch
+perf: make something faster           -> patch
+feat!: remove deprecated tool         -> major
+docs: / refactor: / test: / chore:    -> no release on their own
 ```
 
-## 🔧 Available Scripts
+For a breaking change without `!`, add a footer to the commit body:
 
-- `npm run publish:npm` - Publish to NPM only
-- `npm run publish:github` - Create GitHub release only
-- `npm run preview:release` - Preview release notes
-- `scripts/generate-release-notes.sh` - Generate release notes for specific version
+```text
+BREAKING CHANGE: list_cards no longer accepts board_name
+```
 
-## 🎯 Example of Generated Release Notes
+## 👀 Previewing the Next Release
+
+```bash
+npm run preview:release          # next version and notes, as the workflow would compute them
+npm run preview:release 1.2.3    # notes for an explicit version
+```
+
+The workflow can also be started manually from **Actions → Release → Run workflow**
+with **dry_run** checked to see the version and notes without publishing anything.
+
+## 🎛️ Forcing a Specific Version
+
+Bump `version` in `package.json` (and `package-lock.json`) in a pull request,
+for example with `npm version 5.0.0 --no-git-tag-version`. When it lands on
+`main`, the workflow sees an unpublished version, tags that commit and releases
+it as is instead of computing a bump.
+
+## 📋 Release Notes Format
+
+Commits since the previous tag are grouped by type, each one credited to its
+GitHub author:
 
 ```markdown
 ## What's Changed
 
+### ⚠️ Breaking Changes
 ### 🚀 New Features
-- add user authentication support by @username
-- implement card filtering by @username
-
 ### 🐛 Bug Fixes
-- fix memory leak in client by @username
-- resolve API timeout issues by @username
-
+### ⚡ Performance
+### ♻️ Code Refactoring
 ### 📚 Documentation
-- update README with new examples by @username
+### 📦 Dependencies          (scope `deps` / `deps-dev`)
+### 🔧 Other Changes
 
 **Full Changelog**: https://github.com/edicarloslds/businessmap-mcp/compare/v1.0.0...v1.1.0
 ```
 
+## ⚙️ One-time Setup
+
+1. **GitHub environment**: in *Settings → Environments*, create `npm` and under
+   *Deployment branches and tags* select *Selected branches and tags* with only
+   `main`. Only the release job running on `main` can then request an npm
+   publish token.
+2. **npm Trusted Publishing**: on npmjs.com, open the package → *Settings* →
+   *Trusted Publisher* → *GitHub Actions* and set:
+   - Organization or user: `edicarloslds`
+   - Repository: `businessmap-mcp`
+   - Workflow filename: `release.yml`
+   - Environment name: `npm`
+   - Allowed actions: `npm publish` (besides the default `npm stage publish`),
+     since the workflow publishes directly without a manual approval step
+3. **Smoke test secrets** (optional): add environment secrets to `npm` or repository secrets
+   `BUSINESSMAP_SMOKE_API_URL` and `BUSINESSMAP_SMOKE_API_TOKEN`, ideally a
+   read-only token. Without them the smoke test step is skipped.
+4. **Squash merge only**: in *Settings → General → Pull Requests*, keep only
+   *Allow squash merging* with the default message set to the PR title.
+5. **Branch protection** (if enabled later): allow GitHub Actions to push the
+   release commit and tag to `main`, otherwise the release push is rejected.
+
+## 🔧 Scripts
+
+- `scripts/release.sh` - non-interactive release used by the workflow (`DRY_RUN=true` to simulate)
+- `scripts/next-version.sh` - bump type implied by the commits in a range
+- `scripts/generate-release-notes.sh` - release notes for a version and commit range
+- `scripts/preview-release-notes.sh` - local preview of the next release
+
 ## 🚨 Troubleshooting
 
-### NPM Authentication Error
+### A release failed halfway
 
-```bash
-npm login
-```
+Re-run the failed workflow. `scripts/release.sh` is idempotent: when the version
+in `package.json` is missing from npm or has no GitHub release yet, it finishes
+that release instead of computing a new one.
 
-### GitHub Authentication Error
+### Merged a fix but nothing was released
 
-```bash
-gh auth login
-```
+Check that the squash commit on `main` starts with `fix:`/`feat:`/`perf:` and
+run `npm run preview:release` locally to see what the workflow detects.
 
-### Working Directory not clean
+### npm publish fails with 404 / ENEEDAUTH
 
-```bash
-git status
-git add .
-git commit -m "prepare for release"
-```
-
-### Tag already exists
-
-If something goes wrong during the process, you can remove the created tag:
-
-```bash
-git tag -d v1.2.3
-git push origin :refs/tags/v1.2.3
-```
+The Trusted Publisher on npmjs.com must match the repository and the
+`release.yml` filename exactly.

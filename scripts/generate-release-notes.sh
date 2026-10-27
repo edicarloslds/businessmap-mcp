@@ -7,6 +7,7 @@ set -e
 
 VERSION=$1
 COMMIT_RANGE=${2:-""}
+REPO=${GITHUB_REPOSITORY:-"edicarloslds/businessmap-mcp"}
 
 if [ -z "$VERSION" ]; then
     echo "Usage: $0 <version> [commit-range]"
@@ -14,131 +15,166 @@ if [ -z "$VERSION" ]; then
     exit 1
 fi
 
+VERSION=${VERSION#v}
+
+# Cache of "email<TAB>login" lines so each author is resolved only once
+LOGIN_CACHE=$(mktemp)
+trap 'rm -f "$LOGIN_CACHE"' EXIT
+
+GH_AVAILABLE=false
+if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+    GH_AVAILABLE=true
+fi
+
+# Resolve the GitHub login of a commit author, falling back to the git author name
+resolve_author() {
+    local sha=$1
+    local email=$2
+    local name=$3
+    local login=""
+
+    login=$(awk -F'\t' -v e="$email" '$1 == e { print $2; exit }' "$LOGIN_CACHE")
+    if [ -n "$login" ]; then
+        echo "$login"
+        return
+    fi
+
+    # GitHub noreply addresses embed the login: 12345+login@users.noreply.github.com
+    if [[ $email =~ ^([0-9]+\+)?([^@]+)@users\.noreply\.github\.com$ ]]; then
+        login="@${BASH_REMATCH[2]}"
+    elif [ "$GH_AVAILABLE" = true ]; then
+        # gh prints the error payload on stdout when the commit is unknown to GitHub
+        if login=$(gh api "repos/$REPO/commits/$sha" --jq '.author.login // empty' 2>/dev/null) \
+            && [[ $login =~ ^[A-Za-z0-9-]+(\[bot\])?$ ]]; then
+            login="@$login"
+        else
+            login=""
+        fi
+    fi
+
+    if [ -z "$login" ]; then
+        login="$name"
+    fi
+
+    printf '%s\t%s\n' "$email" "$login" >> "$LOGIN_CACHE"
+    echo "$login"
+}
+
 # Function to categorize commits
 categorize_commits() {
     local range=$1
-    
+
     # Initialize arrays for different types
+    declare -a breaking=()
     declare -a features=()
     declare -a fixes=()
-    declare -a docs=()
+    declare -a perf=()
     declare -a refactor=()
+    declare -a docs=()
+    declare -a deps=()
     declare -a other=()
-    
-    # Get commits
+
+    # Get commits (fields separated by the ASCII unit separator)
     if [ -z "$range" ]; then
         # If no range, get all commits (first release)
-        commits=$(git log --pretty=format:"%s|%an" --reverse | head -20)
+        commits=$(git log --pretty=format:"%H%x1f%s%x1f%ae%x1f%an" --reverse | head -20)
     else
-        commits=$(git log $range --pretty=format:"%s|%an" --reverse)
+        commits=$(git log $range --pretty=format:"%H%x1f%s%x1f%ae%x1f%an" --reverse)
     fi
-    
+
+    shopt -s nocasematch
+
     # Process each commit
-    while IFS='|' read -r message author; do
-        # Skip version bump commits (e.g., "1.2.3" or "v1.2.3")
-        if [[ $message =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    while IFS=$'\x1f' read -r sha message email name; do
+        [ -z "$sha" ] && continue
+
+        # Skip release and version bump commits (e.g., "chore(release): 1.2.3", "1.2.3" or "v1.2.3")
+        if [[ $message =~ ^chore\(release\): ]] || [[ $message =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             continue
         fi
-        
-        # Extract GitHub username if available, fallback to git author
-        gh_user=""
-        if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
-            gh_user=$(gh api user --jq '.login' 2>/dev/null || echo "")
+
+        author=$(resolve_author "$sha" "$email" "$name")
+
+        # Split "type(scope)!: description"
+        type=""
+        scope=""
+        bang=""
+        description=$message
+        if [[ $message =~ ^([a-z]+)(\(([^\)]*)\))?(!)?:[[:space:]]*(.*)$ ]]; then
+            type=$(echo "${BASH_REMATCH[1]}" | tr '[:upper:]' '[:lower:]')
+            scope=${BASH_REMATCH[3]}
+            bang=${BASH_REMATCH[4]}
+            description=${BASH_REMATCH[5]}
         fi
-        
-        # Fallback to git author if GitHub CLI failed or not available
-        if [[ -z "$gh_user" ]]; then
-            # If we got a git author name, try to extract a username format
-            if [[ "$author" =~ ^[a-zA-Z0-9._-]+$ ]]; then
-                gh_user="$author"
-            else
-                # Convert full name to a username-like format
-                gh_user=$(echo "$author" | tr '[:upper:]' '[:lower:]' | sed 's/ //g' | sed 's/[^a-zA-Z0-9._-]//g')
-            fi
+
+        entry="- $description by $author"
+        if [ -n "$scope" ] && [[ ! $scope =~ ^deps(-dev)?$ ]]; then
+            entry="- **$scope:** $description by $author"
         fi
-        
+
         # Categorize based on commit message prefix
-        if [[ $message =~ ^[Ff][Ee][Aa][Tt][:_\s] ]]; then
-            features+=("- ${message#*:} by @$gh_user")
-        elif [[ $message =~ ^[Ff][Ii][Xx][:_\s] ]]; then
-            fixes+=("- ${message#*:} by @$gh_user")
-        elif [[ $message =~ ^[Dd][Oo][Cc][Ss]?[:_\s] ]]; then
-            docs+=("- ${message#*:} by @$gh_user")
-        elif [[ $message =~ ^[Rr][Ee][Ff][Aa][Cc][Tt][Oo][Rr][:_\s] ]]; then
-            refactor+=("- ${message#*:} by @$gh_user")
+        if [ -n "$bang" ] || git log -1 --format=%b "$sha" | grep -qiE '^BREAKING[ -]CHANGE:'; then
+            breaking+=("$entry")
+        elif [[ $scope =~ ^deps(-dev)?$ ]]; then
+            deps+=("$entry")
+        elif [ "$type" = "feat" ] || [ "$type" = "feature" ]; then
+            features+=("$entry")
+        elif [ "$type" = "fix" ]; then
+            fixes+=("$entry")
+        elif [ "$type" = "perf" ]; then
+            perf+=("$entry")
+        elif [ "$type" = "refactor" ]; then
+            refactor+=("$entry")
+        elif [ "$type" = "docs" ] || [ "$type" = "doc" ]; then
+            docs+=("$entry")
         else
-            # Clean up the message and add to other
-            clean_message=$message
-            # Remove common prefixes if present
-            clean_message=${clean_message#*: }
-            other+=("- $clean_message by @$gh_user")
+            other+=("$entry")
         fi
     done <<< "$commits"
-    
+
+    shopt -u nocasematch
+
     # Generate release notes
     echo "## What's Changed"
     echo ""
-    
-    # Print features
-    if [ ${#features[@]} -gt 0 ]; then
-        echo "### 🚀 New Features"
-        printf '%s\n' "${features[@]}"
-        echo ""
-    fi
-    
-    # Print fixes
-    if [ ${#fixes[@]} -gt 0 ]; then
-        echo "### 🐛 Bug Fixes"
-        printf '%s\n' "${fixes[@]}"
-        echo ""
-    fi
-    
-    # Print refactoring
-    if [ ${#refactor[@]} -gt 0 ]; then
-        echo "### ♻️ Code Refactoring"
-        printf '%s\n' "${refactor[@]}"
-        echo ""
-    fi
-    
-    # Print documentation
-    if [ ${#docs[@]} -gt 0 ]; then
-        echo "### 📚 Documentation"
-        printf '%s\n' "${docs[@]}"
-        echo ""
-    fi
-    
-    # Print other changes
-    if [ ${#other[@]} -gt 0 ]; then
-        echo "### 🔧 Other Changes"
-        printf '%s\n' "${other[@]}"
-        echo ""
-    fi
-    
+
+    print_section "⚠️ Breaking Changes" "${breaking[@]}"
+    print_section "🚀 New Features" "${features[@]}"
+    print_section "🐛 Bug Fixes" "${fixes[@]}"
+    print_section "⚡ Performance" "${perf[@]}"
+    print_section "♻️ Code Refactoring" "${refactor[@]}"
+    print_section "📚 Documentation" "${docs[@]}"
+    print_section "📦 Dependencies" "${deps[@]}"
+    print_section "🔧 Other Changes" "${other[@]}"
+
     # Add changelog link
     if [ -n "$COMMIT_RANGE" ]; then
         # Extract the previous tag from the commit range (everything before the dots)
         PREVIOUS_TAG=$(echo $COMMIT_RANGE | sed 's/\.\.\..*$//' | sed 's/\.\..*$//')
-        PREVIOUS_TAG_NO_V=$(echo "$PREVIOUS_TAG" | sed 's/^v//')
-        VERSION_NO_V=$(echo "$VERSION" | sed 's/^v//')
-        if [ "$PREVIOUS_TAG_NO_V" != "$VERSION_NO_V" ]; then
-            echo "**Full Changelog**: https://github.com/edicarloslds/businessmap-mcp/compare/$PREVIOUS_TAG...v$VERSION"
-        fi
     else
         # If no range provided, get the previous tag automatically
         PREVIOUS_TAG=$(git tag --sort=-version:refname | grep -v "^v$VERSION$" | head -1)
-        if [ -n "$PREVIOUS_TAG" ]; then
-            PREVIOUS_TAG_NO_V=$(echo "$PREVIOUS_TAG" | sed 's/^v//')
-            VERSION_NO_V=$(echo "$VERSION" | sed 's/^v//')
-            if [ "$PREVIOUS_TAG_NO_V" != "$VERSION_NO_V" ]; then
-                echo "**Full Changelog**: https://github.com/edicarloslds/businessmap-mcp/compare/$PREVIOUS_TAG...v$VERSION"
-            fi
-        else
-            # For first release
-            FIRST_COMMIT=$(git rev-list --max-parents=0 HEAD)
-            echo "**Full Changelog**: https://github.com/edicarloslds/businessmap-mcp/commits/v$VERSION"
+    fi
+
+    if [ -n "$PREVIOUS_TAG" ]; then
+        if [ "${PREVIOUS_TAG#v}" != "$VERSION" ]; then
+            echo "**Full Changelog**: https://github.com/$REPO/compare/$PREVIOUS_TAG...v$VERSION"
         fi
+    else
+        # For first release
+        echo "**Full Changelog**: https://github.com/$REPO/commits/v$VERSION"
+    fi
+}
+
+print_section() {
+    local title=$1
+    shift
+    if [ $# -gt 0 ]; then
+        echo "### $title"
+        printf '%s\n' "$@"
+        echo ""
     fi
 }
 
 # Generate and output the release notes
-categorize_commits "$COMMIT_RANGE" 
+categorize_commits "$COMMIT_RANGE"

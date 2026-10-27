@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Compute the next version and release notes without pushing or publishing
+        type: boolean
+        default: false
+
+# One release at a time; a newer push waits instead of racing for the same version
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    name: Release to npm and GitHub
+    runs-on: ubuntu-latest
+    # Must match the environment configured in the npm Trusted Publisher
+    environment: npm
+    env:
+      BUSINESSMAP_API_URL: https://example.kanbanize.com/api/v2
+      BUSINESSMAP_API_TOKEN: ci-placeholder-token
+      HAS_SMOKE_SECRETS: ${{ secrets.BUSINESSMAP_SMOKE_API_TOKEN != '' }}
+
+    steps:
+      # Always release the current tip of main, even when this run waited in the queue
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      # npm Trusted Publishing (OIDC) requires npm >= 11.5.1
+      - name: Update npm
+        run: npm install -g npm@^11.5.1
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test -- --runInBand
+
+      - name: Build
+        run: npm run build
+
+      - name: Check unused code
+        run: npm run knip
+
+      - name: Package smoke test
+        if: env.HAS_SMOKE_SECRETS == 'true'
+        env:
+          BUSINESSMAP_API_URL: ${{ secrets.BUSINESSMAP_SMOKE_API_URL }}
+          BUSINESSMAP_API_TOKEN: ${{ secrets.BUSINESSMAP_SMOKE_API_TOKEN }}
+          BUSINESSMAP_READ_ONLY_MODE: "true"
+        run: npm run test:npx
+
+      - name: Release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run || 'false' }}
+        run: bash scripts/release.sh
+
+      - name: Summary
+        if: steps.release.outputs.released == 'true'
+        run: |
+          VERSION="${{ steps.release.outputs.version }}"
+          {
+            echo "### 🎉 Released v$VERSION"
+            echo ""
+            echo "- npm: https://www.npmjs.com/package/@edicarlos.lds/businessmap-mcp/v/$VERSION"
+            echo "- GitHub: https://github.com/${{ github.repository }}/releases/tag/v$VERSION"
+          } >> "$GITHUB_STEP_SUMMARY"
