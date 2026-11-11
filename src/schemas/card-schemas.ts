@@ -156,8 +156,35 @@ export const getCardCommentSchema = z.object({
   comment_id: z.number().describe('The ID of the comment'),
 });
 
-// Schema for get card types (no parameters)
-export const getCardTypesSchema = z.object({});
+// Schema for listing card types
+export const getCardTypesSchema = z.object({
+  board_id: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe(
+      'Optional board ID: only return the card types available on this board (the ones its cards can use)'
+    ),
+  type_ids: z
+    .array(z.number().int().positive())
+    .optional()
+    .describe('Optional card type IDs to filter by'),
+  name: z.string().min(1).optional().describe('Optional card type name to filter by'),
+  availability: z
+    .array(z.union([z.literal(0), z.literal(1), z.literal(2)]))
+    .optional()
+    .describe('Optional availability levels to filter by: 0 = On-demand, 1 = Auto, 2 = Global'),
+  is_enabled: z
+    .boolean()
+    .optional()
+    .describe('Optional filter: true for enabled card types only, false for disabled ones only'),
+});
+
+// Schema for fetching a single card type
+export const getCardTypeSchema = z.object({
+  type_id: z.number().int().positive().describe('The ID of the card type'),
+});
 
 // Schema for fetching card history
 export const getCardHistorySchema = z.object({

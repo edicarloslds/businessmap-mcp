@@ -366,6 +366,36 @@ export interface CardTypesResponse {
   data: CardType[];
 }
 
+export interface CardTypeResponse {
+  data: CardType;
+}
+
+/** Availability level: 0 = On-demand, 1 = Auto, 2 = Global */
+export type CardTypeAvailability = 0 | 1 | 2;
+
+export interface CardTypeFilters {
+  type_ids?: number[];
+  name?: string;
+  availability?: CardTypeAvailability[];
+  is_enabled?: boolean;
+}
+
+/**
+ * Card type as returned by GET /boards/{board_id}/cardTypes: only the type_id plus
+ * the board-level overrides of its visual properties (null when not overridden)
+ */
+export interface BoardCardType {
+  type_id: number;
+  icon_type: number | null;
+  icon_id: number | null;
+  color: string | null;
+  card_color_sync: number | null;
+}
+
+export interface BoardCardTypesResponse {
+  data: BoardCardType[];
+}
+
 // Card History types
 export interface CardHistoryItem {
   history_id: number;

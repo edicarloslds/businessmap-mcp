@@ -67,7 +67,7 @@ for publishing the design and its evaluation results.
 
 ---
 
-### Card Management (44 tools)
+### Card Management (45 tools)
 
 #### Basic Operations
 
@@ -77,7 +77,8 @@ for publishing the design and its evaluation results.
 | `search_cards`   | Discover compact cards across boards with advanced filters           |       ✅       |
 | `get_card`       | Get a card summary; set `detail_level=full` for the complete payload |       ✅       |
 | `get_card_size`  | Get the size/points of a specific card                               |       ✅       |
-| `get_card_types` | Get all available card types                                         |       ✅       |
+| `get_card_types` | List card types; filter by board, IDs, name, availability or state   |       ✅       |
+| `get_card_type`  | Get the details of a single card type                                |       ✅       |
 | `create_card`    | Create a new card in a board                                         |       ❌       |
 | `move_card`      | Move a card to a different column or lane                            |       ❌       |
 | `update_card`    | Update card properties and links to other cards                      |       ❌       |
@@ -105,6 +106,15 @@ only for legacy array compatibility.
 
 ```json
 { "card_id": 1234, "type_id": 5 }
+```
+
+Each board only allows some card types, so pass `board_id` to `get_card_types`
+to list the types its cards can use before setting `type_id`. The other filters
+(`type_ids`, `name`, `availability` and `is_enabled`) work with or without
+`board_id`:
+
+```json
+{ "board_id": 285, "is_enabled": true }
 ```
 
 `update_card` can also add, reposition or remove links on an existing card.

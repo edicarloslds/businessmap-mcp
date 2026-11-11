@@ -1,5 +1,5 @@
 import type { AxiosInstance } from 'axios';
-import type { Card } from '../../types/index.js';
+import type { Card, CardType } from '../../types/index.js';
 import { CardClient } from './card-client.js';
 
 function createClient(get: jest.Mock): CardClient {
@@ -211,5 +211,80 @@ describe('CardClient updateCard', () => {
       links_to_existing_cards_to_add_or_update: [{ linked_card_id: 2, link_type: 'parent' }],
       links_to_existing_cards_to_remove: [{ linked_card_id: 3, link_type: 'relative' }],
     });
+  });
+});
+
+describe('CardClient card types', () => {
+  const bug = { type_id: 1, name: 'Bug', color: 'ff0000', icon_id: 3 } as CardType;
+  const task = { type_id: 2, name: 'Task', color: '00ff00', icon_id: 4 } as CardType;
+
+  it('lists all card types without filters', async () => {
+    const get = jest.fn().mockResolvedValue({ data: { data: [bug, task] } });
+
+    await expect(createClient(get).getCardTypes()).resolves.toEqual([bug, task]);
+    expect(get).toHaveBeenCalledWith('/cardTypes', { params: {} });
+  });
+
+  it('sends array filters comma-separated and is_enabled as 0/1', async () => {
+    const get = jest.fn().mockResolvedValue({ data: { data: [bug] } });
+
+    await createClient(get).getCardTypes({
+      type_ids: [1, 2],
+      availability: [0, 2],
+      name: 'Bug',
+      is_enabled: false,
+    });
+    expect(get).toHaveBeenCalledWith('/cardTypes', {
+      params: { type_ids: '1,2', availability: '0,2', name: 'Bug', is_enabled: 0 },
+    });
+  });
+
+  it('gets a single card type', async () => {
+    const get = jest.fn().mockResolvedValue({ data: { data: bug } });
+
+    await expect(createClient(get).getCardType(1)).resolves.toBe(bug);
+    expect(get).toHaveBeenCalledWith('/cardTypes/1');
+  });
+
+  it('lists board card types with full details and board overrides applied', async () => {
+    const get = jest
+      .fn()
+      .mockResolvedValueOnce({
+        data: {
+          data: [
+            { type_id: 1, icon_type: null, icon_id: null, color: '0000ff', card_color_sync: null },
+            { type_id: 2, icon_type: null, icon_id: null, color: null, card_color_sync: null },
+          ],
+        },
+      })
+      .mockResolvedValueOnce({ data: { data: [bug, task] } });
+
+    await expect(createClient(get).getBoardCardTypes(9, { is_enabled: true })).resolves.toEqual([
+      { ...bug, color: '0000ff' },
+      task,
+    ]);
+    expect(get).toHaveBeenNthCalledWith(1, '/boards/9/cardTypes');
+    expect(get).toHaveBeenNthCalledWith(2, '/cardTypes', {
+      params: { type_ids: '1,2', is_enabled: 1 },
+    });
+  });
+
+  it('only requests board card types that match the requested type_ids', async () => {
+    const get = jest
+      .fn()
+      .mockResolvedValueOnce({ data: { data: [{ type_id: 1 }, { type_id: 2 }] } })
+      .mockResolvedValueOnce({ data: { data: [task] } });
+
+    await expect(createClient(get).getBoardCardTypes(9, { type_ids: [2, 5] })).resolves.toEqual([
+      task,
+    ]);
+    expect(get).toHaveBeenNthCalledWith(2, '/cardTypes', { params: { type_ids: '2' } });
+  });
+
+  it('returns an empty list without a second request when no board type matches', async () => {
+    const get = jest.fn().mockResolvedValueOnce({ data: { data: [{ type_id: 1 }] } });
+
+    await expect(createClient(get).getBoardCardTypes(9, { type_ids: [5] })).resolves.toEqual([]);
+    expect(get).toHaveBeenCalledTimes(1);
   });
 });
