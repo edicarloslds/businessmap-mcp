@@ -8,6 +8,8 @@ import {
   moveCardSchema,
   searchCardsSchema,
   updateCardSchema,
+  getCardTypesSchema,
+  getCardTypeSchema,
   updateCardSubtaskSchema,
 } from './card-schemas.js';
 
@@ -277,5 +279,34 @@ describe('moveCardSchema', () => {
     });
     expect(result.lane_id).toBe(3);
     expect(result.position).toBe(0);
+  });
+});
+
+describe('getCardTypesSchema', () => {
+  it('accepts empty input', () => {
+    expect(getCardTypesSchema.parse({})).toEqual({});
+  });
+
+  it('accepts board_id and filters', () => {
+    const input = {
+      board_id: 9,
+      type_ids: [1, 2],
+      name: 'Bug',
+      availability: [0, 2],
+      is_enabled: true,
+    };
+    expect(getCardTypesSchema.parse(input)).toEqual(input);
+  });
+
+  it('rejects invalid availability levels', () => {
+    expect(() => getCardTypesSchema.parse({ availability: [3] })).toThrow();
+  });
+});
+
+describe('getCardTypeSchema', () => {
+  it('requires a positive integer type_id', () => {
+    expect(getCardTypeSchema.parse({ type_id: 5 })).toEqual({ type_id: 5 });
+    expect(() => getCardTypeSchema.parse({})).toThrow();
+    expect(() => getCardTypeSchema.parse({ type_id: 0 })).toThrow();
   });
 });

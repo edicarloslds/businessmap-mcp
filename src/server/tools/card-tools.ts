@@ -33,6 +33,7 @@ import {
   getCardSchema,
   getCardSubtaskSchema,
   getCardSubtasksSchema,
+  getCardTypeSchema,
   getCardTypesSchema,
   listCardsSchema,
   moveCardSchema,
@@ -289,14 +290,28 @@ export class CardToolHandler implements BaseToolHandler {
     registerTool(server, {
       name: 'get_card_types',
       title: 'Get Card Types',
-      description: 'Get all available card types',
+      description:
+        'List card types, optionally filtered by ID, name, availability or enabled state. Pass board_id to list only the card types available on that board (use it before setting type_id on a card)',
       schema: getCardTypesSchema,
       annotations: READ_ONLY,
       errorContext: 'getting card types',
-      handler: async () => {
-        const cardTypes = await client.cards.getCardTypes();
+      handler: async ({ board_id, ...filters }) => {
+        const cardTypes =
+          board_id === undefined
+            ? await client.cards.getCardTypes(filters)
+            : await client.cards.getBoardCardTypes(board_id, filters);
         return { cardTypes, count: cardTypes.length };
       },
+    });
+
+    registerTool(server, {
+      name: 'get_card_type',
+      title: 'Get Card Type',
+      description: 'Get the details of a single card type',
+      schema: getCardTypeSchema,
+      annotations: READ_ONLY,
+      errorContext: 'getting card type',
+      handler: ({ type_id }) => client.cards.getCardType(type_id),
     });
 
     registerTool(server, {

@@ -14,7 +14,10 @@ import {
   CardOutcomesResponse,
   CardStickerItem,
   CardStickerResponse,
+  BoardCardTypesResponse,
   CardType,
+  CardTypeFilters,
+  CardTypeResponse,
   CardTypesResponse,
   ChildCardItem,
   ChildCardsResponse,
@@ -360,9 +363,57 @@ export class CardClient extends BaseClientModuleImpl {
   /**
    * Get all card types
    */
-  async getCardTypes(): Promise<CardType[]> {
-    const response = await this.http.get<CardTypesResponse>('/cardTypes');
+  async getCardTypes(filters?: CardTypeFilters): Promise<CardType[]> {
+    const response = await this.http.get<CardTypesResponse>('/cardTypes', {
+      params: this.toCardTypeParams(filters),
+    });
     return response.data.data;
+  }
+
+  /**
+   * Get the card types available on a board. The board endpoint only returns the
+   * type_id and the board-level visual overrides, so the full card types are fetched
+   * from /cardTypes and the non-null board overrides are applied on top of them.
+   */
+  async getBoardCardTypes(boardId: number, filters?: CardTypeFilters): Promise<CardType[]> {
+    const response = await this.http.get<BoardCardTypesResponse>(`/boards/${boardId}/cardTypes`);
+    const boardTypes = response.data.data;
+    const requestedIds = filters?.type_ids?.length ? new Set(filters.type_ids) : undefined;
+    const typeIds = boardTypes
+      .map((boardType) => boardType.type_id)
+      .filter((typeId) => !requestedIds || requestedIds.has(typeId));
+    if (typeIds.length === 0) return [];
+
+    const cardTypes = await this.getCardTypes({ ...filters, type_ids: typeIds });
+    const overridesById = new Map(boardTypes.map((boardType) => [boardType.type_id, boardType]));
+    return cardTypes.map((cardType) => {
+      const boardType = overridesById.get(cardType.type_id);
+      const definedOverrides = Object.fromEntries(
+        Object.entries(boardType ?? {}).filter(
+          ([key, value]) => key !== 'type_id' && value !== null && value !== undefined
+        )
+      );
+      return { ...cardType, ...definedOverrides };
+    });
+  }
+
+  /**
+   * Get the details of a single card type
+   */
+  async getCardType(typeId: number): Promise<CardType> {
+    const response = await this.http.get<CardTypeResponse>(`/cardTypes/${typeId}`);
+    return response.data.data;
+  }
+
+  private toCardTypeParams(filters?: CardTypeFilters): Record<string, string | number> {
+    const { type_ids, name, availability, is_enabled } = filters || {};
+    // Array params use explode: false in the spec, so they must be comma-separated
+    return {
+      ...(type_ids?.length && { type_ids: type_ids.join(',') }),
+      ...(availability?.length && { availability: availability.join(',') }),
+      ...(name && { name }),
+      ...(is_enabled !== undefined && { is_enabled: is_enabled ? 1 : 0 }),
+    };
   }
 
   /**
