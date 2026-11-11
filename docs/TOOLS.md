@@ -101,6 +101,12 @@ page size. Use `page` and `per_page` to navigate. Set `compact: false` only when
 full list payloads are required; set `include_pagination: false` on `list_cards`
 only for legacy array compatibility.
 
+`update_card` accepts `type_id` to change the card type:
+
+```json
+{ "card_id": 1234, "type_id": 5 }
+```
+
 `update_card` can also add, reposition or remove links on an existing card.
 `link_type` is one of `parent`, `child`, `relative`, `predecessor` or
 `successor`, and describes the linked card from the point of view of the

@@ -307,6 +307,7 @@ export interface UpdateCardParams {
   priority?: string;
   owner_user_id?: number;
   assignee_user_id?: number;
+  type_id?: number;
   deadline?: string;
   position?: number;
   links_to_existing_cards_to_add_or_update?: CardLinkToAddOrUpdate[];

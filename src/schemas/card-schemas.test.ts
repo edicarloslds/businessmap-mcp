@@ -147,6 +147,17 @@ describe('updateCardSchema', () => {
     expect(() => updateCardSchema.parse({ title: 'No id' })).toThrow();
   });
 
+  it('accepts type_id to change the card type', () => {
+    const result = updateCardSchema.parse({ card_id: 1, type_id: 5 });
+    expect(result.type_id).toBe(5);
+  });
+
+  it('rejects invalid type_id values', () => {
+    expect(() => updateCardSchema.parse({ card_id: 1, type_id: 0 })).toThrow();
+    expect(() => updateCardSchema.parse({ card_id: 1, type_id: 1.5 })).toThrow();
+    expect(() => updateCardSchema.parse({ card_id: 1, type_id: '5' })).toThrow();
+  });
+
   it('accepts links to add, reposition and remove', () => {
     const result = updateCardSchema.parse({
       card_id: 1,
