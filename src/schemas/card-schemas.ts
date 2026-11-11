@@ -556,6 +556,12 @@ export const updateCardSchema = z.object({
   position: z.number().optional().describe('New position'),
   owner_user_id: z.number().optional().describe('New owner user ID'),
   assignee_user_id: z.number().optional().describe('New assignee user ID'),
+  type_id: z
+    .number()
+    .int()
+    .positive()
+    .optional()
+    .describe('New card type ID (changes the type of the card)'),
   size: z.number().optional().describe('New card size/points'),
   priority: z.string().optional().describe('New priority level'),
   deadline: z.string().optional().describe('New deadline (ISO date string)'),

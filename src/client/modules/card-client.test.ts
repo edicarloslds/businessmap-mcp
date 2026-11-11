@@ -96,6 +96,14 @@ describe('CardClient write responses', () => {
     expect(get).not.toHaveBeenCalled();
   });
 
+  it('sends type_id in the PATCH body to change the card type', async () => {
+    const patch = jest.fn().mockResolvedValue({ data: { data: [card] } });
+    const client = createWriteClient({ patch, get: jest.fn() });
+
+    await expect(client.updateCard({ card_id: 7, type_id: 5 })).resolves.toBe(card);
+    expect(patch).toHaveBeenCalledWith('/cards/7', { type_id: 5 });
+  });
+
   it('fetches the card when PATCH changes nothing and returns an empty array', async () => {
     const patch = jest.fn().mockResolvedValue({ data: { data: [] } });
     const get = jest.fn().mockResolvedValue({ data: { data: card } });
