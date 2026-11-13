@@ -41,3 +41,32 @@ jobs:
 
       - name: Check unused code
         run: npm run knip
+
+  security:
+    name: Security audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Runtime dependencies ship to users: any known advisory fails the build
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
+
+      # Development-only dependencies: fail on moderate or higher. Low is tolerated
+      # because some advisories have no patched release (e.g. deepmerge via jest-config)
+      - name: Audit all dependencies
+        run: npm audit --audit-level=moderate
+
+      # .deepsec is local scan tooling with its own pnpm lockfile
+      - name: Audit .deepsec dependencies
+        working-directory: .deepsec
+        run: |
+          corepack enable
+          pnpm audit --audit-level moderate

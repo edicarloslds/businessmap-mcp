@@ -58,6 +58,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Never publish with a known advisory in the dependencies that ship to users
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
+
       - name: Lint
         run: npm run lint
 
