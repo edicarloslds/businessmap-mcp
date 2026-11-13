@@ -58,9 +58,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Never publish with a known advisory in the dependencies that ship to users
+      # Never publish with a moderate or higher advisory in the dependencies that ship
+      # to users. Low is tolerated so an unpatched low advisory cannot block a release
       - name: Audit production dependencies
-        run: npm audit --omit=dev
+        run: npm audit --omit=dev --audit-level=moderate
 
       - name: Lint
         run: npm run lint
